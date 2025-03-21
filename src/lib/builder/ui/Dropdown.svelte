@@ -36,7 +36,7 @@
 			<Icon {icon} />
 		{/if}
 	</DropdownMenu.Trigger>
-	<DropdownMenu.Content class="text-sm bg-[#171717] border-[#292929] border-[1px] z-[999999999]">
+	<DropdownMenu.Content class="text-sm bg-[#171717] border-[#292929] border-[1px] z-999999999">
 		<DropdownMenu.Group>
 			<div class="options">
 				{#each options as option, i}

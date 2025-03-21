@@ -26,7 +26,7 @@
 		</div>
 	{/if}
 	<SitePreview {preview} {append} />
-	<div class="absolute bottom-0 w-full px-3 py-2 z-30 bg-gray-900 bg-opacity-50 backdrop-blur-sm text-left">
+	<div class="absolute bottom-0 w-full px-3 py-2 z-30 bg-gray-900 bg-opacity-50 backdrop-blur-xs text-left">
 		<span class="text-sm font-medium leading-none">{site.name}</span>
 	</div>
 </button>

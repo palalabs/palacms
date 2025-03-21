@@ -83,8 +83,8 @@
 	</Dialog.Content>
 </Dialog.Root>
 
-<Sidebar.Root collapsible="icon" class="overflow-hidden [&>[data-sidebar=sidebar]]:flex-row">
-	<Sidebar.Root collapsible="none" class="!w-[calc(var(--sidebar-width-icon)_+_1px)] border-r">
+<Sidebar.Root collapsible="icon" class="overflow-hidden *:data-[sidebar=sidebar]:flex-row">
+	<Sidebar.Root collapsible="none" class="w-[calc(var(--sidebar-width-icon)+1px)]! border-r">
 		<Sidebar.Header>
 			<Sidebar.Menu>
 				<Sidebar.MenuItem>
@@ -186,7 +186,7 @@
 								</Sidebar.MenuButton>
 							{/snippet}
 						</DropdownMenu.Trigger>
-						<DropdownMenu.Content class="w-[--bits-dropdown-menu-anchor-width] min-w-56 rounded-lg" side={sidebar.isMobile ? 'bottom' : 'right'} align="end" sideOffset={4}>
+						<DropdownMenu.Content class="w-(--bits-dropdown-menu-anchor-width) min-w-56 rounded-lg" side={sidebar.isMobile ? 'bottom' : 'right'} align="end" sideOffset={4}>
 							<DropdownMenu.Label class="p-0 font-normal">
 								<div class="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
 									<Avatar.Root class="h-8 w-8 rounded-lg">
