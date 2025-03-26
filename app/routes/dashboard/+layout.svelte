@@ -3,6 +3,15 @@
 	import AppSidebar from '$lib/components/app-sidebar.svelte'
 	import { Globe, LayoutTemplate, Store, Library, Cuboid } from 'lucide-svelte'
 	import { page } from '$app/stores'
+	import { pb } from '$lib/pocketbase/PocketBase'
+	import { onMount } from 'svelte'
+	import { goto } from '$app/navigation'
+
+	onMount(async () => {
+		if (!pb.authStore.isValid) {
+			await goto('/auth')
+		}
+	})
 
 	let { children } = $props()
 

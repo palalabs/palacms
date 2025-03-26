@@ -2,6 +2,15 @@
 	import Primo from '$lib/builder/Primo.svelte'
 	import { show } from '$lib/components/Modal.svelte'
 	import { database_subscribe, storage_subscribe } from '$lib/builder/database.js'
+	import { pb } from '$lib/pocketbase/PocketBase'
+	import { onMount } from 'svelte'
+	import { goto } from '$app/navigation'
+
+	onMount(async () => {
+		if (!pb.authStore.isValid) {
+			await goto('/auth')
+		}
+	})
 
 	let { children } = $props()
 
