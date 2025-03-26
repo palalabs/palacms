@@ -1,9 +1,40 @@
-<script>
+<script lang="ts">
+	import { goto } from '$app/navigation'
+	import { Users } from '$lib/pocketbase/collections'
 	import { Loader } from 'lucide-svelte'
 
-	let { title, email = $bindable(), password = $bindable(null), action, footer = null, error, disable_email = false } = $props()
+	type AuthAction = 'sign_in' | 'sign_up' | 'reset_password' | 'confirm_password_reset'
+
+	let { title, email = $bindable(), password = $bindable(null), action, footer = null, error, disable_email = false }: { action: AuthAction } & Record<string, any> = $props()
 
 	let loading = $state(false)
+	const submit = async (event: SubmitEvent) => {
+		event.preventDefault()
+		switch (action) {
+			case 'sign_in':
+				loading = true
+				await Users.authWithPassword(email, password)
+					.then(() => goto('/dashboard'))
+					.catch(({ message }) => {
+						error = message
+					})
+				loading = false
+				break
+			case 'sign_up':
+				throw new Error('Not implemented')
+			case 'reset_password':
+				loading = true
+				await Users.requestPasswordReset(email).catch(({ message }) => {
+					error = message
+				})
+				loading = false
+				break
+			case 'confirm_password_reset':
+				throw new Error('Not implemented')
+			default:
+				throw new Error('Unknown action')
+		}
+	}
 </script>
 
 <header>
@@ -12,7 +43,7 @@
 {#if error}
 	<div class="error">{error}</div>
 {/if}
-<form class="form" method="POST" action="?/{action}">
+<form class="form" onsubmit={submit}>
 	<div class="fields">
 		<label>
 			<span>Email</span>
@@ -26,14 +57,7 @@
 		{/if}
 		<!-- <input name="invitation_id" type="text" class="hidden" value={$page.url.searchParams.get('join')} /> -->
 	</div>
-	<button
-		class="button"
-		type="submit"
-		data-test-id="submit"
-		onclick={() => {
-			loading = true
-		}}
-	>
+	<button class="button" type="submit" data-test-id="submit">
 		<span class:invisible={loading}>{title}</span>
 		{#if loading}
 			<div class="animate-spin absolute">

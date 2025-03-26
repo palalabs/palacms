@@ -31,6 +31,9 @@ export const createValidatedCollection = <T extends z.AnyZodObject>(idOrName: st
 			const output = schema.parse(record)
 			return output
 		},
-		delete: (id: string) => collection.delete(id)
+		delete: (id: string) => collection.delete(id),
+		authWithPassword: (usernameOrEmail: string, password: string) => collection.authWithPassword(usernameOrEmail, password),
+		requestPasswordReset: (email: string) => collection.requestPasswordReset(email),
+		confirmPasswordReset: (passwordResetToken: string, password: string, passwordConfirm: string) => collection.confirmPasswordReset(passwordResetToken, password, passwordConfirm)
 	}
 }
