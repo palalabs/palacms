@@ -6,8 +6,15 @@ const config = {
 	preprocess: vitePreprocess(),
 	kit: {
 		adapter: adapter({
-			fallback: "index.html"
-		})
+			pages: "pb_public",
+			fallback: "index.html",
+		}),
+		files: {
+			appTemplate: "app/app.html",
+			assets: "app/assets",
+			lib: "app/lib",
+			routes: "app/routes",
+		}
 	},
 	vitePlugin: {
 		// inspector: true

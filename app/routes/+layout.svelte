@@ -1,5 +1,5 @@
 <script>
-	import '../app.css'
+	import '$lib/app.css'
 	import { browser } from '$app/environment'
 	import { compilers_registered } from '$lib/stores'
 	import { registerProcessors } from '$lib/builder/component'
@@ -9,7 +9,7 @@
 	let { children } = $props()
 
 	if (browser) {
-		import('../compiler/processors').then(({ html, css }) => {
+		import('$lib/compiler/processors').then(({ html, css }) => {
 			registerProcessors({ html, css })
 			$compilers_registered = true
 		})

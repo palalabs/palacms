@@ -1,6 +1,6 @@
 import * as factories from '$lib/builder/factories'
 import * as _ from 'lodash-es'
-import scramble_ids from '../scramble_ids'
+import scramble_ids from './scramble_ids'
 import * as code_generators from '$lib/builder/code_generators'
 import { processCode } from '$lib/builder/utils'
 import { get_content_with_synced_values } from '$lib/builder/stores/helpers'

@@ -9,5 +9,7 @@
   "[svelte]": {"editor.defaultFormatter": "svelte.svelte-vscode"},
   "i18n-ally.localesPaths": [
     "src/lib/editor/languages"
-  ]
+  ],
+  "direnv.watchForChanges": false,
+  "direnv.restart.automatic": true,
 }

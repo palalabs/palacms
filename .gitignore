@@ -17,5 +17,19 @@ scratchpad.md
 /playwright-report/
 /playwright/.cache/
 pnpm-lock.yaml
-/build
 /playwright/.auth
+
+# Devenv
+.devenv*
+devenv.local.nix
+
+# direnv
+.direnv
+
+# pre-commit
+.pre-commit-config.yaml
+
+# PocketBase
+/pb_data
+/pb_public
+/pb_hooks/common
