@@ -1,4 +1,4 @@
-import _ from 'lodash-es'
+import * as _ from 'lodash-es'
 import * as factories from './factories.js'
 
 export function transform_fields({ fields }) {

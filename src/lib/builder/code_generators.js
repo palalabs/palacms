@@ -1,5 +1,5 @@
 import { find as _find, chain as _chain, flattenDeep as _flattenDeep } from 'lodash-es'
-import _ from 'lodash-es'
+import * as _ from 'lodash-es'
 import { get } from 'svelte/store'
 import { processors } from './component.js'
 import stores from './stores/data'

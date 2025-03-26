@@ -1,6 +1,6 @@
 <script>
 	import { onMount, createEventDispatcher, getContext } from 'svelte'
-	import _ from 'lodash-es'
+	import * as _ from 'lodash-es'
 	import axios from 'axios'
 	import Icon from '@iconify/svelte'
 	import Toggle from 'svelte-toggle'

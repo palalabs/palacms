@@ -1,7 +1,7 @@
 <script>
 	// @ts-nocheck
 
-	import _ from 'lodash-es'
+	import * as _ from 'lodash-es'
 	import { tick, onDestroy } from 'svelte'
 	import { fade } from 'svelte/transition'
 	import { flip } from 'svelte/animate'
@@ -13,8 +13,6 @@
 	import { isEqual, cloneDeep } from 'lodash-es'
 	import { code as siteCode, design as siteDesign } from '$lib/builder/stores/data/site'
 	import { locale, locked_blocks, page_loaded, dragging_symbol, editing_context } from '$lib/builder/stores/app/misc'
-	import { add_section_to_palette, delete_section_from_palette, move_section } from '$lib/builder/actions/sections'
-	import { update_section } from '$lib/builder/actions/sections'
 	import modal from '$lib/builder/stores/app/modal'
 	import active_site from '$lib/builder/stores/data/site'
 	import active_page from '$lib/builder/stores/data/page'
@@ -25,7 +23,6 @@
 	import { site_design_css } from '$lib/builder/code_generators.js'
 	import { dropTargetForElements } from '$lib/builder/libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
 	import { attachClosestEdge, extractClosestEdge } from '$lib/builder/libraries/pragmatic-drag-and-drop-hitbox/closest-edge.js'
-	import { realtimeChanged, broadcastChanged } from '$lib/builder/database'
 	import { page as page_store } from '$app/stores'
 	import { beforeNavigate } from '$app/navigation'
 	import { hydrate_active_page } from '$lib/builder/stores/hydration'
@@ -181,7 +178,6 @@
 						label: 'Save',
 						onclick: (updated_data) => {
 							unlock_block()
-							broadcastChanged({ page_id: page.id })
 							modal.hide()
 							update_section(section_id, {
 								updated_data

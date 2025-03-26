@@ -3,7 +3,6 @@
 	import SitePreview from '$lib/components/SitePreview.svelte'
 	import { EllipsisVertical, SquarePen, Trash2, Download, Loader, ArrowLeftRight } from 'lucide-svelte'
 	import { find as _find } from 'lodash-es'
-	import { supabase } from '$lib/supabase'
 	import { page } from '$app/stores'
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
 	import * as RadioGroup from '$lib/components/ui/radio-group'
@@ -33,9 +32,7 @@
 	}
 
 	async function get_preview() {
-		const { data } = await supabase.storage.from('sites').download(`${site.id}/preview.html`)
-		const html = await data?.text()
-		preview = html
+		// TODO: Implement
 	}
 
 	async function download_site_file() {
@@ -85,14 +82,12 @@
 	async function handle_rename() {
 		is_rename_open = false
 		await actions.sites.update(site.id, { name: new_name })
-		invalidate('app:data')
 	}
 
 	let deleting = $state(false)
 	async function delete_site() {
 		is_delete_open = false
 		await sites.delete(site.id)
-		invalidate('app:data')
 	}
 
 	let is_move_open = $state(false)
@@ -100,7 +95,6 @@
 	async function move_site() {
 		is_move_open = false
 		await actions.sites.move(site.id, selected_group_id)
-		invalidate('app:data')
 	}
 </script>
 

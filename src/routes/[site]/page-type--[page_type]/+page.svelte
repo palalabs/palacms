@@ -2,7 +2,11 @@
 	import PageType from '$lib/builder/views/editor/PageType.svelte'
 	import { compilers_registered } from '$lib/stores'
 
-	let { data } = $props();
+	// TODO: Load data with possibility to trigger refetch
+	let data = {
+		site_groups: [],
+		symbol_groups: []
+	}
 </script>
 
 {#if $compilers_registered}

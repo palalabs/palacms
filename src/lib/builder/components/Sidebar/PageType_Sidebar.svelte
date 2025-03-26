@@ -1,5 +1,5 @@
 <script>
-	import _ from 'lodash-es'
+	import * as _ from 'lodash-es'
 	import fileSaver from 'file-saver'
 	import axios from 'axios'
 	import { userRole } from '../../stores/app/misc.js'

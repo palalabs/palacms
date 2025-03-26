@@ -1,5 +1,5 @@
 <script>
-	import _ from 'lodash-es'
+	import * as _ from 'lodash-es'
 	import Icon from '@iconify/svelte'
 	import UI from '../ui'
 	import pages from '../stores/data/pages'

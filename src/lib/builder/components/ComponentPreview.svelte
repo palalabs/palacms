@@ -9,7 +9,7 @@
 </script>
 
 <script>
-	import _ from 'lodash-es'
+	import * as _ from 'lodash-es'
 	import { onMount, tick } from 'svelte'
 	import { slide, fade } from 'svelte/transition'
 	import { dynamic_iframe_srcdoc } from './misc.js'

@@ -1,5 +1,5 @@
 import { cloneDeep } from 'lodash-es'
-import _ from 'lodash-es'
+import * as _ from 'lodash-es'
 import {v4 as uuid} from 'uuid'
 import { get } from 'svelte/store'
 import stores, { update_timeline } from '$lib/builder/stores/data'

@@ -1,7 +1,6 @@
 <script>
-	import axios from 'axios'
 	import { flip } from 'svelte/animate'
-	import _ from 'lodash-es'
+	import * as _ from 'lodash-es'
 	import UI from '$lib/builder/ui'
 	import site from '$lib/builder/stores/data/site.js'
 	import active_page from '$lib/builder/stores/data/page.js'

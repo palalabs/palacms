@@ -7,7 +7,6 @@
 	import active_page from '../../stores/data/page.js'
 	import page_type from '../../stores/data/page_type.js'
 	import site from '../../stores/data/site.js'
-	import page_types from '$lib/builder/stores/data/page_types.js'
 	import { fieldTypes, locale } from '../../stores/app/index.js'
 	import { is_regex, get_empty_value } from '../../utils.js'
 	import Card from '../../ui/Card.svelte'
@@ -245,8 +244,8 @@
 
 			if (existing_field.type !== 'page-list' && updated_field.type === 'page-list') {
 				updated_field.options = {
-					...updated_field.options,
-					page_type: $page_types[0].id
+					...updated_field.options
+					// TODO: Check if this works
 				}
 			}
 

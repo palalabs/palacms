@@ -1,11 +1,9 @@
 import { dataChanged } from '$lib/builder/database'
-import {get} from 'svelte/store'
-import _ from 'lodash-es'
+import * as _ from 'lodash-es'
 import { createUniqueID, get_empty_value } from '$lib/builder/utils'
 import { sort_by_hierarchy, remap_entry_ids } from './_db_utils'
 import { Content_Row } from '$lib/builder/factories'
 import {get_on_page_symbol_sections} from '$lib/builder/stores/helpers'
-import {page} from '$app/stores'
 
 // TODO: put DB HELPERS in a separate file
 

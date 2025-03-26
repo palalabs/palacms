@@ -11,7 +11,8 @@
 <script>
 	import Icon from '@iconify/svelte'
 	import { PaneGroup, Pane, PaneResizer } from 'paneforge'
-	import _, { cloneDeep, chain as _chain } from 'lodash-es'
+	import * as _ from 'lodash-es'
+	import { cloneDeep, chain as _chain } from 'lodash-es'
 	import { ComponentPreview } from '$lib/builder/components'
 	import { onMobile } from '$lib/builder/stores/app'
 	// import { sites } from '../../../actions'

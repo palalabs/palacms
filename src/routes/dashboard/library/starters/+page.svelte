@@ -20,7 +20,7 @@
 
 	async function create_starter({ details, site_data, preview }) {
 		await actions.create_starter({ details, site_data, preview })
-		invalidate('app:data')
+		// TODO: Refetch data
 		creating_starter = false
 	}
 

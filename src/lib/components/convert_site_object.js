@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid'
-import _ from 'lodash-es'
+import * as _ from 'lodash-es'
 import * as factories from '$lib/builder/factories'
 import * as constants from '$lib/builder/constants'
 import { Field_Row, Page, Page_Type, Site, Symbol, Section, Content_Row, Field } from '$lib/builder/factories'

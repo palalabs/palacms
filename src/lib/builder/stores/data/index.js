@@ -1,4 +1,4 @@
-import _ from 'lodash-es'
+import * as _ from 'lodash-es'
 import { createStack } from '../../libraries/svelte-undo'
 import page_type from './page_type.js'
 import site from './site'

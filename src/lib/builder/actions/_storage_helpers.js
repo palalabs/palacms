@@ -3,23 +3,17 @@ import { storageChanged } from '$lib/builder/database'
 import site from '$lib/builder/stores/data/site'
 import pages from '$lib/builder/stores/data/pages'
 import sections from '$lib/builder/stores/data/sections'
-// import symbols from '$lib/builder/stores/data/symbols'
 import active_page from '$lib/builder/stores/data/page'
 import * as code_generators from '$lib/builder/code_generators'
 import { processCode } from '$lib/builder/utils'
 import { get_content_with_synced_values } from '$lib/builder/stores/helpers'
-import _ from 'lodash-es'
-import {supabase} from '$lib/supabase'
+import * as _ from 'lodash-es'
 
 export async function update_page_file(update_all = false) {
 	const all_pages = get(pages)
 	if (update_all) {
-		await Promise.all(
-			all_pages.map(async (page) => {
-				const { data = [] } = await supabase.from('sections').select('*, page, entries(*), master(id, symbol, index)').match({ page: page.id }).order('index', { ascending: true })
-				await generate_and_upload_page(page, data)
-			})
-		)
+		// TODO: Implement
+		throw new Error("Not implemented")
 	} else {
 		const page = get(active_page)
 		await generate_and_upload_page(page, get(sections))
@@ -91,30 +85,8 @@ export async function update_symbol_file(symbol) {
 			})
 		})(),
 		(async () => {
-			const { data: direct_sections } = await supabase
-				.from('sections')
-				.select('page(id)')
-				.eq('symbol', symbol.id)
-				.not('page', 'is', null)
-	
-			// Get sections that use the symbol via master
-			const { data: master_sections } = await supabase
-				.from('sections')
-				.select('page(id), master!inner(symbol)')
-				.eq('master.symbol', symbol.id)
-				.not('page', 'is', null)
-		
-			const sections_using_symbol = [...(direct_sections || []), ...(master_sections || [])]
-			const pages_to_rebuild = _.uniqBy(sections_using_symbol.map(s => s.page), 'id').filter(p => p.id !== get(active_page).id).map(page => {
-				const page_data = get(pages).find(p => p.id === page.id)
-				return page_data
-			})
-			await Promise.all(
-				pages_to_rebuild.map(async (page) => {
-					const { data = [] } = await supabase.from('sections').select('*, page, entries(*), master(id, symbol, index)').match({ page: page.id }).order('index', { ascending: true })
-					await generate_and_upload_page(page, data)
-				})
-			)
+			// TODO: Implement generating and uploading page
+			throw new Error("Not implemented")
 		})()
 	])
 }
@@ -220,7 +192,7 @@ async function generate_and_upload_page(page, page_sections) {
 
 	// save site preview
 	if (page.slug === '') {
-		const { data, error } = await supabase.storage.from('sites').upload(`${get(site).id}/preview.html`, file, { upsert: true })
+		// TODO: Implement uploading site preview
+		throw new Error("Not implemented")
 	}
-
 }

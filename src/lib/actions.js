@@ -1,18 +1,10 @@
-import supabase from './supabase/core'
-import { page } from '$app/stores'
-import { get } from 'svelte/store'
-import * as actions from '$lib/builder/actions/active_site'
 import * as factories from '$lib/builder/factories'
-import _ from 'lodash-es'
-import axios from 'axios'
+import * as _ from 'lodash-es'
 import scramble_ids from '../scramble_ids'
-import * as helpers from '$lib/builder/actions/_helpers'
-import * as db_utils from '$lib/builder/actions/_db_utils'
 import * as code_generators from '$lib/builder/code_generators'
 import { processCode } from '$lib/builder/utils'
 import { get_content_with_synced_values } from '$lib/builder/stores/helpers'
 import { v4 as uuidv4 } from 'uuid'
-import {remap_entry_and_field_items} from '$lib/builder/actions/_db_utils'
 
 /**
  * Deletes a site group from the database
@@ -20,7 +12,8 @@ import {remap_entry_and_field_items} from '$lib/builder/actions/_db_utils'
  * @returns {Promise<void>}
  */
 export async function delete_site_group(group_id) {
-	await supabase.from('site_groups').delete().eq('id', group_id)
+	// TODO: Implement
+	throw new Error("Not implemented")
 }
 
 /**
@@ -30,7 +23,8 @@ export async function delete_site_group(group_id) {
  * @returns {Promise<void>}
  */
 export async function add_site_to_group(site_id, group_id) {
-	await supabase.from('sites').update({ group: group_id }).eq('id', site_id)
+	// TODO: Implement
+	throw new Error("Not implemented")
 }
 
 /**
@@ -39,7 +33,8 @@ export async function add_site_to_group(site_id, group_id) {
  * @returns {Promise<void>}
  */
 export async function remove_site_from_group(site_id) {
-	await supabase.from('sites').update({ group: null }).eq('id', site_id)
+	// TODO: Implement
+	throw new Error("Not implemented")
 }
 
 /**
@@ -49,7 +44,8 @@ export async function remove_site_from_group(site_id) {
  * @returns {Promise<void>}
  */
 export async function rename_site_group(group_id, new_name) {
-	await supabase.from('site_groups').update({ name: new_name }).eq('id', group_id)
+	// TODO: Implement
+	throw new Error("Not implemented")
 }
 
 /**
@@ -58,7 +54,8 @@ export async function rename_site_group(group_id, new_name) {
  * @returns {Promise<void>}
  */
 export async function create_site_group(name) {
-	await supabase.from('site_groups').insert({ name, owner: get(page).data.user.id })
+	// TODO: Implement
+	throw new Error("Not implemented")
 }
 
 /**
@@ -68,7 +65,8 @@ export async function create_site_group(name) {
  * @returns {Promise<void>}
  */
 export async function move_library_symbol(symbol_id, new_group_id) {
-	await supabase.from('library_symbols').update({ group: new_group_id }).eq('id', symbol_id)
+	// TODO: Implement
+	throw new Error("Not implemented")
 }
 
 
@@ -78,7 +76,8 @@ export async function move_library_symbol(symbol_id, new_group_id) {
  * @returns {Promise<void>}
  */
 export async function delete_library_symbol_group(group_id) {
-	await supabase.from('library_symbol_groups').delete().eq('id', group_id)
+	// TODO: Implement
+	throw new Error("Not implemented")
 }
 
 /**
@@ -88,7 +87,8 @@ export async function delete_library_symbol_group(group_id) {
  * @returns {Promise<void>}
  */
 export async function rename_library_symbol_group(group_id, new_name) {
-	await supabase.from('library_symbol_groups').update({ name: new_name }).eq('id', group_id)
+	// TODO: Implement
+	throw new Error("Not implemented")
 }
 
 
@@ -98,7 +98,8 @@ export async function rename_library_symbol_group(group_id, new_name) {
  * @returns {Promise<void>}
  */
 export async function create_library_symbol_group(name) {
-	await supabase.from('library_symbol_groups').insert({ name, owner: get(page).data.user.id })
+	// TODO: Implement
+	throw new Error("Not implemented")
 }
 
 /**
@@ -112,28 +113,8 @@ export async function create_library_symbol_group(name) {
  * @returns {Promise<void>}
  */
 export async function add_marketplace_starter_to_library(starter, preview) {
-	const new_starter_id = uuidv4()
-	remap_entry_and_field_items({ entries: starter.entries, fields: starter.fields })
-
-	const symbol_res = await supabase.from('library_symbols').insert({ id: new_starter_id, name: starter.name, code: starter.code, index: 0, owner: get(page).data.user.id })
-	if (symbol_res.error) {
-		console.log('Failed to insert site', { symbol_res, starter })
-		throw new Error('Failed to insert site')
-	}
-
-	const fields_res = await supabase.from('fields').insert(starter.fields.map(f => ({ ...f, library_symbol: new_starter_id })))
-	if (fields_res.error) {
-		console.log('Failed to insert fields', { fields_res, fields: starter.fields })
-		throw new Error('Failed to insert fields')
-	}
-
-	const entries_res = await supabase.from('entries').insert(starter.entries.map(f => ({ ...f, library_symbol: new_starter_id })))
-	if (entries_res.error) {
-		console.log('Failed to insert entries', { entries_res, entries: starter.entries })
-		throw new Error('Failed to insert entries')
-	}
-
-	const storage_res = await supabase.storage.from('sites').upload(`${new_starter_id}/preview.html`, preview)
+	// TODO: Implement
+	throw new Error("Not implemented")
 }
 
 /**
@@ -149,28 +130,8 @@ export async function add_marketplace_starter_to_library(starter, preview) {
  * @returns {Promise<void>}
  */
 export async function add_marketplace_symbol_to_library({symbol, preview, group_id}) {
-	const new_symbol_id = uuidv4()
-	remap_entry_and_field_items({ entries: symbol.entries, fields: symbol.fields })
-
-	const symbol_res = await supabase.from('library_symbols').insert({ id: new_symbol_id, name: symbol.name, code: symbol.code, index: 0, group: group_id, owner: get(page).data.user.id })
-	if (symbol_res.error) {
-		console.log('Failed to insert site', { symbol_res, symbol })
-		throw new Error('Failed to insert site')
-	}
-
-	const fields_res = await supabase.from('fields').insert(symbol.fields.map(f => ({ ...f, library_symbol: new_symbol_id })))
-	if (fields_res.error) {
-		console.log('Failed to insert fields', { fields_res, fields: symbol.fields })
-		throw new Error('Failed to insert fields')
-	}
-
-	const entries_res = await supabase.from('entries').insert(symbol.entries.map(f => ({ ...f, library_symbol: new_symbol_id })))
-	if (entries_res.error) {
-		console.log('Failed to insert entries', { entries_res, entries: symbol.entries })
-		throw new Error('Failed to insert entries')
-	}
-
-	const storage_res = await supabase.storage.from('symbols').upload(`${new_symbol_id}/preview.html`, preview)
+	// TODO: Implement
+	throw new Error("Not implemented")
 }
 
 /**
@@ -180,7 +141,8 @@ export async function add_marketplace_symbol_to_library({symbol, preview, group_
  * @returns {Promise<void>}
  */
 export async function rename_library_symbol(id, new_name) {
-	await supabase.from('library_symbols').update({ name: new_name }).eq('id', id)
+	// TODO: Implement
+	throw new Error("Not implemented")
 }
 
 /**
@@ -196,31 +158,8 @@ export async function rename_library_symbol(id, new_name) {
  * @returns {Promise<void>}
  */
 export async function create_library_symbol({ name = '', code, content, preview, group }) {
-	const symbol_id = uuidv4()
-	const changes = { 
-		entries: db_utils.generate_entry_changes([], content.entries), 
-		fields: db_utils.generate_field_changes([], content.fields) 
-	}
-	await Promise.all([
-		(async() => {
-			let library_symbols_res = await supabase.from('library_symbols').insert({ id: symbol_id, code, name: name, index: 0, group, owner: get(page).data.user.id }).select().single()
-			if (library_symbols_res.error) {
-				console.log('Failed to insert symbols', library_symbols_res)
-				throw new Error('Failed to insert symbols')
-			}
-		
-			// DB: save Symbol fields
-			await helpers.handle_field_changes_new(changes.fields.map(f => ({ ...f, symbol: null })), {
-				library_symbol: symbol_id
-			})
-
-			// DB: save Symbol entries
-			await helpers.handle_content_changes_new(changes.entries.map(f => ({ ...f, symbol: null })), {
-				library_symbol: symbol_id
-			})
-		})(),
-		supabase.storage.from('symbols').upload(`${symbol_id}/preview.html`, preview)
-	])
+	// TODO: Implement
+	throw new Error("Not implemented")
 }
 
 /**
@@ -239,24 +178,8 @@ export async function create_library_symbol({ name = '', code, content, preview,
  * @returns {Promise<void>}
  */
 export async function save_library_symbol(id, { code, content, preview }) {
-
-	const content_changes = db_utils.generate_entry_changes(content.original.entries, content.updated.entries)
-	const field_changes = db_utils.generate_field_changes(content.original.fields, content.updated.fields)
-
-	// DB: save block code if changed
-	await supabase.from('library_symbols').update({ code }).eq('id', id)
-
-	// DB: save Symbol fields
-	await helpers.handle_field_changes_new(field_changes, {
-		library_symbol: id
-	})
-
-	// DB: save Symbol entries
-	await helpers.handle_content_changes_new(content_changes, {
-		library_symbol: id
-	})
-
-	await supabase.storage.from('symbols').upload(`${id}/preview.html`, preview, { upsert: true })
+	// TODO: Implement
+	throw new Error("Not implemented")
 }
 
 /**
@@ -266,11 +189,8 @@ export async function save_library_symbol(id, { code, content, preview }) {
  * @throws {Error} If deletion fails
  */
 export async function delete_library_symbol(symbol_id) {
-	const res = await supabase.from('library_symbols').delete().eq('id', symbol_id)
-	if (res.error) {
-		console.log('Failed to delete library symbol', res)
-		throw new Error('Failed to delete library symbol')
-	}
+	// TODO: Implement
+	throw new Error("Not implemented")
 }
 
 /**
@@ -284,7 +204,6 @@ export async function delete_library_symbol(symbol_id) {
  * @returns {Promise<void>}
  */
 export async function create_starter({ details, preview, site_data = null }) {
-
 	let starter_data
 	if (site_data) {
 		site_data.site.name = details.name
@@ -351,65 +270,12 @@ export async function create_starter({ details, preview, site_data = null }) {
 
 	site.is_starter = true
 
-	try {
-		// Step 1: Insert starter
-		let res = await supabase.from('sites').insert({ ...site, owner: get(page).data.user.id })
-		if (res.error) {
-			console.log('Failed to insert site', { res, site })
-			throw new Error('Failed to insert site')
-		}
-
-		// Step 2: Insert page_types and symbols
-		res = await Promise.all([
-			supabase.from('page_types').insert(page_types),
-			supabase.from('symbols').insert(symbols)
-		])
-		if (res.some(r => r.error)) {
-			console.log('Failed to insert page_types or symbols', { res, page_types, symbols })
-			throw new Error('Failed to insert page_types or symbols')
-		}
-
-		// Step 3: Insert pages
-		res = await supabase.from('pages').insert(pages)
-		if (res.error) {
-			console.log('Failed to insert pages', { res, pages })
-			throw new Error('Failed to insert pages')
-		}
-
-		// Step 4: Insert sections
-		res = await supabase.from('sections').insert(sections)
-		if (res.error) {
-			console.log('Failed to insert sections', { res, sections })
-			throw new Error('Failed to insert sections')
-		}
-
-		// Step 5: Insert fields
-		res = await supabase.from('fields').insert(fields)
-		if (res.error) {
-			console.log('Failed to insert fields', { res, fields })
-			throw new Error('Failed to insert fields')
-		}
-
-		// Step 6: Insert entries
-		res = await supabase.from('entries').insert(entries)
-		if (res.error) {
-			console.log('Failed to insert entries', { res, entries })
-			throw new Error('Failed to insert entries')
-		}
-
-		// Handle preview upload
-		await supabase.storage.from('sites').upload(`${site.id}/preview.html`, preview)
-
-		console.log('Site created successfully')
-	} catch (e) {
-		console.error('SOMETHING WENT WRONG', e)
-			// TODO: Implement rollback logic to delete inserted items if an error occurs
-	}
+	// TODO: Implement
+	throw new Error("Not implemented")
 }
 
 export const sites = {
 	create: async ({ starter_id, duplication_source, details, preview, group }) => {
-
 		const uploaded_data = starter_id ? await fetch_site_data(starter_id) : duplication_source
 		uploaded_data.site.name = details.name
 		uploaded_data.site.design = _.cloneDeep(details.design)
@@ -420,151 +286,40 @@ export const sites = {
 
 		const { site, page_types, pages, symbols, sections, entries, fields } = prepared_data
 
-		try {
-			// Step 1: Insert site
-			let res = await supabase.from('sites').insert({ ...site, group, owner: get(page).data.user.id })
-			if (res.error) {
-				console.log('Failed to insert site', { res, site })
-				throw new Error('Failed to insert site')
-			}
-
-			// Step 2: Insert page_types and symbols
-			res = await Promise.all([
-				supabase.from('page_types').insert(page_types),
-				supabase.from('symbols').insert(symbols)
-			])
-			if (res.some(r => r.error)) {
-				console.log('Failed to insert page_types or symbols', { res, page_types, symbols })
-				throw new Error('Failed to insert page_types or symbols')
-			}
-
-			// Step 3: Insert pages
-			res = await supabase.from('pages').insert(pages)
-			if (res.error) {
-				console.log('Failed to insert pages', { res, pages })
-				throw new Error('Failed to insert pages')
-			}
-
-			// Step 4: Insert sections
-			res = await supabase.from('sections').insert(sections)
-			if (res.error) {
-				console.log('Failed to insert sections', { res, sections })
-				throw new Error('Failed to insert sections')
-			}
-
-			// Step 5: Insert fields
-			res = await supabase.from('fields').insert(fields)
-			if (res.error) {
-				console.log('Failed to insert fields', { res, fields })
-				throw new Error('Failed to insert fields')
-			}
-
-			// Step 6: Insert entries
-			res = await supabase.from('entries').insert(entries)
-			if (res.error) {
-				console.log('Failed to insert entries', { res, entries })
-				throw new Error('Failed to insert entries')
-			}
-
-			// Handle preview upload
-			if (preview) {
-				await supabase.storage.from('sites').upload(`${site.id}/preview.html`, preview)
-			}
-
-			// create distribution
-			const {data} = await axios.post('/api/deploy/initial-deployment', {files, site_id: site.id, domain_name: site.domain_name})
-
-			if (data.success) {
-				console.log('Site created successfully')
-			} else {
-				alert(data.error)
-			}
-		} catch (e) {
-			console.error('SOMETHING WENT WRONG', e)
-				// TODO: Implement rollback logic to delete inserted items if an error occurs
-		}
+		// TODO: Implement
+		throw new Error("Not implemented")
 	},
 	update: async (site_id, props) => {
-		await supabase.from('sites').update(props).eq('id', site_id)
+		// TODO: Implement
+		throw new Error("Not implemented")
 	},
 	move: async (site_id, new_group_id) => {
-		await supabase.from('sites').update({ group: new_group_id }).eq('id', site_id)
+		// TODO: Implement
+		throw new Error("Not implemented")
 	},
 	delete: async (site_id, delete_deployment = false) => {
-		await supabase.from('sites').delete().eq('id', site_id)
-		if (delete_deployment) {
-			await axios.delete(`/api/deploy/delete-deployment?site_id=${site_id}`)
-		}
+		// TODO: Implement
+		throw new Error("Not implemented")
 	},
 	deploy: async (site_id, custom_domain = null) => {
-
 		const site_data = await fetch_site_data(site_id)
 
-		// const scrambled = scramble_ids(site_data)
 		const files = await build_site_bundle(site_data)
 		const prepared_data = prepare_data(site_data)
 
 		const { site } = prepared_data
 
-		try {
-			// create distribution
-			const dist_res = await axios.post('/api/deploy/initial-deployment', {files, site_id: site.id, domain_name: site.domain_name})
-
-			console.log('Site created successfully')
-		} catch (e) {
-			console.error('SOMETHING WENT WRONG', e)
-				// TODO: Implement rollback logic to delete inserted items if an error occurs
-		}
+		// TODO: Implement
+		throw new Error("Not implemented")
 	}
 }
 
 export async function fetch_site_data(site_id) {
-	const { data, error } = await supabase
-	.from('sites')
-	.select(`
-		id,
-		name,
-		code,
-		design,
-		fields!fields_site_fkey(*),
-		entries!entries_site_fkey(*),
-		page_types(
-			*,
-			fields(*),
-			entries(*),
-			sections(*, entries(*)),
-			pages(
-				*,
-				entries(*),
-				sections(*, entries(*))
-			)
-		),
-		symbols(
-			*,
-			fields(*),
-			entries(*)
-		)
-	`)
-	.eq('id', site_id)
-	.single()
-
-	if (!data) {
-		throw new Error('Could not find site')
-	}
-
-	const site_data = {
-		site: _.omit(data, ['pages', 'page_types', 'symbols', 'sections']),
-		pages: data.page_types.flatMap(pt => pt.pages.map(p => _.omit(p, ['sections']))), 
-		page_types: data.page_types.map(pt => _.omit(pt, ['pages', 'sections'])),
-		symbols: data.symbols,
-		sections: data.page_types.flatMap(pt => [ ...pt.sections, ...pt.pages.flatMap(p => p.sections)])
-	}
-
-	return site_data
+	// TODO: Implement
+	throw new Error("Not implemented")
 }
 
 function prepare_data(data) {
-
 	// Prepare data while maintaining relationships
 	const site = _.omit(data.site, ['entries', 'fields'])
 	const page_types = data.page_types.map((pt) => _.omit(pt, ['sections', 'entries', 'fields']))

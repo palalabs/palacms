@@ -1,6 +1,6 @@
 <script>
 	import { fade } from 'svelte/transition'
-	import _ from 'lodash-es'
+	import * as _ from 'lodash-es'
 	import Icon from '@iconify/svelte'
 	import { processCode } from '$lib/builder/utils'
 	import * as Components from '$lib/builder/components'

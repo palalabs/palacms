@@ -4,7 +4,13 @@
 	import { Globe, LayoutTemplate, Store, Library, Cuboid } from 'lucide-svelte'
 	import { page } from '$app/stores'
 
-	let { data, children } = $props()
+	let { children } = $props()
+
+	// TODO: Load data with possibility to trigger refetch
+	let data = {
+		site_groups: [],
+		symbol_groups: []
+	}
 
 	const sidebar_menu = $derived.by(() => {
 		const pathname = $page.url.pathname

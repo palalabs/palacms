@@ -1,6 +1,6 @@
 <script>
 	import { onDestroy } from 'svelte'
-	import _ from 'lodash-es'
+	import * as _ from 'lodash-es'
 	import Icon, { loadIcons, enableCache } from '@iconify/svelte'
 	import { browser } from '$app/environment'
 	import IconButton from './ui/IconButton.svelte'

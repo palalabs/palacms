@@ -1,7 +1,7 @@
 <script>
 	import axios from 'axios'
 	import { fade } from 'svelte/transition'
-	import _ from 'lodash-es'
+	import * as _ from 'lodash-es'
 	import Icon from '@iconify/svelte'
 	import { processCode, processCSS } from '../utils'
 	import { get_content_with_synced_values } from '$lib/builder/stores/helpers'

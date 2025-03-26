@@ -1,5 +1,5 @@
 import { cloneDeep } from 'lodash-es'
-import _ from 'lodash-es'
+import * as _ from 'lodash-es'
 import { get } from 'svelte/store'
 import { goto } from '$app/navigation'
 import active_page_store from '$lib/builder/stores/data/page'

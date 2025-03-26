@@ -46,39 +46,3 @@ export function storage_unsubscribe(fn) {
 export async function storageChanged(payload) {
 	return await storage_listener(payload)
 }
-
-let realtime_listener = () => {}
-export function realtime_subscribe(fn) {
-	realtime_listener = fn
-}
-
-/**
- * Runs when realtime data updates
- * @param {{
- *  instance: string,
- *  user: object,
- *  data: object,
- * }} payload - The data that changed
- */
-export async function realtimeChanged(payload) {
-	return await realtime_listener(payload)
-}
-
-let broadcast_listener = () => {}
-export function broadcast_subscribe(fn) {
-	broadcast_listener = fn
-}
-
-/**
- * Runs when broadcast data updates
- * @param {{
- *  bucket: string,
- *  action: string,
- *  key: string,
- *  file: string,
- *  options: object,
- * }} payload - The data that changed
- */
-export async function broadcastChanged(payload) {
-	return await broadcast_listener(payload)
-}

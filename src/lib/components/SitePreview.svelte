@@ -2,7 +2,6 @@
 	import { tick, onDestroy } from 'svelte'
 	import { browser } from '$app/environment'
 	import { find as _find } from 'lodash-es'
-	import { supabase } from '$lib/supabase'
 
 	/**
 	 * @typedef {Object} Props
@@ -21,9 +20,7 @@
 	}
 
 	async function get_preview() {
-		const { data } = await supabase.storage.from('sites').download(`${site_id}/preview.html`)
-		const html = await data?.text()
-		preview = html
+		// TODO: Implement
 	}
 
 	let container = $state()

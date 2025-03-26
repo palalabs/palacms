@@ -1,5 +1,5 @@
 <script lang="ts">
-	import _ from 'lodash-es'
+	import * as _ from 'lodash-es'
 	import { PaneGroup, Pane, PaneResizer } from 'paneforge'
 	import FullCodeEditor from '$lib/builder/views/modal/SectionEditor/FullCodeEditor.svelte'
 	import ComponentPreview, { has_error } from '$lib/builder/components/ComponentPreview.svelte'

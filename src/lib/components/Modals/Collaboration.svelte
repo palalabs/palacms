@@ -1,11 +1,8 @@
 <script>
-	import axios from 'axios'
 	import * as timeago from 'timeago.js'
 	import Icon from '@iconify/svelte'
 	import { page } from '$app/stores'
 	import ModalHeader from '$lib/components/ModalHeader.svelte'
-
-	// export let site
 
 	const site = $page.data.site
 
@@ -14,21 +11,7 @@
 	let role = $state('DEV')
 
 	async function invite_editor() {
-		loading = true
-		const { data: success } = await axios.post('/api/collaboration/collaborators', {
-			site,
-			email,
-			role,
-			url: $page.url.origin
-		})
-		if (success) {
-			get_collaborators()
-			get_invitations()
-		} else {
-			alert('Could not send invitation. Please try again.')
-		}
-		email = ''
-		loading = false
+		// TODO: Implement
 	}
 
 	let editors = $state([])
@@ -36,20 +19,14 @@
 	get_collaborators()
 
 	export async function get_collaborators() {
-		const { data } = await axios.get(`/api/collaboration/collaborators?site_id=${site.id}`)
-		if (data) {
-			editors = data
-		}
+		// TODO: Implement
 	}
 
 	let invitations = $state([])
 	get_invitations()
 
 	async function get_invitations() {
-		const { data } = await axios.get(`/api/collaboration/invitations?site_id=${site.id}`)
-		if (data) {
-			invitations = data
-		}
+		// TODO: Implement
 	}
 
 	let adding_collaborator = false
@@ -59,12 +36,6 @@
 	title="Editors"
 	icon="clarity:users-solid"
 	warn={() => {
-		// if (!isEqual(local_component, component)) {
-		//   const proceed = window.confirm(
-		//     'Undrafted changes will be lost. Continue?'
-		//   )
-		//   return proceed
-		// } else return true
 		return true
 	}}
 />

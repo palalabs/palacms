@@ -1,7 +1,7 @@
 import {svelteLanguage} from '@replit/codemirror-lang-svelte'
 import { cssLanguage } from "@codemirror/lang-css"
 import { snippetCompletion } from '@codemirror/autocomplete'
-import _ from 'lodash-es';
+import * as _ from 'lodash-es';
 
 const Completion_Label = (value) => {
   if (Array.isArray(value)) {

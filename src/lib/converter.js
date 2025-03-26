@@ -1,4 +1,4 @@
-import _ from 'lodash-es'
+import * as _ from 'lodash-es'
 import { v4 as uuidv4 } from 'uuid'
 import { createUniqueID } from '$lib/builder/utilities'
 import { get_empty_value } from '$lib/builder/utils'

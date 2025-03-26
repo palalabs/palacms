@@ -66,7 +66,7 @@
 				preview,
 				group: active_group
 			})
-			invalidate('app:data')
+			// TODO: Refetch data
 		} catch (error) {
 			console.error('Error processing site file:', error)
 			// primo_json_valid = false
@@ -86,7 +86,7 @@
 			preview,
 			group: active_group
 		})
-		invalidate('app:data')
+		// TODO: Refetch data
 		creating_block = false
 	}
 
@@ -146,7 +146,7 @@
 	async function handle_rename(e) {
 		e.preventDefault()
 		await actions.rename_library_symbol_group(active_symbol_group.id, new_name)
-		invalidate('app:data')
+		// TODO: Refetch data
 		is_rename_open = false
 	}
 
@@ -156,7 +156,7 @@
 		deleting = true
 		await goto('/dashboard/library/starters')
 		await actions.delete_library_symbol_group(active_symbol_group.id)
-		invalidate('app:data')
+		// TODO: Refetch data
 		deleting = false
 	}
 </script>

@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid'
-import _ from 'lodash-es'
+import * as _ from 'lodash-es'
 
 export default function scramble_ids({ site, page_types, symbols, pages, sections }) {
   const id_map = new Map()

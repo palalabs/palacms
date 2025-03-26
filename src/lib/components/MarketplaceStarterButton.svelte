@@ -65,7 +65,6 @@
 			site_data: data,
 			preview
 		})
-		invalidate('app:data')
 		loading = false
 		added_to_library.push(site.id)
 		toast.success('Starter added to Library')

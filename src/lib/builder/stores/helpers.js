@@ -1,12 +1,11 @@
 import { find as _find, chain as _chain, flattenDeep as _flattenDeep } from 'lodash-es'
-import _ from 'lodash-es'
+import * as _ from 'lodash-es'
 import { get } from 'svelte/store'
 import { v4 as uuidv4 } from 'uuid'
 import stores from '$lib/builder/stores/data'
 import { site as activeSite } from './data/site.js'
 import sections from './data/sections.js'
 import symbols from './data/symbols.js'
-// import page_types from './data/page_types.js'
 import { page } from '$app/stores'
 import active_page from './data/page.js'
 import page_type from './data/page_type.js'
@@ -14,31 +13,8 @@ import { locale, editing_context } from './app/misc.js'
 import { transform_content } from '../transform_data.js'
 
 export async function get_symbol_usage_info(symbol_id) {
-	const { data, error } = await get(page).data.supabase.from('sections').select('page(*)').eq('symbol', symbol_id)
-	if (data.length === 0) {
-		return 'Not used on any pages'
-	} else {
-		const info = data.reduce(
-			(previous, current) => {
-				if (previous.pages.includes(current.page.name)) {
-					return previous
-				} else {
-					return {
-						n_pages: previous.n_pages + 1,
-						pages: [...previous.pages, current.page.name]
-					}
-				}
-			},
-			{ n_pages: 0, pages: [] }
-		)
-		if (info.n_page === 1) {
-			return `Used on ${info.pages[0]}`
-		} else {
-			return `Used on ${info.n_pages} page${info.n_pages === 1 ? '' : 's'}: ${info.pages.join(', ')}`
-		}
-	}
-
-	// return info
+	// TODO: Implement
+	throw new Error("Not implemented")
 }
 
 export function get_symbol(symbol_id) {

@@ -1,6 +1,6 @@
 import { get } from 'svelte/store'
 import { timeline } from '$lib/builder/stores/data'
-import _ from 'lodash-es'
+import * as _ from 'lodash-es'
 
 
 // TIMELINE

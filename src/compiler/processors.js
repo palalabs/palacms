@@ -1,4 +1,4 @@
-import _ from 'lodash-es'
+import * as _ from 'lodash-es'
 import PromiseWorker from 'promise-worker'
 import { get } from 'svelte/store'
 // import { render } from 'svelte/server'

@@ -1,6 +1,6 @@
 <script>
 	import { createEventDispatcher } from 'svelte'
-	import _ from 'lodash-es'
+	import * as _ from 'lodash-es'
 	import { fade } from 'svelte/transition'
 	import Icon from '@iconify/svelte'
 	import { clickOutside, createUniqueID } from '../utilities.js'

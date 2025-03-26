@@ -1,4 +1,4 @@
-import _ from 'lodash-es'
+import * as _ from 'lodash-es'
 import { get } from 'svelte/store'
 import stores, { update_timeline } from '$lib/builder/stores/data'
 import { update as update_site } from '$lib/builder/stores/data/site'

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import _ from 'lodash-es'
+	import * as _ from 'lodash-es'
 	import { Building2, Palette, LayoutTemplate, Upload, Loader, ArrowUpRight } from 'lucide-svelte'
 	import * as Dialog from '$lib/components/ui/dialog'
 	import SitePreview from '$lib/components/SitePreview.svelte'

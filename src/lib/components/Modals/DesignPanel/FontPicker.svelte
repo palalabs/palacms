@@ -1,6 +1,6 @@
 <script>
 	import Icon from '@iconify/svelte'
-	import _ from 'lodash-es'
+	import * as _ from 'lodash-es'
 	import UI from '$lib/builder/ui'
 	import { createEventDispatcher } from 'svelte'
 	import { fade } from 'svelte/transition'

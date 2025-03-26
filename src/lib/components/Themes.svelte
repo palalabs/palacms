@@ -1,13 +1,9 @@
 <script>
-	import { LayoutTemplate, ArrowUpRight } from 'lucide-svelte'
 	import { createEventDispatcher } from 'svelte'
-	import _ from 'lodash-es'
-	import axios from 'axios'
+	import * as _ from 'lodash-es'
 	// import ThemeThumbnail from '$lib/components/ThemeThumbnail.svelte'
 	import StarterButton from '$lib/components/StarterButton.svelte'
-	import { supabase } from '$lib/supabase'
 	import { page } from '$app/stores'
-	import EmptyState from '$lib/components/EmptyState.svelte'
 
 	/**
 	 * @typedef {Object} Props
@@ -29,18 +25,7 @@
 	}
 
 	async function download_file(site_id, file) {
-		const reader = new FileReader()
-		return new Promise(async (resolve, reject) => {
-			const { data, error } = await supabase.storage.from('sites').download(`${site_id}/${file}`)
-			reader.onload = function () {
-				if (file.includes('json')) {
-					resolve(JSON.parse(reader.result))
-				} else {
-					resolve(reader.result)
-				}
-			}
-			reader.readAsText(data)
-		})
+		// TODO: Implement
 	}
 
 	const dispatch = createEventDispatcher()

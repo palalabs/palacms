@@ -1,5 +1,5 @@
 <script lang="ts">
-	import _ from 'lodash-es'
+	import * as _ from 'lodash-es'
 	import { FilePlus, Upload, Loader, X } from 'lucide-svelte'
 	import { Separator } from '$lib/components/ui/separator'
 	import * as Dialog from '$lib/components/ui/dialog'

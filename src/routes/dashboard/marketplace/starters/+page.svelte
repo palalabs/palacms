@@ -1,14 +1,9 @@
 <script>
-	import * as Dialog from '$lib/components/ui/dialog'
 	import * as Sidebar from '$lib/components/ui/sidebar'
 	import { Separator } from '$lib/components/ui/separator'
-	import { Button } from '$lib/components/ui/button'
-	import CreateStarter from '$lib/components/Modals/CreateStarter.svelte'
 	import EmptyState from '$lib/components/EmptyState.svelte'
-	import { CirclePlus, LayoutTemplate } from 'lucide-svelte'
+	import { LayoutTemplate } from 'lucide-svelte'
 	import MarketplaceStarterButton from '$lib/components/MarketplaceStarterButton.svelte'
-	import * as actions from '$lib/actions'
-	import { invalidate, goto } from '$app/navigation'
 
 	/**
 	 * @typedef {Object} Props

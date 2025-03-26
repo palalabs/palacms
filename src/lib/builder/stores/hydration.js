@@ -1,4 +1,4 @@
-import _ from 'lodash-es'
+import * as _ from 'lodash-es'
 import stores from '$lib/builder/stores/data'
 import sections from '$lib/builder/stores/data/sections'
 import { update as update_site } from '$lib/builder/stores/data/site'

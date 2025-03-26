@@ -1,5 +1,5 @@
 <script>
-	import _ from 'lodash-es'
+	import * as _ from 'lodash-es'
 	import Icon from '@iconify/svelte'
 	import TextInput from '../ui/TextInput.svelte'
 	import Spinner from '../ui/Spinner.svelte'
@@ -35,7 +35,7 @@
 
 		// Get compression options from field config or use defaults
 		const maxSizeMB = field.options?.maxSizeMB ?? 1
-    	const maxWidthOrHeight = field.options?.maxWidthOrHeight ?? 1920
+		const maxWidthOrHeight = field.options?.maxWidthOrHeight ?? 1920
 
 		// Compression options
 		const options = {

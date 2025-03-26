@@ -3,7 +3,7 @@
 	import Icon from '@iconify/svelte'
 	import { tick } from 'svelte'
 	import { static_iframe_srcdoc } from './misc'
-	import _ from 'lodash-es'
+	import * as _ from 'lodash-es'
 
 	/**
 	 * @typedef {Object} Props

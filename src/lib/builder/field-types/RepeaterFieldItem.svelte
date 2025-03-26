@@ -6,7 +6,7 @@
 
 <script>
 	import { createEventDispatcher } from 'svelte'
-	import _ from 'lodash-es'
+	import * as _ from 'lodash-es'
 	import { onMount } from 'svelte'
 	import Icon from '@iconify/svelte'
 	import { is_regex } from '../utils'

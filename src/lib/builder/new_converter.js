@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid'
-import _ from 'lodash-es'
+import * as _ from 'lodash-es'
 import { Field_Row, Page, Site, Symbol } from './factories'
 import convert_v2_to_v3 from '../components/convert_site_object'
 

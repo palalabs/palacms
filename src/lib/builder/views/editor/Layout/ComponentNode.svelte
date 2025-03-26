@@ -8,7 +8,7 @@
 
 <script>
 	import { onMount, untrack } from 'svelte'
-	import _ from 'lodash-es'
+	import * as _ from 'lodash-es'
 	import { fade } from 'svelte/transition'
 	import Icon from '@iconify/svelte'
 	import Typography from '@tiptap/extension-typography'
@@ -31,7 +31,6 @@
 	import MarkdownButton from './MarkdownButton.svelte'
 	import modal from '$lib/builder/stores/app/modal'
 	import { get_content_with_synced_values } from '$lib/builder/stores/helpers'
-	import { broadcastChanged } from '$lib/builder/database'
 	import { component_iframe_srcdoc } from '$lib/builder/components/misc'
 
 	const lowlight = createLowlight(all)
@@ -51,15 +50,8 @@
 		})[$locale]
 	)
 
-	// let local_component_data
 	async function save_edited_value({ id, value }) {
-		// set local_component_data to avoid hydrating data when already changed on page
-		// if (key) {
-		// 	_.set(local_component_data, key, value)
-		// }
 		await update_section_entries({ id, value })
-		console.log('saving', { $active_page })
-		broadcastChanged({ page_id: $active_page.id })
 	}
 
 	let floating_menu = $state()

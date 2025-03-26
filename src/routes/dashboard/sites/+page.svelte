@@ -16,17 +16,15 @@
 	import { useSidebar } from '$lib/components/ui/sidebar'
 	const sidebar = useSidebar()
 
-	/**
-	 * @typedef {Object} Props
-	 * @property {any} data
-	 */
-
-	/** @type {Props} */
-	let { data } = $props()
+	// TODO: Load data with possibility to trigger refetch
+	let data = {
+		site_groups: [],
+		symbol_groups: []
+	}
 
 	async function create_site({ starter_id, details, duplication_source, preview }) {
 		await actions.sites.create({ starter_id, details, duplication_source, preview, group: active_site_group.id })
-		invalidate('app:data')
+		// TODO: Refetch data
 		creating_site = false
 	}
 
@@ -44,7 +42,7 @@
 	async function handle_rename(e) {
 		e.preventDefault()
 		await actions.rename_site_group(active_site_group.id, new_name)
-		invalidate('app:data')
+		// TODO: Refetch data
 		is_rename_open = false
 	}
 
@@ -53,7 +51,7 @@
 	async function handle_delete() {
 		deleting = true
 		await actions.delete_site_group(active_site_group.id)
-		invalidate('app:data')
+		// TODO: Refetch data
 		deleting = false
 	}
 </script>

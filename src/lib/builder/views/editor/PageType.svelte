@@ -1,5 +1,5 @@
 <script>
-	import _ from 'lodash-es'
+	import * as _ from 'lodash-es'
 	import { tick } from 'svelte'
 	import { fade } from 'svelte/transition'
 	import { flip } from 'svelte/animate'

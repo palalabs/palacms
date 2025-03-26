@@ -17,3 +17,5 @@ scratchpad.md
 /playwright-report/
 /playwright/.cache/
 pnpm-lock.yaml
+/build
+/playwright/.auth

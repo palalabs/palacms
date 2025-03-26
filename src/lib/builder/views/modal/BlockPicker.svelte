@@ -5,7 +5,6 @@
 	import { Symbol as Create_Symbol } from '../../factories'
 	import { site_html } from '$lib/builder/stores/app/page'
 	import { site as site_store } from '$lib/builder/stores/data'
-	import { supabase } from '$lib/builder/supabase'
 	import { get_site_data } from '$lib/builder/stores/helpers.js'
 	import { page } from '$app/stores'
 	import { browser } from '$app/environment'
@@ -30,13 +29,7 @@
 
 	fetch_symbols()
 	async function fetch_symbols() {
-		const { data, error } = await supabase
-			.from('library_symbol_groups')
-			.select(`*, symbols:library_symbols(*, entries(*), fields(*))`)
-			.eq('owner', $page.data.user.id)
-			.order('created_at', { ascending: false })
-		symbol_groups = data
-		selected_group_id = symbol_groups[0]?.id
+		// TODO: Implement
 	}
 
 	function include_symbol(symbol) {

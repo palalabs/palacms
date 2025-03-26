@@ -1,48 +1,18 @@
 <script>
 	import '../app.css'
-	import { setContext } from 'svelte'
 	import { browser } from '$app/environment'
 	import { compilers_registered } from '$lib/stores'
-	import { onMount } from 'svelte'
 	import { registerProcessors } from '$lib/builder/component'
 	import Modal from '$lib/components/Modal.svelte'
-	import { invalidate } from '$app/navigation'
-	import supabase_client from '$lib/supabase/core'
 	import { Toaster } from '$lib/components/ui/sonner'
 
-	let { data, children } = $props()
-
-	let { supabase, session } = $state(data)
-	$effect.pre(() => {
-		;({ supabase, session } = data)
-	})
-
-	$effect.pre(() => {
-		session &&
-			supabase_client.auth.setSession({
-				access_token: session.access_token,
-				refresh_token: session.refresh_token
-			})
-	})
-
-	onMount(() => {
-		if (!supabase) return
-		const {
-			data: { subscription }
-		} = supabase.auth.onAuthStateChange((event, _session) => {
-			if (_session?.expires_at !== session?.expires_at) {
-				invalidate('supabase:auth')
-			}
-		})
-		return () => subscription.unsubscribe()
-	})
+	let { children } = $props()
 
 	if (browser) {
 		import('../compiler/processors').then(({ html, css }) => {
 			registerProcessors({ html, css })
 			$compilers_registered = true
 		})
-		setContext('track', () => {})
 	}
 </script>
 

@@ -41,7 +41,6 @@
 	async function create_site_group(e) {
 		e.preventDefault()
 		await actions.create_site_group(new_site_group_name)
-		invalidate('app:data')
 		is_creating_site_group = false
 	}
 
@@ -50,7 +49,6 @@
 	async function create_group(e) {
 		e.preventDefault()
 		await create_library_symbol_group(new_group_name)
-		invalidate('app:data')
 		is_dialog_open = false
 	}
 
@@ -202,8 +200,8 @@
 							<DropdownMenu.Separator />
 							<DropdownMenu.Item
 								onclick={async () => {
-									await $page.data.supabase.auth.signOut()
-									window.location.reload()
+									// TODO: Implement
+									throw new Error('Not implemented')
 								}}
 							>
 								<LogOut />
