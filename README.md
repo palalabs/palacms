@@ -1,7 +1,6 @@
-# WeaveCMS V3 Alpha
+# PalaCMS (formerly Primo) V3 Alpha
 
-> Weave has been temporarily reverted from Beta to Alpha status pending major architectural changes. We're currently working on significant backend changes and restructuring core components that could require a database manual migration in the future. During this transition period, the codebase is functional but should be considered highly experimental. Features, APIs, and architecture are all subject to substantial changes in upcoming releases.
-
+> Pala has been temporarily reverted from Beta to Alpha status pending major architectural changes. We're currently working on significant backend changes and restructuring core components that could require a database manual migration in the future. During this transition period, the codebase is functional but should be considered highly experimental. Features, APIs, and architecture are all subject to substantial changes in upcoming releases.
 
 ## ✨ V3 Features & Improvements
 
@@ -21,15 +20,15 @@
 
 ## 🔄 Migrating from V2 to V3
 
-WeaveCMS V3 includes significant improvements that require setting up a new database. Follow these steps to migrate your sites from V2 to V3:
+PalaCMS V3 includes significant improvements that require setting up a new database. Follow these steps to migrate your sites from V2 to V3:
 
 ### Step 1: Export Your V2 Site File
 1. Navigate to your published V2 site
 2. Add `/primo.json` to the end of your site URL (e.g., `https://your-site.com/primo.json`)
 3. Save this JSON file
 
-### Step 2: Import to WeaveCMS V3
-1. Log in to WeaveCMS V3
+### Step 2: Import to PalaCMS V3
+1. Log in to PalaCMS V3
 2. Select "Create Site"
 3. Choose "Upload Site File" option
 4. Upload the JSON file you saved from V2
