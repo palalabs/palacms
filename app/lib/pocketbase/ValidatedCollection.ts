@@ -1,11 +1,13 @@
-import type { z } from 'zod'
+import { z } from 'zod'
 import type { RecordFullListOptions, RecordListOptions, RecordModel } from 'pocketbase'
 import { pb } from './PocketBase'
 
 export const createValidatedCollection = <T extends z.AnyZodObject>(idOrName: string, schema: T) => {
 	type Values = z.TypeOf<T>
+	type ValuesWithOptionalId = Omit<Values, 'id'> & { id?: string }
 	type Record = RecordModel & Values
 	const collection = pb.collection<Record>(idOrName)
+	const schemaWithOptionalId = schema.extend({ id: z.string().nonempty().optional() })
 	return {
 		getOne: async (id: string): Promise<Values> => {
 			const record = await collection.getOne(id)
@@ -19,8 +21,8 @@ export const createValidatedCollection = <T extends z.AnyZodObject>(idOrName: st
 			const records = await collection.getFullList(options)
 			return records.map((record) => schema.parse(record))
 		},
-		create: async (values: Values): Promise<Values> => {
-			const input = schema.parse(values)
+		create: async (values: ValuesWithOptionalId): Promise<Values> => {
+			const input = schemaWithOptionalId.parse(values)
 			const record = await collection.create(input)
 			const output = schema.parse(record)
 			return output
