@@ -28,6 +28,7 @@
 		"eslint": "^9.23.0",
 		"eslint-config-prettier": "^10.1.1",
 		"estree-walker": "^3.0.3",
+		"json-ptr": "^3.1.1",
 		"lucide-svelte": "^0.483.0",
 		"mode-watcher": "^0.5.1",
 		"pocketbase": "^0.25.2",

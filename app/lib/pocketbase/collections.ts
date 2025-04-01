@@ -5,6 +5,6 @@ import { createValidatedCollection } from './ValidatedCollection'
 import { Library } from '$lib/common/models/Library'
 
 export const Users = createValidatedCollection('users', User)
-export const LibrarySettings = createValidatedCollection('libraries', Library)
+export const Libraries = createValidatedCollection('libraries', Library)
 export const SiteGroups = createValidatedCollection('site_groups', SiteGroup)
 export const Sites = createValidatedCollection('sites', Site)
