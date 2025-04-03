@@ -14,4 +14,13 @@
     common-build.exec = "vite --config common.config.js build --watch";
     pocketbase.exec = "vite --config common.config.js build && pocketbase serve --dev";
   };
+  devcontainer = {
+    enable = true;
+    settings.customizations.vscode.extensions = [
+      "bbenoist.Nix"
+      "svelte.svelte-vscode"
+      "esbenp.prettier-vscode"
+      "eamodio.gitlens"
+    ];
+  };
 }
