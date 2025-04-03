@@ -1,8 +1,11 @@
 import { z } from 'zod'
-import { EntityReference } from './EntityReference'
+import { SiteEntityReference } from './SiteEntityReference'
+import { Id } from './Id'
+import { ID } from '../constants'
 
 export const Section = z.object({
-	symbol: EntityReference('symbols')
+	[ID]: Id,
+	symbol: SiteEntityReference('symbols')
 })
 
 export type Section = z.infer<typeof Section>

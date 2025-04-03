@@ -2,10 +2,13 @@ import { z } from 'zod'
 import { Id } from './Id'
 import { Site } from './Site'
 import { Symbol } from './Symbol'
+import { LibraryEntityReference, type LibraryEntityType } from './LibraryEntityReference'
+import { ID } from '../constants'
 
 export const SymbolGroup = z.object({
+	[ID]: Id,
 	name: z.string().nonempty(),
-	symbols: z.array(Symbol)
+	symbols: z.array(LibraryEntityReference('symbols'))
 })
 
 export const Library = z.object({
@@ -20,8 +23,11 @@ export const Library = z.object({
 			radius: z.string(),
 			shadow: z.string()
 		}),
-		starters: z.record(Id, Site),
-		symbols: z.record(Id, SymbolGroup)
+		entities: z.object({
+			symbols: z.record(Id, Symbol),
+			symbol_groups: z.record(Id, SymbolGroup)
+		} satisfies Record<LibraryEntityType, unknown>),
+		symbol_groups: z.array(LibraryEntityReference('symbol_groups'))
 	})
 })
 

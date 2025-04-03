@@ -1,12 +1,10 @@
 import { z } from 'zod'
-import { Id } from '../Id'
 import { Entry } from '../Entry'
+import { FieldBase } from '../FieldBase'
 
-export const TextField = z.object({
+export const TextField = FieldBase.extend({
 	type: z.enum(['text']),
-	key: z.string().nonempty(),
-	label: z.string().nonempty(),
-	values: z.array(Entry(z.string()))
+	entries: z.array(Entry(z.string()))
 })
 
 export type TextField = z.infer<typeof TextField>

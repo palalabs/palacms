@@ -1,9 +1,8 @@
+import { FieldBase } from '../FieldBase'
 import { z } from 'zod'
 
-export const IconField = z.object({
-	type: z.enum(['icon']),
-	key: z.string().nonempty(),
-	label: z.string().nonempty()
+export const IconField = FieldBase.extend({
+	type: z.enum(['icon'])
 })
 
 export type IconField = z.infer<typeof IconField>

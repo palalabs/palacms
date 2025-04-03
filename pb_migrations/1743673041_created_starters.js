@@ -2,8 +2,8 @@
 migrate(
 	(app) => {
 		const collection = new Collection({
-			createRule: '@request.auth.id = owner.id',
-			deleteRule: '@request.auth.id = owner.id',
+			createRule: '@request.auth.id = library.owner.id',
+			deleteRule: '@request.auth.id = library.owner.id',
 			fields: [
 				{
 					autogeneratePattern: '[a-z0-9]{15}',
@@ -20,13 +20,41 @@ migrate(
 					type: 'text'
 				},
 				{
-					cascadeDelete: true,
-					collectionId: '_pb_users_auth_',
+					autogeneratePattern: '',
 					hidden: false,
-					id: 'relation3479234172',
+					id: 'text1579384326',
+					max: 0,
+					min: 0,
+					name: 'name',
+					pattern: '',
+					presentable: true,
+					primaryKey: false,
+					required: true,
+					system: false,
+					type: 'text'
+				},
+				{
+					autogeneratePattern: '',
+					hidden: false,
+					id: 'text1843675174',
+					max: 0,
+					min: 0,
+					name: 'description',
+					pattern: '',
+					presentable: false,
+					primaryKey: false,
+					required: false,
+					system: false,
+					type: 'text'
+				},
+				{
+					cascadeDelete: true,
+					collectionId: 'pbc_1593226033',
+					hidden: false,
+					id: 'relation2709559484',
 					maxSelect: 1,
 					minSelect: 0,
-					name: 'owner',
+					name: 'library',
 					presentable: false,
 					required: true,
 					system: false,
@@ -41,6 +69,18 @@ migrate(
 					required: true,
 					system: false,
 					type: 'json'
+				},
+				{
+					hidden: false,
+					id: 'number2155046657',
+					max: null,
+					min: 0,
+					name: 'index',
+					onlyInt: true,
+					presentable: false,
+					required: false,
+					system: false,
+					type: 'number'
 				},
 				{
 					hidden: false,
@@ -63,20 +103,20 @@ migrate(
 					type: 'autodate'
 				}
 			],
-			id: 'pbc_1593226033',
-			indexes: ['CREATE UNIQUE INDEX `idx_umFQYbpMkQ` ON `libraries` (`owner`)'],
-			listRule: '@request.auth.id = owner.id',
-			name: 'libraries',
+			id: 'pbc_560631705',
+			indexes: [],
+			listRule: '@request.auth.id = library.owner.id',
+			name: 'starters',
 			system: false,
 			type: 'base',
-			updateRule: '@request.auth.id = owner.id',
-			viewRule: '@request.auth.id = owner.id'
+			updateRule: '@request.auth.id = library.owner.id',
+			viewRule: '@request.auth.id = library.owner.id'
 		})
 
 		return app.save(collection)
 	},
 	(app) => {
-		const collection = app.findCollectionByNameOrId('pbc_1593226033')
+		const collection = app.findCollectionByNameOrId('pbc_560631705')
 
 		return app.delete(collection)
 	}

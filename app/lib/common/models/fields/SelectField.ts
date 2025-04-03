@@ -1,9 +1,15 @@
+import { FieldBase } from '../FieldBase'
 import { z } from 'zod'
 
-export const SelectField = z.object({
+export const SelectField = FieldBase.extend({
 	type: z.enum(['select']),
-	key: z.string().nonempty(),
-	label: z.string().nonempty()
+	options: z.array(
+		z.object({
+			value: z.string().nonempty(),
+			label: z.string().nonempty(),
+			icon: z.string()
+		})
+	)
 })
 
 export type SelectField = z.infer<typeof SelectField>

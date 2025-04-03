@@ -20,6 +20,20 @@ migrate(
 					type: 'text'
 				},
 				{
+					autogeneratePattern: '',
+					hidden: false,
+					id: 'text1579384326',
+					max: 0,
+					min: 0,
+					name: 'name',
+					pattern: '',
+					presentable: true,
+					primaryKey: false,
+					required: true,
+					system: false,
+					type: 'text'
+				},
+				{
 					cascadeDelete: true,
 					collectionId: '_pb_users_auth_',
 					hidden: false,
@@ -34,13 +48,15 @@ migrate(
 				},
 				{
 					hidden: false,
-					id: 'json2918445923',
-					maxSize: 0,
-					name: 'data',
+					id: 'number2155046657',
+					max: null,
+					min: 0,
+					name: 'index',
+					onlyInt: true,
 					presentable: false,
-					required: true,
+					required: false,
 					system: false,
-					type: 'json'
+					type: 'number'
 				},
 				{
 					hidden: false,
@@ -63,10 +79,10 @@ migrate(
 					type: 'autodate'
 				}
 			],
-			id: 'pbc_1593226033',
-			indexes: ['CREATE UNIQUE INDEX `idx_umFQYbpMkQ` ON `libraries` (`owner`)'],
+			id: 'pbc_1192439887',
+			indexes: [],
 			listRule: '@request.auth.id = owner.id',
-			name: 'libraries',
+			name: 'site_groups',
 			system: false,
 			type: 'base',
 			updateRule: '@request.auth.id = owner.id',
@@ -76,7 +92,7 @@ migrate(
 		return app.save(collection)
 	},
 	(app) => {
-		const collection = app.findCollectionByNameOrId('pbc_1593226033')
+		const collection = app.findCollectionByNameOrId('pbc_1192439887')
 
 		return app.delete(collection)
 	}

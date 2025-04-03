@@ -1,19 +1,16 @@
 import { z } from 'zod'
-import { EntityReference } from './EntityReference'
+import { SiteEntityReference } from './SiteEntityReference'
+import { Id } from './Id'
+import { ID } from '../constants'
 
-export type Page = {
-	name: string
-	slug: string
-	page_type: EntityReference<'page_types'>
-	children: Page[]
-}
-
-export const Page: z.ZodType<Page> = z.object({
+export const Page = z.object({
+	[ID]: Id,
 	name: z.string().nonempty(),
 	slug: z.string().nonempty(),
-	site: z.string().nonempty(),
-	page_type: EntityReference('page_types'),
-	fields: z.array(EntityReference('fields')),
-	sections: z.array(EntityReference('sections')),
-	children: z.lazy(() => z.array(Page))
+	page_type: SiteEntityReference('page_types'),
+	fields: z.array(SiteEntityReference('fields')),
+	sections: z.array(SiteEntityReference('sections')),
+	children: z.array(SiteEntityReference('pages'))
 })
+
+export type Page = z.infer<typeof Page>

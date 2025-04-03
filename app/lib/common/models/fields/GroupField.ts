@@ -1,11 +1,10 @@
 import { z } from 'zod'
-import { EntityReference } from '../EntityReference'
+import { SiteEntityReference } from '../SiteEntityReference'
+import { FieldBase } from '../FieldBase'
 
-export const GroupField = z.object({
+export const GroupField = FieldBase.extend({
 	type: z.enum(['group']),
-	key: z.string().nonempty(),
-	label: z.string().nonempty(),
-	fields: z.array(EntityReference('fields'))
+	fields: z.array(SiteEntityReference('fields'))
 })
 
 export type GroupField = z.infer<typeof GroupField>

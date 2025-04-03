@@ -1,8 +1,9 @@
 import { z } from 'zod'
-import type { RecordAuthResponse, RecordFullListOptions, RecordListOptions, RecordModel } from 'pocketbase'
+import type { RecordAuthResponse, RecordFullListOptions, RecordListOptions } from 'pocketbase'
 import { pb } from './PocketBase'
 
 export type ValidatedCollection<T extends z.AnyZodObject> = {
+	model: z.AnyZodObject
 	getOne: (id: string) => Promise<z.TypeOf<T>>
 	getList: (page?: number, perPage?: number, options?: RecordListOptions) => Promise<z.TypeOf<T>[]>
 	getFullList: (options?: RecordFullListOptions) => Promise<z.TypeOf<T>[]>
@@ -14,32 +15,33 @@ export type ValidatedCollection<T extends z.AnyZodObject> = {
 	confirmPasswordReset: (passwordResetToken: string, password: string, passwordConfirm: string) => Promise<boolean>
 }
 
-export const createValidatedCollection = <T extends z.AnyZodObject>(idOrName: string, schema: T): ValidatedCollection<T> => {
+export const createValidatedCollection = <T extends z.AnyZodObject>(idOrName: string, model: T): ValidatedCollection<T> => {
 	const collection = pb.collection(idOrName)
-	const schemaWithOptionalId = schema.extend({ id: z.string().nonempty().optional() })
+	const schemaWithOptionalId = model.extend({ id: z.string().nonempty().optional() })
 	return {
+		model,
 		getOne: async (id) => {
 			const record = await collection.getOne(id)
-			return schema.parse(record)
+			return model.parse(record)
 		},
 		getList: async (page, perPage, options) => {
 			const result = await collection.getList(page, perPage, options)
-			return result.items.map((record) => schema.parse(record))
+			return result.items.map((record) => model.parse(record))
 		},
 		getFullList: async (options) => {
 			const records = await collection.getFullList(options)
-			return records.map((record) => schema.parse(record))
+			return records.map((record) => model.parse(record))
 		},
 		create: async (values) => {
 			const input = schemaWithOptionalId.parse(values)
 			const record = await collection.create(input)
-			const output = schema.parse(record)
+			const output = model.parse(record)
 			return output
 		},
 		update: async (id, values) => {
-			const input = schema.partial().parse(values)
+			const input = model.partial().parse(values)
 			const record = await collection.update(id, input)
-			const output = schema.parse(record)
+			const output = model.parse(record)
 			return output
 		},
 		delete: (id) => collection.delete(id),
@@ -47,7 +49,7 @@ export const createValidatedCollection = <T extends z.AnyZodObject>(idOrName: st
 			const response = await collection.authWithPassword(usernameOrEmail, password)
 			return {
 				...response,
-				record: schema.parse(response.record)
+				record: model.parse(response.record)
 			}
 		},
 		requestPasswordReset: (email) => {

@@ -1,6 +1,7 @@
 import { Library } from './Library'
 import { Site } from './Site'
 import { SiteGroup } from './SiteGroup'
+import { Starter } from './Starter'
 import { User } from './User'
 
 /**
@@ -10,5 +11,6 @@ export const models = {
 	users: User,
 	libraries: Library,
 	site_groups: SiteGroup,
-	sites: Site
+	sites: Site,
+	starters: Starter
 } satisfies Record<string, import('zod').AnyZodObject>

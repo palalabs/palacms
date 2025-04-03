@@ -1,12 +1,11 @@
 import { z } from 'zod'
 import { Entry } from '../Entry'
-import { EntityReference } from '../EntityReference'
+import { SiteEntityReference } from '../SiteEntityReference'
+import { FieldBase } from '../FieldBase'
 
-export const SiteFieldField = z.object({
+export const SiteFieldField = FieldBase.extend({
 	type: z.enum(['site-field']),
-	key: z.string().nonempty(),
-	label: z.string().nonempty(),
-	values: z.array(Entry(EntityReference('fields')))
+	entries: z.array(Entry(SiteEntityReference('fields')))
 })
 
 export type SiteFieldField = z.infer<typeof SiteFieldField>

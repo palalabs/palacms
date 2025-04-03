@@ -1,9 +1,8 @@
+import { FieldBase } from '../FieldBase'
 import { z } from 'zod'
 
-export const SwitchField = z.object({
-	type: z.enum(['switch']),
-	key: z.string().nonempty(),
-	label: z.string().nonempty()
+export const SwitchField = FieldBase.extend({
+	type: z.enum(['switch'])
 })
 
 export type SwitchField = z.infer<typeof SwitchField>

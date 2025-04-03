@@ -1,7 +1,8 @@
 import { z } from 'zod'
+import { Id } from './Id'
 
 export const User = z.object({
-	id: z.string().nonempty(),
+	id: Id,
 	email: z.string().nonempty()
 })
 

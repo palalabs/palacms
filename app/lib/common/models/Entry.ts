@@ -1,15 +1,12 @@
 import { z } from 'zod'
-import { locales } from '../constants'
-import { EntityReference } from './EntityReference'
+import { locales, SITE } from '../constants'
+import { SiteEntityReference } from './SiteEntityReference'
 
-export type Entry<T> = {
-	locale: (typeof locales)[number]
-	value: T
-}
-
-export const Entry = <T>(value: z.ZodType<T>) =>
+export const Entry = <T extends z.ZodTypeAny>(value: T) =>
 	z.object({
 		locale: z.enum(locales),
-		entity: z.union([EntityReference('sections'), EntityReference('page_types'), z.enum(['site'])]),
+		entity: z.union([SiteEntityReference('symbols'), SiteEntityReference('sections'), SiteEntityReference('pages'), SiteEntityReference('page_types'), z.enum([SITE])]),
 		value
-	}) as z.ZodType<Entry<T>>
+	})
+
+export type Entry<T extends z.ZodTypeAny> = z.infer<ReturnType<typeof Entry<T>>>
