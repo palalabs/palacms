@@ -10,8 +10,11 @@
 	import { transform_content } from '$lib/builder/transform_data'
 	import { static_iframe_srcdoc } from '$lib/builder/components/misc'
 	import { block_html } from '$lib/builder/code_generators.js'
+	import { setContext } from 'svelte'
 
 	let { symbol = Symbol(), onsubmit, head = '', append = '' } = $props()
+
+	setContext('hide_dynamic_field_types', true)
 
 	let local_html = $state(symbol.code.html)
 	let local_css = $state(symbol.code.css)

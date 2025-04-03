@@ -73,6 +73,7 @@
 
 <svelte:head>
 	{#each results as font}
+		<link rel="preload" href="https://fonts.googleapis.com/css2?family={font.family.replace(/ /g, '+')}:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700" as="font" />
 		<link href="https://fonts.googleapis.com/css2?family={font.family.replace(/ /g, '+')}:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700" rel="stylesheet" />
 	{/each}
 	<link href="https://fonts.googleapis.com/css2?family={value.replace(/ /g, '+')}:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700" rel="stylesheet" />

@@ -200,6 +200,7 @@ export async function update_block({ block, updated_data }) {
 
 			// DB: save Symbol fields
 			await helpers.handle_field_changes_new(field_changes, {
+				owner_site: get(stores.site).id,
 				symbol: block.id
 			})
 
@@ -270,7 +271,7 @@ export async function update_block({ block, updated_data }) {
 			}
 
 			// DB: restore symbol fields
-			await helpers.handle_field_changes_new(inverted_field_changes, { symbol: block.id })
+				await helpers.handle_field_changes_new(inverted_field_changes, { symbol: block.id, owner_site: get(stores.site).id })
 
 
 			// DB: revert Symbol and Sections entry changes

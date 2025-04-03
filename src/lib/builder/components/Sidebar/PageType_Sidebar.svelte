@@ -27,11 +27,6 @@
 	import { dropTargetForElements } from '../../libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
 	import { attachClosestEdge, extractClosestEdge } from '../../libraries/pragmatic-drag-and-drop-hitbox/closest-edge.js'
 	import { site_html } from '$lib/builder/stores/app/page'
-	import * as Dialog from '$lib/components/ui/dialog'
-	import { Button } from '$lib/components/ui/button'
-	import DropZone from '$lib/components/DropZone.svelte'
-	import { Input } from '$lib/components/ui/input'
-	import { Loader } from 'lucide-svelte'
 	import * as Tabs from '$lib/components/ui/tabs'
 	import { Cuboid, SquarePen } from 'lucide-svelte'
 
@@ -161,9 +156,6 @@
 	}
 
 	function isolate_block(block) {
-		const has_dynamic_field = block.fields.some((f) => dynamic_field_types.includes(f.type))
-		if (!has_dynamic_field) return block
-
 		const isolated_fields = []
 		const isolated_entries = []
 
@@ -219,7 +211,8 @@
 		return {
 			...block,
 			fields: isolated_fields.map((f) => ({ ...f, symbol: null, page_type: null, site: null, owner_site: null })),
-			entries: isolated_entries.map((e) => ({ ...e, symbol: null, page_type: null, site: null, owner_site: null }))
+			entries: isolated_entries.map((e) => ({ ...e, symbol: null, page_type: null, site: null, owner_site: null })),
+			owner_site: null
 		}
 	}
 

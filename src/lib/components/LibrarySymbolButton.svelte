@@ -1,6 +1,7 @@
 <script>
+	import fileSaver from 'file-saver'
 	import CreateBlock from '$lib/components/Modals/CreateBlock.svelte'
-	import { EllipsisVertical, SquarePen, Trash2, ArrowLeftRight, Code, Loader } from 'lucide-svelte'
+	import { EllipsisVertical, SquarePen, Trash2, ArrowLeftRight, Code, Loader, Download } from 'lucide-svelte'
 	import { find as _find } from 'lodash-es'
 	import IFrame from '$lib/builder/components/IFrame.svelte'
 	import * as RadioGroup from '$lib/components/ui/radio-group'
@@ -57,6 +58,21 @@
 		invalidate('app:data')
 	}
 
+	async function download_symbol() {
+		// const isolated_symbol = _.cloneDeep({
+		// 	...block,
+		// 	fields: block.fields.map((f) => ({ ...f, symbol: null, page_type: null, site: null, owner_site: null })),
+		// 	entries: block.entries.map((e) => ({ ...e, symbol: null, page_type: null, site: null, owner_site: null })),
+		// })
+		// remap_entry_and_field_items({
+		// 	fields: isolated_symbol.fields,
+		// 	entries: isolated_symbol.entries
+		// })
+		const json = JSON.stringify(symbol)
+		var blob = new Blob([json], { type: 'application/json' })
+		fileSaver.saveAs(blob, `${symbol.name || symbol.id}.json`)
+	}
+
 	let is_move_open = $state(false)
 	let selected_group_id = $state(symbol.group)
 	async function move_symbol() {
@@ -96,10 +112,10 @@
 					<SquarePen class="h-4 w-4" />
 					<span>Rename</span>
 				</DropdownMenu.Item>
-				<!-- <DropdownMenu.Item onclick={download_site_file}>
+				<DropdownMenu.Item onclick={download_symbol}>
 					<Download class="h-4 w-4" />
 					<span>Download</span>
-				</DropdownMenu.Item> -->
+				</DropdownMenu.Item>
 				<DropdownMenu.Item onclick={() => (is_delete_open = true)} class="text-red-500 hover:text-red-600 focus:text-red-600">
 					<Trash2 class="h-4 w-4" />
 					<span>Delete</span>

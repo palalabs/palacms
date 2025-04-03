@@ -18,14 +18,12 @@ export default async function authorize({ request, locals, url }: RequestEvent, 
     if (request.method === 'POST') {
       request_data = await request.json();
     } else if (request.method === 'GET') {
-      console.log('GET')
       const the_url = new URL(url)
-      console.log({ the_url })
       request_data = Object.fromEntries(the_url.searchParams.entries());
     }
 
     if (!request_data.site_id) {
-      throw server_error(401, { message: 'Request should in include site_id' });
+      return await onsuccess(request_data)
     }
 
     const user_id = session.user.id;
@@ -54,4 +52,5 @@ export default async function authorize({ request, locals, url }: RequestEvent, 
     return await onerror(error)
   }
 };
+
 

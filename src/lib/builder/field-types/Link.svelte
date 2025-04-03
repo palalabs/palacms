@@ -89,7 +89,7 @@
 			{#if selected === 'page'}
 				{@const top_level_pages = $pages.filter((p) => !p.parent)}
 				<UI.Select
-					value={selected_page.id}
+					value={selected_page?.id}
 					options={top_level_pages.map((page) => ({
 						label: page.name,
 						value: page.id,

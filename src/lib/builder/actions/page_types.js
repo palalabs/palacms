@@ -144,9 +144,10 @@ export async function update_page_type({ entries, fields }) {
 
 	stores.page_type.update((store) => ({ ...store, entries, fields }))
 
-	await helpers.handle_field_changes_new(changes.fields, { page_type: page_type_id })
+	await helpers.handle_field_changes_new(changes.fields, { page_type: page_type_id, owner_site: get(site).id })
 	await helpers.handle_content_changes_new(changes.entries, {
-		page_type: page_type_id
+		page_type: page_type_id,
+		owner_site: get(site).id
 	})
 
 	// DB: update page type instances

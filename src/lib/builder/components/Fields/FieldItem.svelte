@@ -141,7 +141,6 @@
 				}))}
 				dividers={[1, 8, 10, 12]}
 				on:input={({ detail: field_type_id }) => {
-					console.log({ field_type_id })
 					field_type_changed = true
 					selected_field_type_id = field_type_id
 					dispatch_update({
@@ -381,10 +380,7 @@
 			/>
 		{/if}
 		{#if field.type === 'image'}
-			<ImageFieldOptions
-				{field}
-				on:input={({ detail }) => dispatch_update({ options: detail.options })}
-			/>
+			<ImageFieldOptions {field} oninput={(options) => dispatch_update({ options })} />
 		{/if}
 		{#if field.type === 'page-field'}
 			<PageFieldField {field} on:input={({ detail }) => dispatch_update({ source: detail })} />

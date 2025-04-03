@@ -144,77 +144,66 @@ export async function reverse_content_changes(content_changes, original_entries,
 }
 
 export async function handle_field_changes_new(changes, args = {}) {
+	const insertions = changes.filter(c => c.action === 'insert').map(c => ({ ...c.data, ...args }))
+	const updates = changes.filter(c => c.action === 'update').map(c => ({ ...c.data, id: c.id, ...args }))
+	const deletions = changes.filter(c => c.action === 'delete')
 
-	const insertions = changes.filter((c) => c.action === 'insert').reduce((acc, change) => [ ...acc, { ...change.data, ...args } ], [])
-	const updates_and_deletions = changes.filter((c) => c.action === 'update' || c.action === 'delete')
-
+	// Handle insertions
 	if (insertions.length > 0) {
-		await dataChanged({
-			table: 'fields',
-			action: 'insert',
-			data: sort_by_hierarchy(insertions)
-		})
+		const res = await get(page).data.supabase
+			.from('fields')
+			.insert(sort_by_hierarchy(insertions))
+			console.log({res, items: sort_by_hierarchy(insertions)})
 	}
 
-	await Promise.all(
-		updates_and_deletions.map(async change => {
-			if (change.action === 'update') {
-				await dataChanged({
-					table: 'fields',
-					action: 'update',
-					data: {
-						...change.data,
-						...args
-					},
-					id: change.id
-				})
-			} else if (change.action === 'delete') {
-				await dataChanged({
-					table: 'fields',
-					action: 'delete',
-					id: change.id
-				})
-			}
-		})
-	)
+	// Handle updates and deletions in parallel
+	if (updates.length > 0 || deletions.length > 0) {
+		const res = await Promise.all([
+			...updates.map(update => 
+				get(page).data.supabase
+					.from('fields')
+					.update(update)
+					.eq('id', update.id)
+			),
+			...deletions.map(change => 
+				get(page).data.supabase
+					.from('fields')
+					.delete()
+					.eq('id', change.id)
+			)
+		])
+	}
 }
 
 export async function handle_content_changes_new(changes, args = {}) {
-	// do all insertions first, send in one insert batch
-	const insertions = changes.filter((c) => c.action === 'insert').reduce((acc, change) => [ ...acc, { ...change.data, ...args } ], [])
-	const updates_and_deletions = changes.filter((c) => c.action === 'update' || c.action === 'delete')
+	const insertions = changes.filter(c => c.action === 'insert').map(c => ({ ...c.data, ...args }))
+	const updates = changes.filter(c => c.action === 'update').map(c => ({ ...c.data, id: c.id, ...args }))
+	const deletions = changes.filter(c => c.action === 'delete')
 
+	// Handle insertions
 	if (insertions.length > 0) {
-		// first, insert new entries
-		await dataChanged({
-			table: 'entries',
-			action: 'insert',
-			data: sort_by_hierarchy(insertions)
-		})
+		await get(page).data.supabase
+			.from('entries')
+			.insert(sort_by_hierarchy(insertions))
 	}
 
-	// then do everything else, referencing new ids and existing ids
-	await Promise.all(
-		updates_and_deletions.map(async change => {
-			if (change.action === 'update') {
-				await dataChanged({
-					table: 'entries',
-					action: 'update',
-					id: change.id,
-					data: {
-						...change.data,
-						...args
-					},
-				})
-			} else if (change.action === 'delete') {
-				await dataChanged({
-					table: 'entries',
-					action: 'delete',
-					id: change.id
-				})
-			}
-		})
-	)
+	// Handle updates and deletions in parallel
+	if (updates.length > 0 || deletions.length > 0) {
+		await Promise.all([
+			...updates.map(update => 
+				get(page).data.supabase
+					.from('entries')
+					.update(update)
+					.eq('id', update.id)
+			),
+			...deletions.map(change => 
+				get(page).data.supabase
+					.from('entries')
+					.delete()
+					.eq('id', change.id)
+			)
+		])
+	}
 }
 
 export async function handle_field_changes(changes, args = {}) {

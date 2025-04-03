@@ -1,10 +1,7 @@
 <script>
 	import UI from '../../ui/index.js'
-	import { createEventDispatcher } from 'svelte'
 
-	const dispatch = createEventDispatcher()
-
-	let { field } = $props()
+	let { field, oninput } = $props()
 
 	// Initialize options object if it doesn't exist
 	if (!field.options) field.options = {}
@@ -15,15 +12,15 @@
 
 	// Listen for changes to dispatch updates to parent
 	function handle_change() {
-		dispatch('input', { options: field.options })
+		oninput(field.options)
 	}
 </script>
 
-<div class="ImageFieldOptions">
+<div class="grid grid-cols-2 gap-2">
 	<div class="option-group">
 		<UI.TextInput type="number" label="Max Size (MB)" bind:value={field.options.maxSizeMB} on:input={handle_change} />
 	</div>
 	<div class="option-group">
-		<UI.TextInput type="number" label="Max Dimension (px)" bind:value={field.options.maxWidthOrHeight} on:input={handle_change} />
+		<UI.TextInput type="number" label="Max Width (px)" bind:value={field.options.maxWidthOrHeight} on:input={handle_change} />
 	</div>
 </div>

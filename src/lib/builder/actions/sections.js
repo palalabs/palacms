@@ -268,19 +268,22 @@ export async function update_section(section_id, { updated_data, build_page = tr
 
 			// DB: save Symbol fields
 			await helpers.handle_field_changes_new(symbol_field_changes, {
+				owner_site: get(stores.site).id,
 				symbol: symbol_id
 			})
 
 			// DB: save Section, Symbol, Site, and Page entries
 			await Promise.all([
 				helpers.handle_content_changes_new(section_content_changes, {
+					owner_site: get(stores.site).id,
 					section: section_id
 				}),
 				helpers.handle_content_changes_new(symbol_content_changes, {
+					owner_site: get(stores.site).id,
 					symbol: symbol_id
 				}),
 				helpers.handle_content_changes_new(site_content_changes, { site: get(stores.site).id}),
-				helpers.handle_content_changes_new(page_content_changes, { page: get(active_page_store).id})
+					helpers.handle_content_changes_new(page_content_changes, { page: get(active_page_store).id, owner_site: get(stores.site).id })
 			])
 
 
@@ -289,7 +292,8 @@ export async function update_section(section_id, { updated_data, build_page = tr
 				await Promise.all(
 					local_sibling_sections.map(({ id, changes }) => 
 						helpers.handle_content_changes_new(changes, {
-							section: id
+							section: id,
+							owner_site: get(stores.site).id
 						})
 					)
 				)
@@ -306,7 +310,8 @@ export async function update_section(section_id, { updated_data, build_page = tr
 				await Promise.all(
 					foreign_sibling_sections.map(({ id, changes }) => 
 						helpers.handle_content_changes_new(changes, {
-							section: id
+							section: id,
+							owner_site: get(stores.site).id
 						})
 					)
 				)
@@ -364,7 +369,7 @@ export async function update_section(section_id, { updated_data, build_page = tr
 			}
 
 			// DB: restore symbol fields
-			await helpers.handle_field_changes_new(inverted_field_changes, { symbol: symbol_id })
+			await helpers.handle_field_changes_new(inverted_field_changes, { symbol: symbol_id, owner_site: get(stores.site).id })
 
 			// DB: revert section, sibling, symbol, page, and site entry changes
 			await Promise.all([
