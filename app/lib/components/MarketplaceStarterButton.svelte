@@ -5,12 +5,11 @@
 	import { CircleCheck, CirclePlus, Loader } from 'lucide-svelte'
 	import { find as _find } from 'lodash-es'
 	import { Button } from '$lib/components/ui/button'
-	import { invalidate } from '$app/navigation'
-	import * as actions from '$lib/actions'
+	import { Site } from '$lib/common/models/Site'
 
 	/**
 	 * @typedef {Object} Props
-	 * @property {import('$lib').Site} site
+	 * @property {Site} site
 	 * @property {any} [preview]
 	 * @property {string} [append]
 	 */
@@ -55,16 +54,9 @@
 	let loading = $state(false)
 	async function add_to_library() {
 		loading = true
-		const { data } = await axios.get(`https://weave-marketplace.vercel.app/api/starters/${site.id}`)
-		console.log({ data })
-		await actions.create_starter({
-			details: {
-				name: data.site.name,
-				description: data.site.description
-			},
-			site_data: data,
-			preview
-		})
+		// const { data } = await axios.get(`https://weave-marketplace.vercel.app/api/starters/${site.id}`)
+		// TODO: Implement
+		throw new Error('Not implemented')
 		loading = false
 		added_to_library.push(site.id)
 		toast.success('Starter added to Library')

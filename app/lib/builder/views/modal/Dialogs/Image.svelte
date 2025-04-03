@@ -3,7 +3,6 @@
 	import Icon from '@iconify/svelte'
 	import Button from '$lib/builder/ui/Button.svelte'
 	import UI from '../../../ui'
-	import { storageChanged } from '../../../database'
 	import imageCompression from 'browser-image-compression'
 
 	let { value = {}, children, onsubmit, fieldOptions = {} } = $props()
@@ -45,24 +44,21 @@
 			console.log(`Compressed size: ${compressedImage.size / 1024 / 1024} MB`)
 
 			const key = `_images/${image.lastModified + image.name}`
-			const { url } = await storageChanged({
-				action: 'upload',
-				key,
-				file: compressedImage
-			})
+			// TODO: Upload
+			throw new Error('Not implemented')
 
-			if (url) {
-				imagePreview = url
+			// if (url) {
+			// 	imagePreview = url
 
-				setValue({
-					url,
-					size: Math.floor(image.size / 1024)
-				})
+			// 	setValue({
+			// 		url,
+			// 		size: Math.floor(image.size / 1024)
+			// 	})
 
-				loading = false
-			} else {
-				loading = false
-			}
+			// 	loading = false
+			// } else {
+			// 	loading = false
+			// }
 		}
 	}
 </script>

@@ -1,5 +1,4 @@
 <script>
-	import { v4 as uuid } from 'uuid'
 	import { createEventDispatcher } from 'svelte'
 	import { fade } from 'svelte/transition'
 	import UI from '../../../../ui/index.js'
@@ -22,7 +21,6 @@
 	let page_creation_disabled = $derived(!new_page_name)
 
 	let new_page_details = $derived({
-		id: uuid(),
 		name: new_page_name,
 		color: new_color,
 		icon: new_icon

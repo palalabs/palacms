@@ -12,7 +12,7 @@
 	import * as code_generators from '$lib/builder/code_generators'
 	import { static_iframe_srcdoc } from '$lib/builder/components/misc'
 
-	let { onclose, onsubmit } = $props()
+	let { onclose } = $props()
 
 	let starter_name = $state(``)
 	let starter_description = $state(``)
@@ -45,10 +45,7 @@
 			await code_generators.page_html({
 				page: home_page,
 				site: data.site,
-				page_sections: data.sections.filter((section) => section.page === home_page.id),
-				page_symbols: data.symbols,
-				page_list: data.pages,
-				page_types: data.page_types
+				locale: 'en'
 			})
 		).html
 		generating_site_preview = false
@@ -59,11 +56,7 @@
 	let loading = $state(false)
 	function create_starter() {
 		loading = true
-		onsubmit({
-			details: { name: starter_name, description: starter_description },
-			site_data,
-			preview: site_preview
-		})
+		onclose()
 	}
 </script>
 

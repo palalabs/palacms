@@ -1,31 +1,28 @@
-<script>
+<script lang="ts">
 	import { createEventDispatcher } from 'svelte'
 	import { fade } from 'svelte/transition'
 	import UI from '../../../../ui'
-	import pages from '$lib/builder/stores/data/pages'
-	import page_types from '../../../../stores/data/page_types'
 	import Icon from '@iconify/svelte'
 	import { validate_url } from '../../../../utilities'
-	import { Page } from '../../../../factories.js'
+	import { Page } from '$lib/common/models/Page'
+	import type { Resolved } from '$lib/pocketbase/CollectionStore'
+	import { page } from '$app/state'
+	import { require_site } from '$lib/loaders'
 
-	/**
-	 * @typedef {Object} Props
-	 * @property {number | null} [parent]
-	 */
+	let { parent }: { parent?: Resolved<typeof Page> } = $props()
 
-	/** @type {Props} */
-	let { parent = null } = $props()
+	const site_id = $derived(page.params.site)
+	const site = $derived(require_site(site_id))
 
 	const dispatch = createEventDispatcher()
 
-	// set page type equal to first sibling (i.e. the last type used under this parent)
-	const first_sibling = $pages.filter((p) => p.parent === parent)[0]
-	const default_page_type_id = first_sibling?.page_type
+	// set page type equal to the last type used under this parent
+	const default_page_type = parent?.children[0]?.page_type
 
 	const new_page = $state({
 		name: '',
 		slug: '',
-		page_type: default_page_type_id || $page_types[0].id
+		page_type: default_page_type
 	})
 
 	let page_creation_disabled = $derived(!new_page.name || !new_page.slug)
@@ -35,14 +32,14 @@
 		new_page.slug = page_label_edited ? validate_url(new_page.slug) : validate_url(new_page.name)
 	})
 
-	let new_page_details = $derived(
-		Page({
-			name: new_page.name,
-			slug: new_page.slug,
-			parent,
-			page_type: new_page.page_type
-		})
-	)
+	let new_page_details = $derived({
+		name: new_page.name,
+		slug: new_page.slug,
+		page_type: new_page.page_type,
+		fields: [],
+		children: [],
+		sections: []
+	} satisfies Resolved<typeof Page>)
 </script>
 
 <form
@@ -51,16 +48,16 @@
 		dispatch('create', new_page_details)
 	}}
 	in:fade={{ duration: 100 }}
-	class:has-page-types={$page_types.length > 1}
+	class:has-page-types={!!$site?.data.page_types.length}
 >
 	<UI.TextInput autofocus={true} bind:value={new_page.name} id="page-label" label="Page Name" placeholder="About Us" />
 	<UI.TextInput bind:value={new_page.slug} id="page-slug" label="Page Slug" oninput={() => (page_label_edited = true)} placeholder="about-us" />
-	{#if $page_types.length > 1}
+	{#if $site?.data.page_types.length}
 		<UI.Select
 			fullwidth={true}
 			label="Page Type"
 			value={new_page.page_type}
-			options={$page_types.sort((a, b) => a.index - b.index).map((p) => ({ value: p.id, icon: p.icon, label: p.name }))}
+			options={$site.data.page_types.map((p) => ({ value: p, icon: p.icon, label: p.name }))}
 			on:input={({ detail }) => (new_page.page_type = detail)}
 		/>
 	{/if}

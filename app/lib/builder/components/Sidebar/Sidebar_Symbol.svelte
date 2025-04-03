@@ -1,37 +1,28 @@
-<script>
-	import { onMount, createEventDispatcher, getContext } from 'svelte'
+<script lang="ts">
 	import * as _ from 'lodash-es'
-	import axios from 'axios'
 	import Icon from '@iconify/svelte'
 	import Toggle from 'svelte-toggle'
-	import TextInput from '$lib/builder/ui/TextInput.svelte'
 	import { Button } from '$lib/components/ui/button'
 	import * as Dialog from '$lib/components/ui/dialog'
 	import { Input } from '$lib/components/ui/input'
-	import { userRole } from '../../stores/app/misc'
 	import MenuPopup from '../../ui/Dropdown.svelte'
-	import { get_symbol_usage_info, get_content_with_synced_values } from '../../stores/helpers'
 	import { locale } from '../../stores/app/misc'
-	import { click_to_copy } from '../../utilities'
-	import { block_html } from '../../code_generators.js'
 	import { draggable } from '../../libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
-
 	import { browser } from '$app/environment'
 	import IFrame from '../../components/IFrame.svelte'
-	const dispatch = createEventDispatcher()
+	import type { Resolved } from '$lib/pocketbase/CollectionStore'
+	import type { Symbol } from '$lib/common/models/Symbol'
+	import { get_content } from '$lib/builder/stores/helpers'
+	import { ID } from '$lib/common/constants'
 
-	/**
-	 * @typedef {Object} Props
-	 * @property {any} symbol
-	 * @property {boolean} [controls_enabled]
-	 * @property {boolean} [show_toggle]
-	 * @property {boolean} [toggled]
-	 * @property {string} [head]
-	 * @property {string} [append]
-	 */
-
-	/** @type {Props} */
-	let { symbol = $bindable(), controls_enabled = true, show_toggle = false, toggled = false, head = '', append = '' } = $props()
+	let {
+		symbol = $bindable(),
+		controls_enabled = true,
+		show_toggle = false,
+		toggled = false,
+		head = '',
+		append = ''
+	}: { symbol: Resolved<typeof Symbol>; controls_enabled?: boolean; show_toggle?: boolean; toggled?: boolean; head?: string; append?: string } = $props()
 
 	let name_el = $state()
 
@@ -46,60 +37,22 @@
 	}
 
 	function save_rename() {
-		dispatch('rename', new_name)
 		renaming = false
 	}
 
 	let height = $state(0)
 
 	let componentCode = $state()
-	let cachedSymbol = {}
 	let component_error = $state()
 	async function compile_component_code(symbol, language) {
-		if (_.isEqual(cachedSymbol.code, symbol.code) && _.isEqual(cachedSymbol.entries, symbol.entries)) {
-			return
-		}
 		const code = {
 			html: symbol.code.html,
 			css: symbol.code.css,
 			js: symbol.code.js
 		}
-		const data = get_content_with_synced_values({ entries: symbol.entries, fields: symbol.fields })[$locale]
-		const res = await axios
-			.post(`/api/render`, {
-				id: symbol.id,
-				code,
-				data,
-				dev_mode: false
-			})
-			.catch((e) => console.error(e))
-		if (res?.data?.error) {
-			component_error = res.data.error
-		} else if (res?.data) {
-			const updated_componentCode = res.data
-			if (!_.isEqual(componentCode, updated_componentCode)) {
-				componentCode = updated_componentCode
-				cachedSymbol = _.cloneDeep({ code: symbol.code, entries: symbol.entries })
-			}
-
-			component_error = null
-		} else {
-			// fallback if cloud render doesn't work (i.e. browser dependencies)
-			const compiled = await block_html({
-				code,
-				data
-			})
-			const updated_componentCode = compiled
-			if (!_.isEqual(componentCode, updated_componentCode)) {
-				componentCode = updated_componentCode
-				cachedSymbol = _.cloneDeep({ code: symbol.code, entries: symbol.entries })
-			}
-		}
-	}
-
-	let active_symbol_label = ''
-	async function get_label() {
-		active_symbol_label = await get_symbol_usage_info(symbol.id)
+		const data = get_content(symbol[ID], symbol.fields)[$locale]
+		// TODO: Implement
+		throw new Error('Not implemented')
 	}
 
 	let element = $state()
@@ -170,16 +123,8 @@
 				<MenuPopup
 					icon="carbon:overflow-menu-vertical"
 					options={[
-						...(getContext('DEBUGGING')
-							? [
-									{
-										label: `${symbol.id.slice(0, 5)}...`,
-										icon: 'ph:copy-duotone',
-										on_click: (e) => click_to_copy(e.target, symbol.id)
-									}
-								]
-							: []),
-						...($userRole === 'DEV'
+						// $userRole === 'DEV'
+						...(true
 							? [
 									{
 										label: 'Edit Block',

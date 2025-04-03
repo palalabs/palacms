@@ -1,29 +1,31 @@
-<script>
+<script lang="ts">
 	import { flip } from 'svelte/animate'
 	import * as _ from 'lodash-es'
 	import UI from '$lib/builder/ui'
-	import site from '$lib/builder/stores/data/site.js'
-	import active_page from '$lib/builder/stores/data/page.js'
-	import symbols from '$lib/builder/stores/data/symbols.js'
 	import { dragging_symbol } from '$lib/builder/stores/app/misc'
 	import { site_design_css } from '$lib/builder/code_generators.js'
 	import Sidebar_Symbol from './Sidebar_Symbol.svelte'
 	import Content from '../Content.svelte'
-	import { debounce } from '$lib/builder/utils'
-	import { update_page_entries } from '$lib/builder/actions/pages.js'
-	import { move_block } from '$lib/builder/actions/symbols'
 	import { browser } from '$app/environment'
 	import { goto } from '$app/navigation'
 	import { dropTargetForElements } from '$lib/builder/libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
 	import { attachClosestEdge, extractClosestEdge } from '$lib/builder/libraries/pragmatic-drag-and-drop-hitbox/closest-edge.js'
 	import { site_html } from '$lib/builder/stores/app/page'
-	import { userRole } from '$lib/builder/stores/app/misc'
 	import * as Tabs from '$lib/components/ui/tabs'
 	import { Cuboid, SquarePen } from 'lucide-svelte'
+	import { page as pageState } from '$app/state'
+	import { require_site } from '$lib/loaders'
+	import type { Id } from '$lib/common/models/Id'
+	import { ID } from '$lib/common'
 
 	let active_tab = $state((browser && localStorage.getItem('page-tab')) || 'BLOCKS')
 
-	let page_type_symbols = $derived($symbols.filter((s) => s.page_types.includes($active_page.page_type.id)))
+	const site_id = $derived(pageState.params.site as Id)
+	const page_id = $derived(pageState.params.page as Id)
+	const site = $derived(require_site(site_id))
+	const page = $derived($site?.data.entities.pages[page_id] ?? null)
+
+	let page_type_symbols = $derived([])
 	let has_symbols = $derived(page_type_symbols.length > 0)
 
 	$effect(() => {
@@ -52,13 +54,13 @@
 			},
 			onDrop({ self, source }) {
 				$dragging_symbol = false
-				const block_dragged_over_index = $symbols.find((s) => s.id === self.data.block.id).index
-				const block_being_dragged = source.data.block
 				const closestEdgeOfTarget = extractClosestEdge(self.data)
 				if (closestEdgeOfTarget === 'top') {
-					move_block(block_being_dragged, block_dragged_over_index)
+					// TODO: Implement
+					throw new Error('Not implemented')
 				} else if (closestEdgeOfTarget === 'bottom') {
-					move_block(block_being_dragged, block_dragged_over_index + 1)
+					// TODO: Implement
+					throw new Error('Not implemented')
 				}
 			}
 		})
@@ -92,41 +94,28 @@
 						</div>
 					{/if}
 				</div>
-				{#if $userRole === 'DEV'}
-					<button onclick={() => goto(`/${$site.id}/page-type--${$active_page.page_type.id}?t=b`)} class="footer-link">Manage Blocks</button>
+				<!-- $userRole === 'DEV' -->
+				{#if true}
+					<button onclick={() => goto(`/${$site?.id}/page-type--${page?.page_type[ID]}?t=b`)} class="footer-link">Manage Blocks</button>
 				{/if}
 			</Tabs.Content>
 			<Tabs.Content value="content">
 				<div class="page-type-fields">
-					<Content
-						fields={$active_page.page_type.fields}
-						entries={$active_page.entries}
-						on:input={debounce({
-							instant: ({ detail }) => update_page_entries.store(detail.updated),
-							delay: ({ detail }) => update_page_entries.db(detail.original, detail.updated)
-						})}
-						minimal={true}
-					/>
+					<Content entity_id={page?.[ID]} fields={page?.page_type.fields} />
 				</div>
-				{#if $userRole === 'DEV'}
-					<button onclick={() => goto(`/${$site.id}/page-type--${$active_page.page_type.id}?t=p`)} class="footer-link">Manage Fields</button>
+				<!-- $userRole === 'DEV' -->
+				{#if true}
+					<button onclick={() => goto(`/${$site?.id}/page-type--${page?.page_type[ID]}?t=p`)} class="footer-link">Manage Fields</button>
 				{/if}
 			</Tabs.Content>
 		</Tabs.Root>
 	{:else}
 		<div class="p-4 page-type-fields">
-			<Content
-				fields={$active_page.page_type.fields}
-				entries={$active_page.entries}
-				on:input={debounce({
-					instant: ({ detail }) => update_page_entries.store(detail.updated),
-					delay: ({ detail }) => update_page_entries.db(detail.original, detail.updated)
-				})}
-				minimal={true}
-			/>
+			<Content entity_id={page?.[ID]} fields={page?.page_type.fields} />
 		</div>
-		{#if $userRole === 'DEV'}
-			<button onclick={() => goto(`/${$site.id}/page-type--${$active_page.page_type.id}?t=p`)} class="footer-link mb-2 mr-2">Manage Fields</button>
+		<!-- $userRole === 'DEV' -->
+		{#if true}
+			<button onclick={() => goto(`/${$site?.id}/page-type--${page?.page_type[ID]}?t=p`)} class="footer-link mb-2 mr-2">Manage Fields</button>
 		{/if}
 	{/if}
 </div>

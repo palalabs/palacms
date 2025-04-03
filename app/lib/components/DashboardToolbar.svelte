@@ -1,8 +1,5 @@
 <script>
-	import Icon from '@iconify/svelte'
 	import UserPopup from './UserPopup.svelte'
-	import { show } from '$lib/components/Modal.svelte'
-	import { page } from '$app/stores'
 	import UI from '$lib/builder/ui'
 	import ServerLogo from '$lib/components/ui/ServerLogo.svelte'
 

@@ -1,85 +1,76 @@
-<script>
+<script lang="ts">
 	import Icon from '@iconify/svelte'
 	import { PaneGroup, Pane, PaneResizer } from 'paneforge'
 	import Fields from '$lib/builder/components/Fields/FieldsContent.svelte'
-	import _, { chain as _chain } from 'lodash-es'
+	import * as _ from 'lodash-es'
 	import ModalHeader from './ModalHeader.svelte'
 	import CodeEditor from '$lib/builder/components/CodeEditor/CodeMirror.svelte'
-	import modal from '$lib/builder/stores/app/modal'
-	import page_types, { update_page_type } from '$lib/builder/actions/page_types'
-	import page_type from '$lib/builder/stores/data/page_type'
+	import { page } from '$app/state'
+	import { require_site } from '$lib/loaders'
+	import type { Id } from '$lib/common/models/Id'
+	import { ID } from '$lib/common/constants'
 
-	let local_code = $state(_.cloneDeep($page_type.code))
-	let local_fields = $state(_.cloneDeep($page_type.fields))
-	let local_entries = $state(_.cloneDeep($page_type.entries))
+	const site_id = page.params.site
+	const page_type_id = page.params.page_type as Id
+	const site = require_site(site_id)
+	const page_type = $derived($site?.data.entities.page_types[page_type_id])
 
 	let disableSave = false
 
 	async function saveComponent() {
-		page_types.update($page_type.id, { code: local_code })
-		update_page_type({
-			entries: local_entries,
-			fields: local_fields
-		})
-		modal.hide()
+		// TODO: Implement
+		throw new Error('Not implemented')
 	}
 </script>
 
-<ModalHeader
-	icon={$page_type.icon}
-	title={$page_type.name}
-	warn={() => {
-		return true
-	}}
-	button={{
-		icon: 'material-symbols:save',
-		label: 'Save',
-		onclick: saveComponent,
-		disabled: disableSave
-	}}
-/>
+{#if page_type}
+	<ModalHeader
+		icon={page_type.icon}
+		title={page_type.name}
+		warn={() => {
+			return true
+		}}
+		button={{
+			icon: 'material-symbols:save',
+			label: 'Save',
+			disabled: disableSave
+		}}
+	/>
 
-<main class="SiteEditor">
-	<PaneGroup direction="horizontal" style="display: flex;">
-		<Pane defaultSize={50}>
-			<Fields
-				id="page-type-{$page_type.id}"
-				fields={local_fields}
-				entries={local_entries}
-				on:input={({ detail }) => {
-					local_fields = detail.fields
-					local_entries = detail.entries
-				}}
-			/>
-		</Pane>
-		<PaneResizer class="PaneResizer-primary">
-			<div class="icon primary">
-				<Icon icon="mdi:drag-vertical-variant" />
-			</div>
-		</PaneResizer>
-		<Pane defaultSize={50}>
-			<PaneGroup direction="vertical">
-				<Pane>
-					<div class="container" style="margin-bottom: 1rem">
-						<span class="primo--field-label">Head</span>
-						<CodeEditor mode="html" bind:value={local_code.head} on:save={saveComponent} />
-					</div>
-				</Pane>
-				<PaneResizer class="PaneResizer-secondary">
-					<div class="icon secondary">
-						<Icon icon="mdi:drag-horizontal-variant" />
-					</div>
-				</PaneResizer>
-				<Pane>
-					<div class="container">
-						<span class="primo--field-label">Foot</span>
-						<CodeEditor mode="html" bind:value={local_code.foot} on:save={saveComponent} />
-					</div>
-				</Pane>
-			</PaneGroup>
-		</Pane>
-	</PaneGroup>
-</main>
+	<main class="SiteEditor">
+		<PaneGroup direction="horizontal" style="display: flex;">
+			<Pane defaultSize={50}>
+				<Fields id="page-type-{page_type[ID]}" entity_id={page_type[ID]} fields={page_type.fields} />
+			</Pane>
+			<PaneResizer class="PaneResizer-primary">
+				<div class="icon primary">
+					<Icon icon="mdi:drag-vertical-variant" />
+				</div>
+			</PaneResizer>
+			<Pane defaultSize={50}>
+				<PaneGroup direction="vertical">
+					<Pane>
+						<div class="container" style="margin-bottom: 1rem">
+							<span class="primo--field-label">Head</span>
+							<CodeEditor mode="html" bind:value={page_type.code.head} on:save={saveComponent} />
+						</div>
+					</Pane>
+					<PaneResizer class="PaneResizer-secondary">
+						<div class="icon secondary">
+							<Icon icon="mdi:drag-horizontal-variant" />
+						</div>
+					</PaneResizer>
+					<Pane>
+						<div class="container">
+							<span class="primo--field-label">Foot</span>
+							<CodeEditor mode="html" bind:value={page_type.code.foot} on:save={saveComponent} />
+						</div>
+					</Pane>
+				</PaneGroup>
+			</Pane>
+		</PaneGroup>
+	</main>
+{/if}
 
 <style lang="postcss">
 	.SiteEditor {

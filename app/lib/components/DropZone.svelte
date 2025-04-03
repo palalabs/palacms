@@ -83,7 +83,7 @@
     flex flex-col items-center justify-center gap-2
     {isDragging ? 'border-blue-500 bg-blue-500/10' : file ? 'border-green-500/50 bg-green-500/5' : 'border-gray-700 hover:border-gray-600'}"
 >
-	<input bind:this={inputEl} type="file" class="hidden" onchange={(e) => handleFiles(e.currentTarget.files)} {accept} />
+	<input bind:this={inputEl} type="file" class="hidden" onchange={(e) => e.currentTarget.files && handleFiles(e.currentTarget.files)} {accept} />
 
 	{#if invalid}
 		<div class="flex flex-col items-center text-sm text-destructive">

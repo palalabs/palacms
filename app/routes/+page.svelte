@@ -5,9 +5,9 @@
 
 	onMount(async () => {
 		if (pb.authStore.isValid) {
-			await goto('/dashboard/sites')
+			await goto('/dashboard/sites', { replaceState: true })
 		} else {
-			await goto('/auth')
+			await goto('/auth', { replaceState: true })
 		}
 	})
 </script>

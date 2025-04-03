@@ -1,44 +1,37 @@
-<script>
+<script lang="ts">
 	import Item from './Item.svelte'
 	import Icon from '@iconify/svelte'
 	import { onMount } from 'svelte'
 	import { get, set } from 'idb-keyval'
-	import { createEventDispatcher, getContext } from 'svelte'
-	const dispatch = createEventDispatcher()
-	import modal from '$lib/builder/stores/app/modal'
-	import pages from '$lib/builder/stores/data/pages'
-	import page_types from '$lib/builder/stores/data/page_types'
-	import active_page from '$lib/builder/stores/data/page'
-	import actions from '$lib/builder/actions/pages'
+	import { createEventDispatcher } from 'svelte'
 	import { content_editable, validate_url } from '$lib/builder/utilities'
 	import PageForm from './PageForm.svelte'
 	import MenuPopup from '$lib/builder/ui/Dropdown.svelte'
+	import type { Resolved } from '$lib/pocketbase/CollectionStore'
+	import type { Page } from '$lib/common/models/Page'
+	import { page as pageState } from '$app/state'
+	import { ID } from '$lib/common/constants'
+	import { require_site } from '$lib/loaders'
+
+	const dispatch = createEventDispatcher()
 
 	let editing_page = $state(false)
 
-	/**
-	 * @typedef {Object} Props
-	 * @property {import('$lib').Page | null} [parent]
-	 * @property {import('$lib').Page} page
-	 * @property {any} [children]
-	 * @property {any} active
-	 * @property {string[]} [parent_urls]
-	 */
-
 	/** @type {Props} */
-	let { parent = null, page, children = [], active, parent_urls = [] } = $props()
+	let { parent, page, active }: { parent?: Resolved<typeof Page>; page: Resolved<typeof Page>; active: boolean } = $props()
 
-	const site_id = window.location.pathname.split('/')[1]
-	const full_url = parent ? `/${site_id}/${parent_urls.join('/')}/${page.slug}` : `/${site_id}/${page.slug}`
+	const site_id = pageState.params.site
+	const site = $derived(require_site(site_id))
+	const full_url = `/${site_id}/${page.slug}`
 
 	let showing_children = $state(false)
-	let has_children = $derived(children.length > 0)
+	let has_children = $derived(page.children.length > 0)
 
-	get(`page-list-toggle--${page.id}`).then((toggled) => {
+	get(`page-list-toggle--${page[ID]}`).then((toggled) => {
 		if (toggled !== undefined) showing_children = toggled
 	})
 	$effect(() => {
-		set(`page-list-toggle--${page.id}`, showing_children)
+		set(`page-list-toggle--${page[ID]}`, showing_children)
 	})
 
 	let creating_page = $state(false)
@@ -46,13 +39,6 @@
 	$effect(() => {
 		new_page_url = validate_url(new_page_url)
 	})
-
-	/**
-	 * @param {{ name?: string, url?: string }} args
-	 */
-	function edit_page(args) {
-		actions.update(page.id, args)
-	}
 
 	let drag_handle_element = $state()
 	let element = $state()
@@ -88,9 +74,11 @@
 				const closestEdgeOfTarget = extractClosestEdge(self.data)
 				if (page_dragged_over.index === 0) return // can't place above home
 				if (closestEdgeOfTarget === 'top') {
-					actions.rearrange(page_being_dragged, page_dragged_over.index)
+					// TODO: Implement
+					throw new Error('Not implemented')
 				} else if (closestEdgeOfTarget === 'bottom') {
-					actions.rearrange(page_being_dragged, page_dragged_over.index + 1)
+					// TODO: Implement
+					throw new Error('Not implemented')
 				}
 				hover_position = null
 			}
@@ -101,7 +89,7 @@
 </script>
 
 <div class="Item" bind:this={element} class:contains-child={parent}>
-	<div class="page-item-container" class:active={page.id === $active_page.id} class:expanded={showing_children && has_children}>
+	<div class="page-item-container" class:active={false} class:expanded={showing_children && has_children}>
 		<div class="left">
 			{#if editing_page}
 				<div class="details">
@@ -109,7 +97,7 @@
 						class="name"
 						use:content_editable={{
 							autofocus: true,
-							on_change: (val) => edit_page({ name: val }),
+							on_change: (val) => (page.name = val),
 							on_submit: () => (editing_page = false)
 						}}
 					>
@@ -122,7 +110,7 @@
 								class="url"
 								use:content_editable={{
 									on_change: (val) => {
-										edit_page({ slug: validate_url(val) })
+										page.slug = validate_url(val)
 									},
 									on_submit: () => (editing_page = false)
 								}}
@@ -133,13 +121,10 @@
 					{/if}
 				</div>
 			{:else}
-				{@const page_type = $page_types.find((pt) => pt.id === page.page_type)}
 				<div class="details">
-					{#if $page_types.length > 1}
-						<span class="icon" style:background={page_type.color}>
-							<Icon icon={page_type.icon} />
-						</span>
-					{/if}
+					<span class="icon" style:background={page.page_type.color}>
+						<Icon icon={page.page_type.icon} />
+					</span>
 					<a class:active href={full_url} onclick={() => modal.hide()} class="name">{page.name}</a>
 					<span class="url">/{page.slug}</span>
 				</div>
@@ -194,9 +179,8 @@
 
 	{#if showing_children && has_children}
 		<ul class="page-list child">
-			{#each children as subpage}
-				{@const subchildren = $pages.filter((p) => p.parent === subpage.id)}
-				<Item parent={page} page={subpage} parent_urls={[...parent_urls, page.slug]} children={subchildren} active={$active_page.id === subpage.id} on:delete on:create />
+			{#each page.children as subpage}
+				<Item parent={page} page={subpage} active={false} on:delete on:create />
 			{/each}
 		</ul>
 	{/if}
@@ -204,12 +188,11 @@
 	{#if creating_page}
 		<div style="border-left: 0.5rem solid #111;">
 			<PageForm
-				{page}
-				parent={page.id}
+				parent={page}
 				on:create={({ detail: new_page }) => {
 					creating_page = false
 					showing_children = true
-					dispatch('create', { page: new_page, index: children.length })
+					dispatch('create', new_page)
 				}}
 			/>
 		</div>

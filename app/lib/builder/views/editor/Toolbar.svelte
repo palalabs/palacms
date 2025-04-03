@@ -1,66 +1,29 @@
-<script>
-	import { getContext, createEventDispatcher } from 'svelte'
+<script lang="ts">
 	import { fade } from 'svelte/transition'
 	import { find as _find } from 'lodash-es'
-	import { browser } from '$app/environment'
 	import Icon from '@iconify/svelte'
 	import ToolbarButton from './ToolbarButton.svelte'
 	import Letter from '$lib/builder/ui/Letter.svelte'
 	import { PrimoButton } from '$lib/builder/components/buttons'
-	import site from '$lib/builder/stores/data/site'
-	import pages from '$lib/builder/stores/data/pages'
-	import page_types from '$lib/builder/stores/data/page_types'
 	import { mod_key_held } from '$lib/builder/stores/app/misc'
-	import { userRole, hotkey_events } from '$lib/builder/stores/app'
-	import active_page from '$lib/builder/stores/data/page'
 	import modal from '$lib/builder/stores/app/modal'
-	import { click_to_copy } from '$lib/builder/utilities'
-	import { page } from '$app/stores'
-	import { goto } from '$app/navigation'
 	import { active_users } from '$lib/builder/stores/app/misc'
-	import { timeline } from '$lib/builder/stores/data'
-	import { undo_change, redo_change } from '$lib/builder/actions/misc'
+	import { page as pageState } from '$app/state'
+	import { require_site } from '$lib/loaders'
+	import { Id } from '$lib/common/models/Id'
+	import { ID } from '$lib/common/constants'
 
-	const dispatch = createEventDispatcher()
+	let { primary_buttons, secondary_buttons, children } = $props()
 
-	let { primary_buttons, secondary_buttons, dropdown, children } = $props()
-
-	// $: pageEmpty =
-	// 	$sections && $sections.length <= 1 && $sections.length > 0 && $sections[0]['type'] === 'options'
-
-	let DEBUGGING = $state()
-	if (browser) DEBUGGING = getContext('DEBUGGING')
-
-	let showing_dropdown = false
+	const site_id = $derived(pageState.params.site)
+	const page_id = $derived(pageState.params.page as Id)
+	const page_type_id = $derived(pageState.params.page_type as Id)
+	const site = $derived(require_site(site_id))
+	const page = $derived($site?.data.entities.pages[page_id])
+	const page_type = $derived($site?.data.entities.page_types[page_type_id])
 
 	let going_up = $state(false)
-	hotkey_events.on('up', () => {
-		going_up = true
-		if (previous_page) {
-			goto(`/${$site.id}/${previous_page.slug}`)
-		}
-		setTimeout(() => {
-			going_up = false
-		}, 600)
-	})
-
 	let going_down = $state(false)
-	hotkey_events.on('down', () => {
-		going_down = true
-		if (next_page) {
-			goto(`/${$site.id}/${next_page.slug}`)
-		}
-		setTimeout(() => {
-			going_down = false
-		}, 600)
-	})
-
-	let previous_page = $derived(
-		$page.data.page ? $pages.find((p) => p.parent === $active_page.parent && p.index === $page.data.page.index - 1) : $page_types.find((p) => p.index === $page.data.page_type.index - 1)
-	)
-	let next_page = $derived(
-		$page.data.page ? $pages.find((p) => p.parent === $active_page.parent && p.index === $page.data.page.index + 1) : $page_types.find((p) => p.index === $page.data.page_type.index + 1)
-	)
 </script>
 
 <nav aria-label="toolbar" id="primo-toolbar" class="primo-reset">
@@ -82,8 +45,8 @@
 					align-items: center;
 					border-radius: var(--primo-border-radius);"
 					>
-						<div style:color={going_up ? 'var(--weave-primary-color)' : 'inherit'} style:opacity={previous_page ? '1' : '0.1'}>&#8984; ↑</div>
-						<div style:color={going_down ? 'var(--weave-primary-color)' : 'inherit'} style:opacity={next_page ? '1' : '0.1'}>&#8984; ↓</div>
+						<div style:color={going_up ? 'var(--weave-primary-color)' : 'inherit'} style:opacity={1}>&#8984; ↑</div>
+						<div style:color={going_down ? 'var(--weave-primary-color)' : 'inherit'} style:opacity={1}>&#8984; ↓</div>
 					</div>
 				{:else}
 					<ToolbarButton label="Pages" icon="iconoir:multiple-pages" on:click={() => modal.show('SITE_PAGES', {}, { hideLocaleSelector: true, maxWidth: '1200px', showSwitch: false })} />
@@ -96,69 +59,28 @@
 					<ToolbarButton icon={button.icon} on:click={button.onclick} />
 				{/each}
 			</div>
-
-			<!-- <div class="button-group">
-				{#each primary_buttons as button}
-					<ToolbarButton icon={button.icon} on:click={button.onclick} />
-				{/each}
-			</div> -->
-
-			<!-- TODO: Re-enable Visitor Forms -->
-			<!-- <div
-				class="dropdown"
-				class:active={showing_dropdown}
-				use:clickOutside
-				on:click_outside={() => {
-					showing_dropdown = false
-				}}
-			>
-				<button class="down" on:click={() => (showing_dropdown = !showing_dropdown)}>
-					<div class="icon">
-						<Icon icon="charm:menu-kebab" />
-					</div>
-				</button>
-				{#if showing_dropdown}
-					<div class="list" in:fade={{ duration: 100 }}>
-						{#each dropdown as button}
-							<button
-								on:click={() => {
-									showing_dropdown = false
-									button.onclick()
-								}}
-							>
-								<Icon icon={button.icon} />
-								<span>{button.label}</span>
-							</button>
-						{/each}
-					</div>
-				{/if}
-			</div> -->
 		</div>
 		<div class="site-name">
-			<span class="site">{$site.name} /</span>
-			{#if DEBUGGING}
-				<span class="page">
-					{$active_page.name}
-					<button use:click_to_copy>({$active_page.id})</button>
-				</span>
-			{:else if $page.data.page}
-				<span class="page">{$active_page.name}</span>
-				{#if $userRole === 'DEV'}
-					<a class="page-type-badge" style="background-color: {$active_page.page_type?.color};" href="/{$site.id}/page-type--{$active_page.page_type?.id}">
-						<Icon icon={$active_page.page_type.icon} />
+			<span class="site">{$site?.data.name} /</span>
+			{#if page}
+				<span class="page">{page.name}</span>
+				<!-- $userRole === 'DEV' -->
+				{#if true}
+					<a class="page-type-badge" style="background-color: {page.page_type.color};" href="/{$site?.id}/page-type--{page.page_type[ID]}">
+						<Icon icon={page.page_type.icon} />
 					</a>
 				{:else}
-					<span class="page-type-badge" style="background-color: {$active_page.page_type?.color};">
-						<Icon icon={$active_page.page_type.icon} />
+					<span class="page-type-badge" style="background-color: {page.page_type.color};">
+						<Icon icon={page.page_type.icon} />
 					</span>
 				{/if}
-			{:else if $page.data.page_type}
-				<span class="page-type" style:background={$page.data.page_type.color}>
-					<Icon icon={$page.data.page_type.icon} />
-					<span>{$page.data.page_type.name}</span>
+			{:else if page_type}
+				<span class="page-type" style:background={page_type.color}>
+					<Icon icon={page_type.icon} />
+					<span>{page_type.name}</span>
 				</span>
 			{:else}
-				<span class="page">{$active_page.name}</span>
+				<span class="page">{page?.name}</span>
 			{/if}
 		</div>
 		<div class="right">
@@ -171,13 +93,14 @@
 					{/each}
 				</div>
 			{/if}
-			{#if !$timeline.first}
+			<!-- {#if !$timeline.first}
 				<ToolbarButton id="undo" title="Undo" icon="material-symbols:undo" style="border: 0; font-size: 1.5rem;" on:click={undo_change} />
 			{/if}
 			{#if !$timeline.last}
 				<ToolbarButton id="redo" title="Redo" icon="material-symbols:redo" style="border: 0; font-size: 1.5rem;" on:click={redo_change} />
-			{/if}
-			{#if $userRole === 'DEV'}
+			{/if} -->
+			<!-- $userRole === 'DEV' -->
+			{#if true}
 				<div class="button-group">
 					{#each secondary_buttons as button}
 						<ToolbarButton icon={button.icon} on:click={button.onclick} />
@@ -186,7 +109,7 @@
 			{/if}
 			{@render children?.()}
 			<!-- <LocaleSelector /> -->
-			<ToolbarButton type="primo" icon="entypo:publish" label="Publish" active={false} on:click={() => dispatch('publish')} disabled={false} />
+			<ToolbarButton type="primo" icon="entypo:publish" label="Publish" active={false} on:click={() => {}} disabled={false} />
 		</div>
 	</div>
 </nav>

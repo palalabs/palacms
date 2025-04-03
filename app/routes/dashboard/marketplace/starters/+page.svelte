@@ -4,14 +4,9 @@
 	import EmptyState from '$lib/components/EmptyState.svelte'
 	import { LayoutTemplate } from 'lucide-svelte'
 	import MarketplaceStarterButton from '$lib/components/MarketplaceStarterButton.svelte'
+	import { require_marketplace_starters } from '$lib/loaders'
 
-	/**
-	 * @typedef {Object} Props
-	 * @property {any} data
-	 */
-
-	/** @type {Props} */
-	let { data } = $props()
+	const starters = require_marketplace_starters()
 </script>
 
 <header class="flex h-14 shrink-0 items-center gap-2">
@@ -22,10 +17,10 @@
 	</div>
 </header>
 <div class="flex flex-1 flex-col gap-4 px-4 pb-4">
-	{#if data.starters.length > 0}
+	{#if $starters?.length}
 		<div class="sites-container">
 			<ul class="sites">
-				{#each data.starters as site (site.id)}
+				{#each $starters as site (site.id)}
 					<li>
 						<MarketplaceStarterButton site={site.data} preview={site.preview} />
 					</li>

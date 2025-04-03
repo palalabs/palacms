@@ -1,10 +1,5 @@
 import * as _ from 'lodash-es'
 import PromiseWorker from 'promise-worker'
-import { get } from 'svelte/store'
-// import { render } from 'svelte/server'
-// import { render } from './lib/svelte-5/server/index.js'
-import { site } from '$lib/builder/stores/data'
-import { locale } from '$lib/builder/stores/app'
 import rollupWorker from './workers/rollup.worker.js?worker'
 import postCSSWorker from './workers/postcss.worker.js?worker'
 
@@ -18,7 +13,7 @@ const COMPILED_COMPONENTS_CACHE = new Map()
  * @async
  * @param {Object} options - The options for rendering.
  * @param {Object|Object[]} options.component - The component(s) to be rendered. Can be a single component or an array of components for a page.
- * @param {{ code: string, data: Object }} options.head 
+ * @param {{ code: string, data: Object }} options.head
  * @param {boolean} [options.buildStatic=true] - Indicates whether to build the component statically or not.
  * @param {string} [options.format='esm'] - The module format to use, such as 'esm' for ES Modules.
  * @param {boolean} [options.dev_mode=false] - Whether Svelte should be compiled in dev mode (i.e. attaches LOC for inspecting) or not
@@ -99,8 +94,8 @@ export async function html({ component, head, buildStatic = true, format = 'esm'
 				css: rendered.css.code,
 				js: res.dom
 			}
-		} catch(e) {
-			console.log({e})
+		} catch (e) {
+			console.log({ e })
 			payload = {
 				head: '',
 				html: '',

@@ -1,41 +1,32 @@
-<script>
+<script lang="ts">
 	import * as _ from 'lodash-es'
 	import Icon from '@iconify/svelte'
 	import TextInput from '../ui/TextInput.svelte'
 	import Spinner from '../ui/Spinner.svelte'
-	import site from '../stores/data/site.js'
-	import { storageChanged } from '../database.js'
 	import imageCompression from 'browser-image-compression'
+	import type { ImageField } from '$lib/common/models/fields/ImageField'
+	import type { Resolved } from '$lib/pocketbase/CollectionStore'
+	import type { Id } from '$lib/common/models/Id'
+	import { require_site } from '$lib/loaders'
+	import { page } from '$app/state'
+	import { get_direct_entries } from '../stores/helpers'
 
 	const default_value = {
 		alt: '',
 		url: ''
 	}
 
-	let { field, value = $bindable(), children, oninput = /** @type {(val: {value: {url: string, alt: string}, metadata: {size?: number}}) => void} */ () => {} } = $props()
-
-	if (typeof value === 'string' || !value) {
-		value = _.cloneDeep(default_value)
-	}
-
-	function dispatch_update({ url = value.url, alt = value.alt, size }) {
-		oninput({
-			value: {
-				url,
-				alt
-			},
-			metadata: {
-				size
-			}
-		})
-	}
+	const { entity_id, field }: { entity_id: Id; field: Resolved<typeof ImageField> } = $props()
+	const site_id = $derived(page.params.site)
+	const site = $derived(require_site(site_id))
+	const entry = $derived(get_direct_entries(entity_id, field)[0])
 
 	async function upload_image(image) {
 		loading = true
 
 		// Get compression options from field config or use defaults
-		const maxSizeMB = field.options?.maxSizeMB ?? 1
-		const maxWidthOrHeight = field.options?.maxWidthOrHeight ?? 1920
+		const maxSizeMB = field.maxSizeMB ?? 1
+		const maxWidthOrHeight = field.maxWidthOrHeight ?? 1920
 
 		// Compression options
 		const options = {
@@ -46,34 +37,20 @@
 
 		// Compress the image
 		const compressedImage = await imageCompression(image, options)
-		console.log(`Original size: ${image.size / 1024 / 1024} MB`)
-		console.log(`Compressed size: ${compressedImage.size / 1024 / 1024} MB`)
 
 		await upload(compressedImage)
 
 		async function upload(file) {
-			const key = `${$site.id}/${file.lastModified + file.name}`
-			const { url, size } = await storageChanged({
-				action: 'upload',
-				key,
-				file
-			})
-
-			if (url) {
-				image_preview = url
-				dispatch_update({ url, size })
-				image_size = size
-			}
-			loading = false
+			// TODO: Implement
+			throw new Error('Not implemented')
 		}
 	}
 
 	let image_size = $state(null)
-	let image_preview = $state(value.url || '')
 	let loading = $state(false)
 
-	let width = $state()
-	let collapsed = $derived(width < 200)
+	let width = $state<number | undefined>()
+	let collapsed = $derived(!width || width < 200)
 </script>
 
 <div class="ImageField" bind:clientWidth={width} class:collapsed>
@@ -90,12 +67,12 @@
 						{image_size}KB
 					</span>
 				{/if}
-				{#if value.url}
-					<img src={image_preview} alt="Preview" />
+				{#if entry.value.url}
+					<img src={entry.value.url} alt="Preview" />
 				{/if}
 				<label class="image-upload">
 					<Icon icon="uil:image-upload" />
-					{#if !value.url}
+					{#if !entry.value.url}
 						<span>Upload</span>
 					{/if}
 					<input
@@ -113,13 +90,12 @@
 			{/if}
 		</div>
 		<div class="inputs">
-			<TextInput value={value.alt} label="Description" oninput={(alt) => dispatch_update({ alt })} />
+			<TextInput value={entry.value.alt} label="Description" oninput={(alt) => (entry.value.alt = alt)} />
 			<TextInput
-				value={value.url}
+				value={entry.value.url}
 				label="URL"
 				oninput={(value) => {
-					image_preview = value
-					dispatch_update({ url: value })
+					entry.value.url = value
 				}}
 			/>
 		</div>

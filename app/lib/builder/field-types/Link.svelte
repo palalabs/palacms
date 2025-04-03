@@ -1,11 +1,15 @@
-<script>
+<script lang="ts">
 	import * as _ from 'lodash-es'
 	import Icon from '@iconify/svelte'
 	import UI from '../ui'
-	import pages from '../stores/data/pages'
 	import { locale } from '../stores/app'
-	import { createEventDispatcher } from 'svelte'
-	const dispatch = createEventDispatcher()
+	import type { Id } from '$lib/common/models/Id'
+	import type { Resolved } from '$lib/pocketbase/CollectionStore'
+	import type { LinkField } from '$lib/common/models/fields/LinkField'
+	import { page } from '$app/state'
+	import { require_site } from '$lib/loaders'
+	import { get_direct_entries } from '../stores/helpers'
+	import { ID } from '$lib/common/constants'
 
 	const default_value = {
 		label: '',
@@ -13,13 +17,13 @@
 		active: false
 	}
 
-	let { field, value = $bindable(), metadata, oninput, children } = $props()
+	const { entity_id, field }: { entity_id: Id; field: Resolved<typeof LinkField> } = $props()
+	const site_id = $derived(page.params.site)
+	const site = $derived(require_site(site_id))
+	const entry = $derived(get_direct_entries(entity_id, field)[0])
+	const selectable_pages = $derived(Object.values($site?.data.entities.pages ?? {}).filter((p) => p?.page_type[ID] === field.page_type[ID]))
 
-	if (!value || typeof value === 'string' || !value.label) {
-		value = _.cloneDeep(default_value)
-	}
-
-	let selected = $state(urlMatchesPage(value.url))
+	let selected = $state(urlMatchesPage(entry?.value.url))
 
 	function urlMatchesPage(url) {
 		if (url && url.startsWith('/')) {
@@ -29,36 +33,16 @@
 		}
 	}
 
-	let selected_page = $derived(metadata?.page_id ? $pages.find((p) => p.id === metadata.page_id) || $pages[0] : $pages[0])
+	let selected_page = $derived(entry.value.page ?? $site?.data.root)
 	function get_page_url(page) {
 		const prefix = $locale === 'en' ? '/' : `/${$locale}/`
 		if (page.slug === '') {
 			return prefix
 		} else {
 			let parent_urls = []
-			if (page.parent) {
-				let no_more_parents = false
-				let grandparent = $pages.find((p) => p.id === page.parent)
-				parent_urls.push(grandparent.slug)
-				while (!no_more_parents) {
-					grandparent = $pages.find((p) => p.id === grandparent.parent)
-					if (!grandparent) {
-						no_more_parents = true
-					} else {
-						parent_urls.unshift(grandparent.slug)
-					}
-				}
-			}
 			return parent_urls.length ? prefix + parent_urls.join('/') + '/' + page.slug : prefix + page.slug
 		}
 	}
-
-	function dispatch_update({ label = value.label, url = value.url }, page_id = selected_page?.id) {
-		oninput({ value: { label, url }, metadata: { page_id } })
-	}
-
-	// auto-set link from page name
-	let page_name_edited = $state(!!value.label)
 </script>
 
 <div class="Link">
@@ -66,12 +50,9 @@
 		<UI.TextInput
 			label={field.label}
 			oninput={(text) => {
-				page_name_edited = true
-				dispatch_update({
-					label: text
-				})
+				entry.value.label = text
 			}}
-			value={value.label}
+			value={entry.value.label}
 			id="page-label"
 			placeholder="About Us"
 		/>
@@ -87,40 +68,26 @@
 				</button>
 			</div>
 			{#if selected === 'page'}
-				{@const top_level_pages = $pages.filter((p) => !p.parent)}
 				<UI.Select
-					value={selected_page.id}
-					options={top_level_pages.map((page) => ({
-						label: page.name,
-						value: page.id,
-						suboptions: $pages.filter((p) => p.parent === page.id).map((subpage) => ({ label: subpage.name, value: subpage.id }))
-					}))}
-					on:input={({ detail: page_id }) => {
-						const page = $pages.find((p) => p.id === page_id)
-						dispatch_update(
-							{
-								url: get_page_url(page),
-								label: value.label || page.name // auto-set page name
-							},
-							page_id
-						)
+					value={selected_page}
+					options={[$site?.data.root]}
+					on:input={({ detail: page }) => {
+						selected_page = page
 					}}
 				/>
 			{:else}
 				<UI.TextInput
-					oninput={(text) =>
-						dispatch_update({
-							url: text
-						})}
-					value={value.url}
+					oninput={(text) => {
+						entry.value.url = text
+					}}
+					value={entry.value.url}
 					type="url"
-					placeholder="https://primocms.org"
+					placeholder="https://palacms.org"
 				/>
 			{/if}
 		</div>
 	</div>
 </div>
-{@render children?.()}
 
 <style lang="postcss">
 	.Link {

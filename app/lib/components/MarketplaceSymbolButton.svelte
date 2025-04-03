@@ -2,22 +2,18 @@
 	import { toast } from 'svelte-sonner'
 	import { Label } from '$lib/components/ui/label'
 	import * as Popover from '$lib/components/ui/popover'
-	import fileSaver from 'file-saver'
 	import SitePreview from '$lib/components/SitePreview.svelte'
-	import { EllipsisVertical, Download, Code, CirclePlus, CircleCheck, Loader } from 'lucide-svelte'
+	import { CirclePlus, CircleCheck } from 'lucide-svelte'
 	import { find as _find } from 'lodash-es'
 	import { Button, buttonVariants } from '$lib/components/ui/button'
-	import * as Dialog from '$lib/components/ui/dialog'
-	import { Input } from '$lib/components/ui/input'
-	import * as actions from '$lib/actions'
-	import * as AlertDialog from '$lib/components/ui/alert-dialog'
 	import * as RadioGroup from '$lib/components/ui/radio-group'
-	import { invalidate } from '$app/navigation'
-	import { page } from '$app/stores'
+	import { Symbol } from '$lib/common/models/Symbol'
+	import { require_library } from '$lib/loaders'
+	import { ID } from '$lib/common'
 
 	/**
 	 * @typedef {Object} Props
-	 * @property {import('$lib').Symbol} symbol
+	 * @property {Symbol} symbol
 	 * @property {string | null} [preview]
 	 * @property {string} [head]
 	 */
@@ -32,14 +28,17 @@
 		// TODO: Implement
 	}
 
-	let selected_group_id = $state($page.data.marketplace_symbol_groups[0]?.id ?? '')
+	const library = require_library()
+	let selected_group_id = $state($library?.data.symbol_groups[0]?.[ID] ?? '')
 
 	let is_popover_open = $state(false)
-	let added_to_library = $state([])
-	async function add_to_library(group_id) {
+	let added_to_library = $state(false)
+	async function add_to_library() {
+		// await actions.add_marketplace_symbol_to_library({ symbol, preview, group_id })
+		// TODO: Implement
+		throw new Error('Not implemented')
 		toast.success('Block added to Library')
-		added_to_library.push(symbol.id)
-		await actions.add_marketplace_symbol_to_library({ symbol, preview, group_id })
+		added_to_library = true
 	}
 </script>
 
@@ -51,7 +50,7 @@
 		<div class="text-sm font-medium leading-none">{symbol.name}</div>
 		<Popover.Root bind:open={is_popover_open}>
 			<Popover.Trigger class={buttonVariants({ variant: 'ghost', class: 'h-4 p-0' })}>
-				{#if added_to_library.includes(symbol.id)}
+				{#if added_to_library}
 					<CircleCheck />
 				{:else}
 					<CirclePlus />
@@ -64,17 +63,17 @@
 						<p class="text-muted-foreground text-sm">Select a group for this block</p>
 					</div>
 					<RadioGroup.Root bind:value={selected_group_id}>
-						{#each $page.data.symbol_groups as group}
+						{#each $library?.data.symbol_groups ?? [] as group}
 							<div class="flex items-center space-x-2">
-								<RadioGroup.Item value={group.id} id={group.id} />
-								<Label for={group.id}>{group.name}</Label>
+								<RadioGroup.Item value={group[ID]} id={group[ID]} />
+								<Label for={group[ID]}>{group.name}</Label>
 							</div>
 						{/each}
 					</RadioGroup.Root>
 					<div class="flex justify-end">
 						<Button
 							onclick={() => {
-								add_to_library(selected_group_id)
+								add_to_library()
 								is_popover_open = false
 							}}
 						>

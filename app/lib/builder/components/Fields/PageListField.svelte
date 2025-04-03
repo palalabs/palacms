@@ -1,46 +1,33 @@
-<script>
-	import { onMount } from 'svelte'
+<script lang="ts">
 	import UI from '../../ui/index.js'
-	import page_types from '../../stores/data/page_types.js'
+	import type { Resolved } from '$lib/pocketbase/CollectionStore.js'
+	import type { PageListField } from '$lib/common/models/fields/PageListField.js'
+	import type { Id } from '$lib/common/models/Id.js'
+	import { page } from '$app/state'
+	import { require_site } from '$lib/loaders'
 
-	let { field, oninput } = $props()
-
-	let selected_page_type = $state(field.options.page_type)
-
-	let field_synced_with_other_page_type = false
-
-	onMount(() => {
-		// set initial value
-		if (!selected_page_type) oninput({ ...field.options, page_type: $page_types[0].id })
-	})
+	const site_id = page.params.site
+	const site = require_site(site_id)
+	const { field }: { entity_id: Id; field: Resolved<typeof PageListField> } = $props()
 </script>
 
 <div class="PagesField">
-	{#if field_synced_with_other_page_type}
-		<div>
-			<p>
-				Synced with {'{page_type}'}. Is hidden. Will fall back to other field. Delete.
-			</p>
-		</div>
-	{:else}
-		<div class="container">
-			<!-- Entity type -->
-			<UI.Select
-				on:input={({ detail }) => {
-					selected_page_type = detail
-					oninput({ ...field.options, page_type: detail })
-				}}
-				label="Page Type"
-				value={selected_page_type}
-				fullwidth={true}
-				options={$page_types.map((page_type) => ({
-					label: page_type.name,
-					value: page_type.id,
-					icon: page_type.icon
-				}))}
-			/>
-		</div>
-	{/if}
+	<div class="container">
+		<!-- Entity type -->
+		<UI.Select
+			on:input={({ detail }) => {
+				field.page_type = detail
+			}}
+			label="Page Type"
+			value={field.page_type}
+			fullwidth={true}
+			options={$site?.data.page_types.map((page_type) => ({
+				label: page_type.name,
+				value: page_type,
+				icon: page_type.icon
+			}))}
+		/>
+	</div>
 </div>
 
 <style>

@@ -11,10 +11,13 @@
 	import DesignFields from './Modals/DesignFields.svelte'
 	import Themes from './Themes.svelte'
 	import * as code_generators from '$lib/builder/code_generators'
-	import { page } from '$app/stores'
 	import EmptyState from '$lib/components/EmptyState.svelte'
+	import { require_library } from '$lib/loaders'
+	import type { Site } from '$lib/common/models/Site'
 
 	let { onclose, onsubmit } = $props()
+
+	const library = require_library()
 
 	let site_name = $state(``)
 
@@ -54,7 +57,7 @@
 		selected_theme_id = theme.id
 	}
 
-	let duplicated_site_data = $state<import('$lib').Site_Data | null>(null)
+	let duplicated_site_data = $state<Site | null>(null)
 	async function duplicate_site_file(event) {
 		const file = event.target.files[0]
 		if (!file) return
@@ -151,7 +154,7 @@
 						</label>
 					</Button>
 				</div>
-				{#if $page.data.starters.length > 0 || duplicated_site_data}
+				{#if $library?.data.starters.length || duplicated_site_data}
 					<div class="split-container flex-1">
 						<div class="h-[77vh] overflow-auto">
 							<Themes on:select={({ detail }) => select_theme(detail)} append={design_variables_css} />

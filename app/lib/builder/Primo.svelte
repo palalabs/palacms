@@ -1,5 +1,5 @@
-<script>
-	import { onDestroy } from 'svelte'
+<script lang="ts">
+	import { onDestroy, type Snippet } from 'svelte'
 	import * as _ from 'lodash-es'
 	import Icon, { loadIcons, enableCache } from '@iconify/svelte'
 	import { browser } from '$app/environment'
@@ -11,34 +11,32 @@
 	import * as Mousetrap from 'mousetrap'
 	import hotkey_events from './stores/app/hotkey_events'
 	import { onMobile, mod_key_held } from './stores/app/misc'
-	import built_in_symbols from './stores/data/primo_symbols'
 	import Page_Sidebar from './components/Sidebar/Page_Sidebar.svelte'
 	import PageType_Sidebar from './components/Sidebar/PageType_Sidebar.svelte'
-	import { userRole } from './stores/app/index.js'
-	import { hydrate_active_data } from './stores/hydration.js'
 	import { PaneGroup, Pane, PaneResizer } from 'paneforge'
 	import { site_design_css } from '$lib/builder/code_generators.js'
 	import { site_html } from '$lib/builder/stores/app/page'
-	import { design as siteDesign, code as siteCode } from '$lib/builder/stores/data/site.js'
 	import { processCode } from '$lib/builder/utils.js'
-	import { get_site_data } from '$lib/builder/stores/helpers.js'
+	import type { Readable } from 'svelte/store'
+	import type { Resolved } from '$lib/pocketbase/CollectionStore'
+	import type { Site } from '$lib/common/models/Site'
+	import { page } from '$app/state'
 
-	/**
-	 * @typedef {Object} Props
-	 * @property {any} data
-	 * @property {string} [role] - $: console.log({ data })
-	 * @property {any} [primary_buttons]
-	 * @property {any} [dropdown]
-	 * @property {any} [secondary_buttons]
-	 * @property {any} [primo_symbols]
-	 * @property {import('svelte').Snippet} [toolbar]
-	 * @property {import('svelte').Snippet} [children]
-	 */
-
-	/** @type {Props} */
-	let { data, role = 'DEV', primary_buttons = [], dropdown = [], secondary_buttons = [], primo_symbols = [], toolbar, children } = $props()
-
-	hydrate_active_data(data)
+	let {
+		site,
+		primary_buttons = [],
+		dropdown = [],
+		secondary_buttons = [],
+		toolbar,
+		children
+	}: {
+		site: Readable<Resolved<typeof Site> | null>
+		primary_buttons?: any
+		dropdown?: any
+		secondary_buttons?: any
+		toolbar?: Snippet
+		children?: Snippet
+	} = $props()
 
 	function getActiveModal(modalType) {
 		return modalType
@@ -139,21 +137,16 @@
 		})
 	}
 
-	let sidebar_pane = $state()
-	$effect.pre(() => {
-		$userRole = role
-		$built_in_symbols = primo_symbols
-		hydrate_active_data(data)
-	})
+	let sidebar_pane = $state<any>()
 	let activeModal = $derived(getActiveModal($modal.type))
 
 	// Generate <head> tag code
 	let previous
 	$effect.pre(() => {
-		if (_.isEqual(previous, { head: $siteCode.head, design: $siteDesign })) return
-		compile_component_head(`<svelte:head>${site_design_css($siteDesign) + $siteCode.head}</svelte:head>`).then((generated_code) => {
+		if (_.isEqual(previous, { head: $site?.data.code.head, design: $site?.data.design })) return
+		compile_component_head(`<svelte:head>${site_design_css($site?.data.design) + $site?.data.code.head}</svelte:head>`).then((generated_code) => {
 			$site_html = generated_code
-			previous = _.cloneDeep({ head: $siteCode.head, design: $siteDesign })
+			previous = _.cloneDeep({ head: $site?.data.code.head, design: $site?.data.design })
 		})
 	})
 
@@ -168,7 +161,7 @@
 				html,
 				css: '',
 				js: '',
-				data: get_site_data({})
+				data: $site
 			}
 		})
 		if (!compiled.error) {
@@ -196,9 +189,9 @@
 			}}
 		>
 			{#if showing_sidebar}
-				{#if data.page_type}
+				{#if page.params.page_type}
 					<PageType_Sidebar />
-				{:else}
+				{:else}page.params.page_type
 					<Page_Sidebar />
 				{/if}
 			{:else if !$onMobile}

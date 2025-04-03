@@ -1,19 +1,15 @@
 <script>
 	import * as Sidebar from '$lib/components/ui/sidebar'
 	import { processCode } from '$lib/builder/utils.js'
-	import { get_site_data } from '$lib/builder/stores/helpers.js'
 	import { Separator } from '$lib/components/ui/separator'
 	import EmptyState from '$lib/components/EmptyState.svelte'
-	import { Cuboid, Code } from 'lucide-svelte'
+	import { Cuboid } from 'lucide-svelte'
 	import MarketplaceSymbolButton from '$lib/components/MarketplaceSymbolButton.svelte'
+	import { require_marketplace_symbols } from '$lib/loaders'
+	import { page } from '$app/state'
 
-	/**
-	 * @typedef {Object} Props
-	 * @property {any} data
-	 */
-
-	/** @type {Props} */
-	let { data } = $props()
+	const group_id = $derived(+(page.url.searchParams.get('group') ?? 0))
+	const marketplace_symbols = $derived(require_marketplace_symbols(group_id))
 
 	let design_variables_css = ''
 
@@ -32,8 +28,7 @@
 			component: {
 				html,
 				css: '',
-				js: '',
-				data: get_site_data({})
+				js: ''
 			}
 		})
 		if (!compiled.error) {
@@ -51,9 +46,9 @@
 </header>
 
 <div class="flex flex-1 flex-col gap-4 px-4 pb-4">
-	{#if data.marketplace_symbols.length > 0}
+	{#if $marketplace_symbols?.length}
 		<ul class="blocks">
-			{#each data.marketplace_symbols as symbol (symbol.id)}
+			{#each $marketplace_symbols as symbol (symbol.id)}
 				<li>
 					<MarketplaceSymbolButton symbol={symbol.data} preview={symbol.preview} head={generated_head_code + design_variables_css} />
 				</li>

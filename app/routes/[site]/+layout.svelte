@@ -1,10 +1,11 @@
 <script>
 	import Primo from '$lib/builder/Primo.svelte'
 	import { show } from '$lib/components/Modal.svelte'
-	import { database_subscribe, storage_subscribe } from '$lib/builder/database.js'
 	import { pb } from '$lib/pocketbase/PocketBase'
 	import { onMount } from 'svelte'
 	import { goto } from '$app/navigation'
+	import { page } from '$app/state'
+	import { require_site } from '$lib/loaders'
 
 	onMount(async () => {
 		if (!pb.authStore.isValid) {
@@ -14,27 +15,13 @@
 
 	let { children } = $props()
 
-	// TODO: Load data with possibility to trigger refetch
-	let data = {}
-
-	database_subscribe(async ({ table, action, data, id, match, order }) => {
-		// TODO: Implement
-		throw new Error('Not implemented')
-	})
-
-	storage_subscribe(async ({ action, key, file, options }) => {
-		// TODO: Implement
-		throw new Error('Not implemented')
-	})
-
-	let primo_symbols = []
+	const site_id = $derived(page.params.site)
+	const site = $derived(require_site(site_id))
 </script>
 
 <Primo
-	{data}
+	{site}
 	on:publish={() => show({ id: 'DEPLOY', options: { max_width: '700px' } })}
-	role={data.role}
-	{primo_symbols}
 	primary_buttons={[
 		{
 			icon: 'solar:pallete-2-bold',

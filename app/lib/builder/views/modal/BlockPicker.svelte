@@ -1,20 +1,19 @@
-<script>
+<script lang="ts">
 	import ModalHeader from '../../views/modal/ModalHeader.svelte'
 	import * as Sidebar from '$lib/components/ui/sidebar'
 	import Symbol from '../../components/Site_Symbol.svelte'
-	import { Symbol as Create_Symbol } from '../../factories'
 	import { site_html } from '$lib/builder/stores/app/page'
-	import { site as site_store } from '$lib/builder/stores/data'
-	import { get_site_data } from '$lib/builder/stores/helpers.js'
-	import { page } from '$app/stores'
-	import { browser } from '$app/environment'
-	import axios from 'axios'
+	import type { Resolved } from '$lib/pocketbase/CollectionStore'
+	import type { Symbol as SymbolModel } from '$lib/common/models/Symbol'
+	import { Id } from '$lib/common/models/Id'
+	import { ID } from '$lib/common/constants'
+	import { require_library, require_site } from '$lib/loaders'
+	import type { SymbolGroup } from '$lib/common/models/Library'
 
 	let { site, onsave } = $props()
 
-	let symbol_groups = $state([])
-	let selected_group_id = $state(null)
-	let selected_symbol_group = $derived(symbol_groups.find((g) => g.id === selected_group_id) || null)
+	const library = require_library()
+	let selected_symbol_group = $state<Resolved<typeof SymbolGroup> | null>(null)
 	let columns = $derived(
 		selected_symbol_group
 			? [
@@ -25,34 +24,18 @@
 			: []
 	)
 
-	let selected = $state([])
+	let selected: Resolved<typeof SymbolModel>[] = $state([])
+	let checked: Id[] = $state([])
 
-	fetch_symbols()
-	async function fetch_symbols() {
-		// TODO: Implement
-	}
-
-	function include_symbol(symbol) {
-		if (selected.some((s) => s.id === symbol.id) || checked.includes(symbol.id)) {
-			selected = selected.filter((item) => item.id !== symbol.id)
-			checked = checked.filter((item) => item !== symbol.id)
+	function include_symbol(symbol: Resolved<typeof SymbolModel>) {
+		if (selected.some((s) => s[ID] === symbol[ID]) || checked.includes(symbol[ID])) {
+			selected = selected.filter((item) => item[ID] !== symbol[ID])
+			checked = checked.filter((item) => item !== symbol[ID])
 		} else {
-			selected = [
-				...selected,
-				Create_Symbol({
-					...symbol,
-					name: selected_symbol_group.name,
-					owner_site: site.id,
-					library_group: null,
-					fields: symbol.fields.map((f) => ({ ...f, library_symbol: null })),
-					entries: symbol.entries.map((f) => ({ ...f, library_symbol: null }))
-				})
-			]
-			checked = [...checked, symbol.id]
+			selected = [...selected, symbol]
+			checked = [...checked, symbol[ID]]
 		}
 	}
-
-	let checked = $state([])
 </script>
 
 <ModalHeader
@@ -70,11 +53,11 @@
 	<Sidebar.Root collapsible="none">
 		<Sidebar.Content class="p-2">
 			<Sidebar.Menu>
-				{#each symbol_groups as group}
+				{#each $library?.data.symbol_groups ?? [] as group}
 					<Sidebar.MenuItem>
-						<Sidebar.MenuButton isActive={selected_group_id === group.id}>
+						<Sidebar.MenuButton isActive={selected_symbol_group?.[ID] === group[ID]}>
 							{#snippet child({ props })}
-								<button {...props} onclick={() => (selected_group_id = group.id)}>{group.name}</button>
+								<button {...props} onclick={() => (selected_symbol_group = group)}>{group.name}</button>
 							{/snippet}
 						</Sidebar.MenuButton>
 					</Sidebar.MenuItem>
@@ -85,23 +68,23 @@
 	<Sidebar.Inset>
 		<div class="BlockPicker">
 			<ul>
-				{#each columns[0] as symbol (symbol.id)}
+				{#each columns[0] as symbol (symbol[ID])}
 					<li>
-						<Symbol checked={checked.includes(symbol.id)} onclick={() => include_symbol(symbol)} {symbol} site={$site_store} append={$site_html} controls_enabled={false} />
+						<Symbol checked={checked.includes(symbol[ID])} onclick={() => include_symbol(symbol)} {symbol} />
 					</li>
 				{/each}
 			</ul>
 			<ul>
-				{#each columns[1] as symbol (symbol.id)}
+				{#each columns[1] as symbol (symbol[ID])}
 					<li>
-						<Symbol checked={checked.includes(symbol.id)} onclick={() => include_symbol(symbol)} {symbol} site={$site_store} append={$site_html} controls_enabled={false} />
+						<Symbol checked={checked.includes(symbol[ID])} onclick={() => include_symbol(symbol)} {symbol} />
 					</li>
 				{/each}
 			</ul>
 			<ul>
-				{#each columns[2] as symbol (symbol.id)}
+				{#each columns[2] as symbol (symbol[ID])}
 					<li>
-						<Symbol checked={checked.includes(symbol.id)} onclick={() => include_symbol(symbol)} {symbol} site={$site_store} append={$site_html} controls_enabled={false} />
+						<Symbol checked={checked.includes(symbol[ID])} onclick={() => include_symbol(symbol)} {symbol} />
 					</li>
 				{/each}
 			</ul>

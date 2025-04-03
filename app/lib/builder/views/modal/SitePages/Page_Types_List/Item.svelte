@@ -1,21 +1,20 @@
-<script>
+<script lang="ts">
 	import Icon from '@iconify/svelte'
-	import { createEventDispatcher, getContext } from 'svelte'
-	const dispatch = createEventDispatcher()
-	import { id as siteID } from '$lib/builder/stores/data/site'
 	import { validate_url } from '$lib/builder/utilities'
 	import PageForm from './PageTypeForm.svelte'
 	import MenuPopup from '$lib/builder/ui/Dropdown.svelte'
 	import modal from '$lib/builder/stores/app/modal'
+	import type { Resolved } from '$lib/pocketbase/CollectionStore'
+	import type { PageType } from '$lib/common/models/PageType'
+	import { ID } from '$lib/common/constants'
+	import { require_site } from '$lib/loaders'
+	import { page } from '$app/state'
+	import { goto } from '$app/navigation'
 
-	/**
-	 * @typedef {Object} Props
-	 * @property {boolean} active
-	 * @property {import('$lib').Page_Type} page
-	 */
+	let { active, page_type }: { active: boolean; page_type: Resolved<typeof PageType> } = $props()
 
-	/** @type {Props} */
-	let { active, page } = $props()
+	const site_id = $derived(page.params.site)
+	const site = $derived(require_site(site_id))
 
 	let editing_page = $state(false)
 
@@ -25,30 +24,29 @@
 		new_page_url = validate_url(new_page_url)
 	})
 
-	const full_url = `/${$siteID}/page-type--${page.id}`
+	const full_url = $derived(`/${site_id}/page-type--${page_type[ID]}`)
 </script>
 
 {#if editing_page}
 	<PageForm
-		{page}
-		new_page_name={page.name}
-		new_color={page.color}
-		new_icon={page.icon}
+		page={page_type}
+		new_page_name={page_type.name}
+		new_color={page_type.color}
+		new_icon={page_type.icon}
 		on:create={({ detail: modified_page }) => {
 			editing_page = false
-			console.log('first')
-			dispatch('edit', modified_page.details)
+			Object.assign(page_type, modified_page)
 		}}
 	/>
 {:else}
 	<div class="Item">
-		<span class="icon" style:background={page.color}>
-			<Icon icon={page.icon} />
+		<span class="icon" style:background={page_type.color}>
+			<Icon icon={page_type.icon} />
 		</span>
 		<div class="page-item-container" class:active>
 			<div class="left">
 				<a class="name" href={full_url} onclick={() => modal.hide()}>
-					{page.name}
+					{page_type.name}
 				</a>
 			</div>
 			<div class="options">
@@ -62,7 +60,7 @@
 								editing_page = !editing_page
 							}
 						},
-						...(page.name !== 'Default'
+						...(page_type.name !== 'Default'
 							? [
 									{
 										label: 'Delete Type & Instances',
@@ -70,7 +68,8 @@
 										on_click: () => {
 											const confirm = window.confirm(`This will delete ALL pages of this page type. Continue?`)
 											if (confirm) {
-												dispatch('delete', page)
+												if (!$site) return
+												delete $site.data.entities.page_types[page_type[ID]]
 											}
 										}
 									}
@@ -86,10 +85,14 @@
 {#if creating_page}
 	<div style="border-left: 0.5rem solid #111;">
 		<PageForm
-			{page}
+			page={page_type}
 			on:create={({ detail: page }) => {
+				if (!$site) return
 				creating_page = false
-				dispatch('create', page)
+				$site.data.page_types.push(page)
+				const [created_page_type] = $site.data.page_types.slice(-1)
+				goto(`/${$site.id}/page-type--${created_page_type[ID]}`)
+				modal.hide()
 			}}
 		/>
 	</div>

@@ -1,48 +1,48 @@
-<script>
+<script lang="ts">
 	import Item from './Item.svelte'
 	import Button from '$lib/builder/ui/Button.svelte'
-	import pages from '$lib/builder/stores/data/pages'
-	import actions from '$lib/builder/actions/pages'
-	import active_page from '$lib/builder/stores/data/page'
-	import { editing_context } from '$lib/builder/stores/app/misc'
 	import { flip } from 'svelte/animate'
 	import PageForm from './PageForm.svelte'
+	import { require_site } from '$lib/loaders'
+	import { page } from '$app/state'
+	import { ID } from '$lib/common/constants'
+	import { Page } from '$lib/common/models/Page'
+	import type { Resolved } from '$lib/pocketbase/CollectionStore'
 
-	async function create_page(new_page, index) {
-		const url_taken = $pages.some((page) => page.slug === new_page.slug)
+	const site_id = $derived(page.params.site)
+	const site = $derived(require_site(site_id))
+
+	async function create_page(new_page: Resolved<typeof Page>, parent: Resolved<typeof Page>) {
+		if (!$site) return
+		const url_taken = Object.values($site.data.entities.pages).some((page) => page?.slug === new_page.slug)
 		if (url_taken) {
 			alert(`That URL is already in use`)
 		} else {
-			await actions.create({ ...new_page, index })
+			parent.children.push(new_page)
 		}
 	}
 
-	async function delete_page(page) {
-		actions.delete(page)
+	async function delete_page(page: Resolved<typeof Page>) {
+		if (!$site) return
+		delete $site.data.entities.pages[page[ID]]
 	}
 
 	let creating_page = $state(false)
 </script>
 
 <ul class="page-list root">
-	{#each $pages.filter((p) => !p.parent).sort((a, b) => a.index - b.index) as page (page.id)}
-		{@const children = $pages.filter((p) => p.id !== page.id && p.parent === page.id)}
+	{#each $site ? [$site.data.root] : [] as page (page[ID])}
 		<li animate:flip={{ duration: 200 }}>
-			<Item
-				{page}
-				{children}
-				active={$active_page.id === page.id && $editing_context === 'page'}
-				on:create={({ detail }) => create_page(detail.page, detail.index)}
-				on:delete={({ detail: terminal_page }) => delete_page(terminal_page)}
-			/>
+			<Item {page} active={false} on:create={({ detail }) => create_page(detail.page, page)} on:delete={({ detail: terminal_page }) => delete_page(terminal_page)} />
 		</li>
 	{/each}
 	{#if creating_page}
 		<li style="background: #1a1a1a;">
 			<PageForm
 				on:create={({ detail: new_page }) => {
+					if (!$site) return
 					creating_page = false
-					create_page(new_page, $pages.length)
+					create_page(new_page, $site.data.root)
 				}}
 			/>
 		</li>

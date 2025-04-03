@@ -1,314 +1,26 @@
-<script>
-	import { createEventDispatcher } from 'svelte'
+<script lang="ts">
 	import Icon from '@iconify/svelte'
-	import _, { cloneDeep, chain as _chain, set as _set, get as _get, isRegExp as _isRegExp } from 'lodash-es'
-	import { Field_Row, Content_Row } from '../../factories.js'
+	import * as _ from 'lodash-es'
 	import FieldItem from './FieldItem.svelte'
-	import active_page from '../../stores/data/page.js'
-	import page_type from '../../stores/data/page_type.js'
-	import site from '../../stores/data/site.js'
 	import { fieldTypes, locale } from '../../stores/app/index.js'
 	import { is_regex, get_empty_value } from '../../utils.js'
 	import Card from '../../ui/Card.svelte'
-	import { get, set } from 'idb-keyval'
-	import { userRole, mod_key_held } from '../../stores/app/misc'
-	import { dynamic_field_types } from '../../field-types'
+	import { get } from 'idb-keyval'
+	import { mod_key_held } from '../../stores/app/misc.js'
+	import type { Resolved } from '$lib/pocketbase/CollectionStore'
+	import type { Field } from '$lib/common/models/Field'
+	import { Id } from '$lib/common/models/Id'
+	import { ID } from '$lib/common/constants'
+	import { get_content, get_direct_entries, get_resolved_entries } from '$lib/builder/stores/helpers'
 
-	let { id, fields, entries, onkeydown = () => {} } = $props()
-
-	let parent_fields = $derived(fields.filter((f) => !f.parent))
-
-	const dispatch = createEventDispatcher()
-
-	function get_field_ancestors(field) {
-		const parent = fields.find((f) => f.id === field.parent)
-		return parent ? [parent.id, ...get_field_ancestors(parent)] : []
-	}
+	let { id, entity_id, fields }: { id: string; entity_id: Id; fields: Resolved<typeof Field>[] } = $props()
 
 	function create_field() {
-		const new_field = Field_Row({ index: parent_fields.length })
-		const updated_fields = cloneDeep([...fields, new_field])
-
-		const new_content_entry = Content_Row({
-			field: new_field.id,
-			locale: $locale,
-			value: get_empty_value(new_field)
-		})
-		const updated_entries = cloneDeep([...entries, new_content_entry])
-		dispatch_update({
-			entries: updated_entries,
-			fields: updated_fields
-		})
-		add_tab(new_field.id)
+		// TODO: Implement
+		throw new Error('Not implemented')
 	}
 
-	function create_subfield(parent_field) {
-		const number_of_sibling_subfields = fields.filter((f) => f.parent === parent_field.id).length
-		const new_field = Field_Row({ parent: parent_field.id, index: number_of_sibling_subfields })
-		const updated_fields = cloneDeep([...fields, new_field])
-
-		// create entries entries
-		const new_entries = []
-		const parent_container_entries = entries.filter((e) => e.field === parent_field.id)
-
-		for (const parent_container_entry of parent_container_entries) {
-			if (parent_field.type === 'repeater' && parent_container_entry) {
-				// add entries item for each existing repeater item
-
-				const repeater_item_entries = entries.filter((e) => e.parent === parent_container_entry.id)
-				for (const repeater_item_entry of repeater_item_entries) {
-					const new_entry = Content_Row({
-						parent: repeater_item_entry.id,
-						field: new_field.id,
-						value: get_empty_value(new_field),
-						locale: ['repeater', 'group'].includes(new_field.type) ? null : $locale
-					})
-					new_entries.push(new_entry)
-				}
-			} else if (parent_field.type === 'group' && parent_container_entry) {
-				const new_entry = Content_Row({
-					parent: parent_container_entry.id,
-					field: new_field.id,
-					value: get_empty_value(new_field),
-					locale: ['repeater', 'group'].includes(new_field.type) ? null : $locale
-				})
-				new_entries.push(new_entry)
-			}
-		}
-
-		const updated_entries = cloneDeep([...entries, ...new_entries])
-
-		dispatch_update({
-			fields: updated_fields,
-			entries: updated_entries
-		})
-	}
-
-	function delete_field(field) {
-		const deleted_fields = []
-		const updated_fields = cloneDeep(
-			fields.filter((f) => {
-				// root-level & not a match
-				if (!f.parent && f.id !== field.id) {
-					return true
-				}
-				// field matches
-				if (f.id === field.id) {
-					deleted_fields.push(field)
-					return false
-				}
-				// is descendent of field
-				if (get_field_ancestors(f).includes(field.id)) {
-					deleted_fields.push(f)
-					return false
-				}
-				return true
-			})
-		)
-
-		// update sibling indeces
-		const updated_siblings = updated_fields
-			.filter((f) => f.parent === field.parent)
-			.sort((a, b) => a.index - b.index)
-			.map((f, i) => ({ ...f, index: i }))
-		for (const sibling of updated_siblings) {
-			const field = updated_fields.find((f) => f.id === sibling.id)
-			field.index = sibling.index
-		}
-
-		// delete unused entries
-		// don't need this because deleting field will cascade delete the entries
-		// nvm, useful when undoing delete operations. unnecessary db operation but that can be filtered out later.
-
-		const deleted_entries = []
-		const updated_entries = cloneDeep(
-			entries.filter((entry) => {
-				if (entry.site || entry.page) return true // don't touch page/site entries
-				const parent_container = entries.find((e) => e.id === entry.parent)
-				const field_still_exists = entry.field
-					? updated_fields.some((f) => f.id === entry.field) // value entry & container
-					: updated_fields.some((f) => f.id === parent_container.field) // repeater entry
-				if (!field_still_exists) {
-					deleted_entries.push(entry)
-				}
-				return field_still_exists
-			})
-		)
-
-		dispatch_update({
-			fields: updated_fields,
-			entries: updated_entries
-		})
-	}
-
-	function duplicate_field(field) {
-		const updated_fields = cloneDeep(fields)
-		const updated_field_ids = {}
-
-		// add duplicate field
-		const new_field = Field_Row({
-			...field,
-			key: field.key + '_copy',
-			label: field.label + ' copy'
-		})
-		updated_fields.push(new_field)
-		updated_field_ids[field.id] = new_field.id
-
-		// set updated indeces
-		const siblings_and_self = updated_fields
-			.filter((f) => f.parent === field.parent)
-			.sort((a, b) => a.index - b.index)
-			.map((f, i) => ({ ...f, index: i }))
-		for (const child of siblings_and_self) {
-			const field = updated_fields.find((f) => f.id === child.id)
-			field.index = child.index
-		}
-
-		// clone descendent fields & update IDs
-		const descendent_fields = fields
-			.filter((f) => get_field_ancestors(f).includes(field.id))
-			.map((f) => {
-				const new_field = Field_Row(f)
-				updated_field_ids[f.id] = new_field.id
-				return new_field
-			}) // get new IDs
-
-		for (const descendent of descendent_fields) {
-			descendent.parent = updated_field_ids[descendent.parent]
-		}
-		updated_fields.push(...descendent_fields)
-
-		const original_entries = entries.filter((e) => e.field === field.id)
-		const new_entries = original_entries.map((entry) =>
-			Content_Row({
-				...entry,
-				field: updated_field_ids[entry.field]
-			})
-		)
-		const updated_entries = cloneDeep([...entries, ...new_entries])
-
-		dispatch_update({
-			fields: updated_fields,
-			entries: updated_entries
-		})
-	}
-
-	function move_field({ field, direction }) {
-		const updated_fields = cloneDeep(fields)
-
-		// select siblings (could be root level)
-		const siblings = updated_fields.filter((f) => f.parent === field.parent && f.id !== field.id).sort((a, b) => a.index - b.index)
-
-		// update siblings & self w/ new indeces
-		const updated_children = {
-			up: [...siblings.slice(0, field.index - 1), field, ...siblings.slice(field.index - 1)],
-			down: [...siblings.slice(0, field.index + 1), field, ...siblings.slice(field.index + 1)]
-		}[direction].map((f, i) => ({ ...f, index: i }))
-
-		// set updated_fields w/ updated indeces
-		for (const child of updated_children) {
-			const field = updated_fields.find((f) => f.id === child.id)
-			field.index = child.index
-		}
-		dispatch_update({
-			fields: updated_fields,
-			entries
-		})
-	}
-
-	function update_field({ id, data }) {
-		// TODO: ensure only passing updated properties
-		const updated_field = cloneDeep({ ...fields.find((f) => f.id === id), ...data })
-		let updated_fields = cloneDeep(fields)
-		const existing_field = fields.find((f) => f.id === id)
-
-		const updated_field_rows = []
-		const deleted_fields = []
-
-		let updated_entries = _.cloneDeep(entries)
-		const field_content_entries = updated_entries.filter((e) => e.field === id)
-
-		const changed_entries = []
-		const deleted_entries = []
-
-		const changing_field_to_dynamic_type = !['page-field', 'site-field'].includes(existing_field.type) && ['page-field', 'site-field'].includes(updated_field.type)
-
-		if (existing_field.type !== updated_field.type) {
-			// set initial source when changing to dynamic field type
-			const page_type_fields = [...$active_page.page_type.fields, ...$page_type.fields]
-			if (changing_field_to_dynamic_type) {
-				const initial_source_field =
-					updated_field.type === 'page-field' ? page_type_fields.filter((f) => !f.parent)[0] : updated_field.type === 'site-field' ? $site.fields.filter((f) => !f.parent)[0] : null
-				updated_field.source = initial_source_field?.id
-			}
-
-			if (existing_field.type !== 'page-list' && updated_field.type === 'page-list') {
-				updated_field.options = {
-					...updated_field.options
-					// TODO: Check if this works
-				}
-			}
-
-			// type has changed, reset entry values to new type & remove children
-			updated_fields = cloneDeep(fields.map((f) => (f.id === updated_field.id ? updated_field : f)))
-			updated_field_rows.push({ id, data: updated_field })
-
-			// override entry values w/ values compatible w/ new field type
-			for (const entry of field_content_entries) {
-				const updated_entry_value = get_empty_value(updated_field)
-				changed_entries.push({ id: entry.id, data: { value: updated_entry_value } })
-				updated_entries = updated_entries.map((e) => (e.id === entry.id ? { ...entry, value: updated_entry_value } : e))
-			}
-
-			// delete any child fields & corresponding entries
-			// TODO: what if the new type is a group/repeater? do we need to create entries?
-			if (existing_field.type === 'group' || existing_field.type === 'repeater') {
-				updated_fields = updated_fields.filter((field) => {
-					if (get_field_ancestors(field).includes(updated_field.id)) {
-						deleted_fields.push(field)
-						return false
-					} else return true
-				})
-
-				// delete any child entries entries
-
-				updated_entries = updated_entries.filter((entry) => {
-					const parent_container = entries.find((e) => e.id === entry.parent)
-					const entry_field_deleted = entry.field
-						? deleted_fields.some((f) => f.id === entry.field) // value entry & container
-						: deleted_fields.some((f) => f.id === parent_container.field) // repeater entry
-					const is_child_repeater_entry = parent_container?.field === updated_field.id
-					if (entry_field_deleted || is_child_repeater_entry) {
-						deleted_entries.push(entry)
-						return false
-					}
-					return true
-				})
-			}
-		} else {
-			updated_fields = cloneDeep(fields.map((f) => (f.id === updated_field.id ? updated_field : f)))
-			updated_field_rows.push({ id, data })
-		}
-
-		dispatch_update({
-			fields: updated_fields,
-			entries: updated_entries
-		})
-	}
-
-	function dispatch_update(update) {
-		dispatch('input', {
-			fields: update.fields || fields,
-			entries: update.entries || entries
-		})
-	}
-
-	function get_entry_ancestors(entry) {
-		const parent = entries.find((e) => e.id === entry.parent)
-		return parent ? [parent, ...get_entry_ancestors(parent)] : []
-	}
-
-	function get_component(field) {
+	function get_component(field: Resolved<typeof Field>) {
 		const fieldType = $fieldTypes.find((ft) => ft.id === field.type)
 		if (fieldType) {
 			return fieldType.component
@@ -318,124 +30,30 @@
 		}
 	}
 
-	function check_condition(field) {
-		if (!field.options.condition) return true // has no condition
+	function check_condition(field: Resolved<typeof Field>) {
+		if (!field.condition) return true // has no condition
 
-		const comparable_fields = fields.filter((f) => f.parent === field.parent && f.id !== field.id && f.index < field.index && !f.options.condition)
-		const { field: field_to_check_id, value, comparison } = field.options.condition
-		const field_to_check = comparable_fields.find((f) => f.id === field_to_check_id)
-		if (!field_to_check) {
-			return false
-		}
+		const { field: field_to_check, value, comparison } = field.condition
 
 		// TODO: ensure correct field (considering repeaters)
-		const content_entry = get_content_entry(field_to_check)
-		const comparable_value = content_entry.value !== undefined ? content_entry.value : null
-		if (comparable_value === null) {
+		const content_entry = get_direct_entries(entity_id, field_to_check)?.[0]
+		if (!content_entry) {
 			// comparable entry is a non-matching data field
 			// TODO: add UI to conditional component that says "this field will show when data field is irrelevant"
 			return true
-		} else if (comparison === '=' && value === comparable_value) {
+		} else if (comparison === '=' && value === content_entry.value) {
 			return true
-		} else if (comparison === '!=' && value !== comparable_value) {
+		} else if (comparison === '!=' && value !== compacontent_entry.valuerable_value) {
 			return true
-		} else if (is_regex(value)) {
+		} else if (typeof value === 'string' && is_regex(value)) {
 			const regex = new RegExp(value.slice(1, -1))
-			if (comparison === '=' && regex.test(comparable_value)) {
+			if (comparison === '=' && regex.test(content_entry.value)) {
 				return true
-			} else if (comparison === '!=' && !regex.test(comparable_value)) {
+			} else if (comparison === '!=' && !regex.test(content_entry.value)) {
 				return true
 			}
 		}
 		return false
-	}
-
-	function add_repeater_item({ parent, index, subfields, dynamic = null }) {
-		const relation = dynamic === 'site' ? { site: $site.id } : dynamic === 'page' ? { page: $active_page.id } : {}
-		const parent_container = entries.find((e) => e.id === parent)
-		const new_repeater_item = Content_Row({ parent: parent_container.id, index, ...relation })
-		const new_entries = subfields.flatMap((subfield) => {
-			const new_entry = Content_Row({
-				parent: new_repeater_item.id,
-				field: subfield.id,
-				value: get_empty_value(subfield),
-				locale: subfield.type === 'repeater' || subfield.type === 'group' ? null : $locale,
-				...relation
-			})
-			// if subfield is a group, add entries for *its* subfields
-			// TODO: (recursively)
-			if (subfield.type === 'group') {
-				const grandchild_fields = fields.filter((f) => f.parent === subfield.id)
-				const group_child_entries = grandchild_fields.map((grandchild_field) =>
-					Content_Row({
-						parent: new_entry.id,
-						field: grandchild_field.id,
-						value: get_empty_value(grandchild_field),
-						locale: grandchild_field.type === 'repeater' || grandchild_field.type === 'group' ? null : $locale,
-						...relation
-					})
-				)
-				return [new_entry, ...group_child_entries]
-			}
-
-			return new_entry
-		})
-		const new_rows = [new_repeater_item, ...new_entries]
-		const updated_entries = cloneDeep([...entries, ...new_rows])
-		dispatch_update({
-			entries: updated_entries
-		})
-	}
-
-	function remove_repeater_item(item, dynamic = null) {
-		let updated_entries = cloneDeep(entries.filter((c) => c.id !== item.id)) // remove repeater item entry
-
-		// get siblings, update indeces
-		const siblings = updated_entries
-			.filter((c) => c.parent === item.parent)
-			.sort((a, b) => a.index - b.index)
-			.map((c, i) => ({ ...c, index: i }))
-		for (const sibling of siblings) {
-			const entry = updated_entries.find((c) => c.id === sibling.id)
-			entry.index = sibling.index
-		}
-
-		// remove descendents
-		updated_entries = updated_entries.filter((entry) => {
-			const is_descendent = get_entry_ancestors(entry).some((e) => e.id === item.id)
-			if (is_descendent) {
-				return false
-			} else return true
-		})
-
-		dispatch_update({
-			entries: updated_entries
-		})
-	}
-
-	function move_repeater_item({ item, new_index }) {
-		const updated_entries = cloneDeep(entries)
-
-		// select siblings (could be root level)
-		const siblings = updated_entries.filter((c) => c.parent === item.parent && c.id !== item.id).sort((a, b) => a.index - b.index)
-
-		// update siblings & self w/ new indeces
-		const updated_children = [...siblings.slice(0, new_index), item, ...siblings.slice(new_index)].map((f, i) => ({ ...f, index: i }))
-
-		// set updated_entries w/ updated indeces
-		for (const child of updated_children) {
-			const row = updated_entries.find((c) => c.id === child.id)
-			row.index = child.index
-		}
-		dispatch_update({
-			entries: updated_entries
-		})
-	}
-
-	function get_content_entry(field) {
-		if (![dynamic_field_types].includes(field.type)) return entries.find((e) => e.field === field.id)
-		const source_entry = $active_page.entries.find((e) => e.field === field.source) || $page_type.entries.find((e) => e.field === field.source) || $site.entries.find((e) => e.field === field.source)
-		return source_entry
 	}
 
 	// TABS
@@ -459,36 +77,18 @@
 			})
 		}
 	})
-	$effect(() => {
-		// set(`active-tabs--${id}`, selected_tabs)
-	})
-	$inspect({ fields, entries, $site, $active_page, $page_type })
-
-	$effect(() => validate_conditions(fields))
-	function validate_conditions(fields) {
-		fields
-			.filter((f) => f.options?.condition)
-			.forEach((field) => {
-				const comparable_fields = fields.filter((f) => f.parent === field.parent && f.id !== field.id && f.index < field.index && !f.options.condition)
-				const { field: field_to_check_id, value, comparison } = field.options.condition
-				const field_to_check = comparable_fields.find((f) => f.id === field_to_check_id)
-				if (!field_to_check) {
-					// comparable field deleted, reset condition
-					update_field({ id: field.id, data: { options: { ...field.options, condition: null } } })
-				}
-			})
-	}
 </script>
 
 <div class="Fields">
-	{#each parent_fields.sort((a, b) => a.index - b.index) as field (field.id)}
+	{#each fields as field (field[ID])}
 		{@const Field_Component = get_component(field)}
-		<!-- {@const is_visible = check_condition(field) && belongs_to_current_page_type(field)} -->
-		{@const active_tab = $userRole === 'DEV' ? selected_tabs[field.id] : 'entry'}
+		<!-- TODO: $userRole === 'DEV' -->
+		{@const active_tab = selected_tabs[field[ID]]}
 		{@const is_visible = check_condition(field)}
 		<div class="entries-item">
 			<!-- TODO: hotkeys for tab switching  -->
-			{#if $userRole === 'DEV'}
+			<!-- TODO: $userRole === 'DEV' -->
+			{#if true}
 				<div class="top-tabs">
 					<button
 						data-test-id="field"
@@ -498,7 +98,7 @@
 							if ($mod_key_held) {
 								set_all_tabs('field')
 							} else {
-								select_tab(field.id, 'field')
+								select_tab(field[ID], 'field')
 							}
 						}}
 					>
@@ -514,11 +114,11 @@
 							if ($mod_key_held) {
 								set_all_tabs('entry')
 							} else {
-								select_tab(field.id, 'entry')
+								select_tab(field[ID], 'entry')
 							}
 						}}
 					>
-						<Icon icon={is_visible ? $fieldTypes.find((ft) => ft.id === field.type).icon : 'mdi:hide'} />
+						<Icon icon={is_visible ? undefined : 'mdi:hide'} />
 						{#if field.type === 'repeater'}
 							<span>Entries</span>
 						{:else}
@@ -530,88 +130,45 @@
 			<div class="container">
 				{#if active_tab === 'field'}
 					<div class="FieldItem">
-						<FieldItem
-							{field}
-							{fields}
-							on:duplicate={({ detail: field }) => duplicate_field(field)}
-							on:delete={({ detail: field }) => delete_field(field)}
-							on:createsubfield={({ detail: field }) => create_subfield(field)}
-							on:move={({ detail }) => move_field(detail)}
-							on:input={({ detail }) => update_field(detail)}
-							on:keydown
-						/>
+						<FieldItem {field} />
 					</div>
 				{:else if active_tab === 'entry'}
 					{#if is_visible}
-						{@const content_entry = get_content_entry(field)}
-						{@const is_dynamic_field_type = ['site-field', 'page-field'].includes(field.type)}
-						{@const source_entry = entries.find((e) => e.field === field.source)}
-						{@const source_field = [...$site.fields, ...$active_page.page_type.fields, ...$page_type.fields].find((f) => f.id === field.source)}
-						{#if is_dynamic_field_type && source_entry && source_field}
-							{@const dynamic_field_type = { 'page-field': 'page', 'site-field': 'site' }[field.type]}
-							{@const title = ['repeater', 'group'].includes(source_field.type) ? field.label : null}
-							{@const icon = title ? $fieldTypes.find((ft) => ft.id === source_field.type)?.icon : null}
-							<div class="dynamic-header">
-								{#if dynamic_field_type === 'site'}
-									<Icon icon="gg:website" />
-									<span>Site Content</span>
-								{:else if dynamic_field_type === 'page'}
-									<Icon icon={$active_page.page_type?.icon || $page_type.icon} />
-									<span>Page Content</span>
-								{/if}
-							</div>
-							<Card {title} {icon}>
-								<Field_Component
-									id={source_entry.id}
-									value={source_entry.value}
-									{entries}
-									{field}
-									{fields}
-									on:keydown
-									on:add={({ detail }) => add_repeater_item({ ...detail, dynamic: dynamic_field_type })}
-									on:remove={({ detail }) => remove_repeater_item(detail, dynamic_field_type)}
-									on:move={({ detail }) => move_repeater_item(detail)}
-									oninput={(value) => {
-										dispatch_update({
-											entries: value.entries,
-											content_changes: [{ action: 'update', id: value.id, data: value.data, dynamic: dynamic_field_type }]
-										})
-									}}
-								/>
-							</Card>
-						{:else if content_entry}
-							{@const title = ['repeater', 'group'].includes(field.type) ? field.label : null}
-							{@const icon = title ? $fieldTypes.find((ft) => ft.id === field.type)?.icon : null}
-							<Card {title} {icon}>
-								<Field_Component
-									id={content_entry.id}
-									{field}
-									value={content_entry.value}
-									metadata={content_entry.metadata}
-									{entries}
-									{fields}
-									autocomplete={content_entry.value === ''}
-									{onkeydown}
-									on:add={({ detail }) => add_repeater_item(detail)}
-									on:remove={({ detail }) => remove_repeater_item(detail)}
-									on:move={({ detail }) => move_repeater_item(detail)}
-									oninput={(value) => {
-										// attach entry id for nested 'input' dispatches
-										const row_id = value.id || content_entry.id
-										const data = value.data || value
-
-										const updated_entries = entries.map((row) => (row.id === row_id ? { ...row, ...data } : row))
-										dispatch_update({
-											entries: updated_entries,
-											content_changes: [{ action: 'update', id: row_id, data }]
-										})
-									}}
-								/>
-							</Card>
+						{#if field.type === 'site-field' || field.type === 'page-field'}
+							{@const source_entry = get_resolved_entries(entity_id, field)[0]}
+							{#if source_entry}
+								{@const title = ['repeater', 'group'].includes(field.type) ? field.label : null}
+								{@const icon = undefined}
+								<div class="dynamic-header">
+									{#if field.type === 'site-field'}
+										<Icon icon="gg:website" />
+										<span>Site Content</span>
+									{:else if field.type === 'page-field'}
+										{@const content_entry = get_direct_entries(entity_id, field)?.[0]}
+										<Icon icon={content_entry?.value.page.page_type.icon} />
+										<span>Page Content</span>
+									{/if}
+								</div>
+								<Card {title} {icon}>
+									<Field_Component {entity_id} {field} />
+								</Card>
+							{:else}
+								<span>Field {field[ID]} is corrupted, should be deleted.</span>
+							{/if}
 						{:else}
-							<span>Field {field.id} is corrupted, should be deleted.</span>
+							{@const content_entry = get_direct_entries(entity_id, field)?.[0]}
+							{#if content_entry}
+								{@const title = ['repeater', 'group'].includes(field.type) ? field.label : null}
+								{@const icon = undefined}
+								<Card {title} {icon}>
+									<Field_Component {entity_id} {field} />
+								</Card>
+							{:else}
+								<span>Field {field[ID]} is corrupted, should be deleted.</span>
+							{/if}
 						{/if}
-					{:else if !is_visible && $userRole === 'DEV'}
+						<!-- TODO: $userRole === 'DEV' -->
+					{:else if !is_visible}
 						<div class="hidden-field">
 							<Icon icon="mdi:hidden" />
 							<span>This field will be hidden from content editors</span>
@@ -621,7 +178,8 @@
 			</div>
 		</div>
 	{/each}
-	{#if $userRole === 'DEV'}
+	<!-- TODO: $userRole === 'DEV' -->
+	{#if true}
 		<button class="field-button" onclick={create_field}>
 			<div class="icon">
 				<Icon icon="fa-solid:plus" />

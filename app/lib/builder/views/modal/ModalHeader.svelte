@@ -3,7 +3,7 @@
 	import { onMount, onDestroy } from 'svelte'
 	import Icon from '@iconify/svelte'
 	import modal from '../../stores/app/modal'
-	import { mod_key_held } from '../../stores/app/misc.js'
+	import { mod_key_held } from '../../stores/app/misc'
 	import hotkey_events from '../../stores/app/hotkey_events.js'
 	// import LocaleSelector from '../../views/editor/LocaleSelector.svelte'
 

@@ -1,23 +1,20 @@
 <script>
-	import fileSaver from 'file-saver'
 	import SitePreview from '$lib/components/SitePreview.svelte'
 	import { EllipsisVertical, SquarePen, Trash2, Download, Loader, ArrowLeftRight } from 'lucide-svelte'
 	import { find as _find } from 'lodash-es'
-	import { page } from '$app/stores'
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
 	import * as RadioGroup from '$lib/components/ui/radio-group'
 	import { Label } from '$lib/components/ui/label'
-	import { Button, buttonVariants } from '$lib/components/ui/button'
+	import { Button } from '$lib/components/ui/button'
 	import * as Dialog from '$lib/components/ui/dialog'
 	import { Input } from '$lib/components/ui/input'
-	import { fetch_site_data, sites } from '$lib/actions'
 	import * as AlertDialog from '$lib/components/ui/alert-dialog'
-	import { invalidate } from '$app/navigation'
-	import * as actions from '$lib/actions'
+	import { require_site, require_site_groups } from '$lib/loaders'
+	import { Sites } from '$lib/pocketbase/collections'
 
 	/**
 	 * @typedef {Object} Props
-	 * @property {import('$lib').Site} site
+	 * @property {string} site_id
 	 * @property {any} [preview]
 	 * @property {string} [append]
 	 * @property {string} [style]
@@ -25,21 +22,22 @@
 	 */
 
 	/** @type {Props} */
-	let { site, preview = $bindable(null), append = '', style = '', src = null } = $props()
+	let { site_id, preview = $bindable(null), append = '', style = '', src = null } = $props()
+	const site = require_site(site_id)
+	const site_groups = require_site_groups()
 
-	if (!preview && site) {
+	if (!preview && $site) {
 		get_preview()
 	}
 
 	async function get_preview() {
 		// TODO: Implement
+		throw new Error('Not implemented')
 	}
 
 	async function download_site_file() {
-		const site_data = await fetch_site_data(site.id)
-		const json = JSON.stringify({ ...site_data, version: 3 })
-		var blob = new Blob([json], { type: 'application/json' })
-		fileSaver.saveAs(blob, `${site.name || site.id}.json`)
+		// TODO: Implement
+		throw new Error('Not implemented')
 	}
 
 	let container = $state()
@@ -77,24 +75,26 @@
 
 	let is_rename_open = $state(false)
 	let is_delete_open = $state(false)
-	let new_name = $state(site.name)
+	let new_name = $state($site?.name ?? '')
 
 	async function handle_rename() {
+		if (!$site) return
 		is_rename_open = false
-		await actions.sites.update(site.id, { name: new_name })
+		$site.name = new_name
 	}
 
 	let deleting = $state(false)
 	async function delete_site() {
 		is_delete_open = false
-		await sites.delete(site.id)
+		await Sites.delete(site_id)
 	}
 
 	let is_move_open = $state(false)
-	let selected_group_id = $state(site.group)
+	let selected_group_id = $state($site?.group ?? $site_groups[0].id ?? '')
 	async function move_site() {
+		if (!$site) return
 		is_move_open = false
-		await actions.sites.move(site.id, selected_group_id)
+		$site.group = selected_group_id
 	}
 </script>
 
@@ -108,7 +108,7 @@
 				<p class="text-muted-foreground text-sm">Select a group for this site</p>
 			</div>
 			<RadioGroup.Root bind:value={selected_group_id}>
-				{#each $page.data.site_groups as group}
+				{#each $site_groups as group}
 					<div class="flex items-center space-x-2">
 						<RadioGroup.Item value={group.id} id={group.id} />
 						<Label for={group.id}>{group.name}</Label>
@@ -124,12 +124,12 @@
 
 <div class="space-y-3 relative w-full bg-gray-900">
 	<div class="rounded-tl rounded-tr overflow-hidden">
-		<a data-sveltekit-prefetch href="/{site.id}">
+		<a data-sveltekit-prefetch href="/{$site?.id}">
 			<SitePreview {preview} {append} />
 		</a>
 	</div>
 	<div class="absolute -bottom-2 rounded-bl rounded-br w-full p-3 z-20 bg-gray-900 truncate flex items-center justify-between">
-		<a data-sveltekit-prefetch href="/{site.id}" class="text-sm font-medium leading-none hover:underline">{site.name}</a>
+		<a data-sveltekit-prefetch href="/{$site?.id}" class="text-sm font-medium leading-none hover:underline">{$site?.data.name}</a>
 		<DropdownMenu.Root>
 			<DropdownMenu.Trigger>
 				<EllipsisVertical size={14} />
@@ -175,7 +175,7 @@
 		<AlertDialog.Header>
 			<AlertDialog.Title>Are you sure?</AlertDialog.Title>
 			<AlertDialog.Description>
-				This action cannot be undone. This will permanently delete <strong>{site.name}</strong>
+				This action cannot be undone. This will permanently delete <strong>{$site?.data.name}</strong>
 				and remove all associated data.
 			</AlertDialog.Description>
 		</AlertDialog.Header>
@@ -187,7 +187,7 @@
 						<Loader />
 					</div>
 				{:else}
-					Delete {site.name}
+					Delete {$site?.data.name}
 				{/if}
 			</AlertDialog.Action>
 		</AlertDialog.Footer>

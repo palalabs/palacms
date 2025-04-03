@@ -134,7 +134,7 @@ export default [
 		icon: 'formkit:info',
 		label: 'Info',
 		component: Information
-	},
+	}
 	// {
 	// 	id: 'user-form',
 	// 	icon: 'fluent:form-multiple-20-filled',

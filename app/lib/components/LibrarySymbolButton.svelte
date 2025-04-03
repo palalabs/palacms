@@ -5,23 +5,25 @@
 	import IFrame from '$lib/builder/components/IFrame.svelte'
 	import * as RadioGroup from '$lib/components/ui/radio-group'
 	import { Label } from '$lib/components/ui/label'
-	import { page } from '$app/stores'
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
-	import { Button, buttonVariants } from '$lib/components/ui/button'
+	import { Button } from '$lib/components/ui/button'
 	import * as Dialog from '$lib/components/ui/dialog'
 	import { Input } from '$lib/components/ui/input'
-	import * as actions from '$lib/actions'
 	import * as AlertDialog from '$lib/components/ui/alert-dialog'
+	import { require_library } from '$lib/loaders'
 
 	/**
 	 * @typedef {Object} Props
-	 * @property {import('$lib').Symbol} symbol
+	 * @property {string} symbol_id
 	 * @property {string | null} [preview]
 	 * @property {string} [head]
 	 */
 
 	/** @type {Props} */
-	let { symbol, preview = null, head = '' } = $props()
+	let { symbol_id, preview = null, head = '' } = $props()
+
+	const library = require_library()
+	const symbol = $derived($library?.data.entities.symbols[symbol_id])
 
 	if (!preview) {
 		get_preview()
@@ -33,31 +35,42 @@
 	let is_editor_open = $state(false)
 	let is_rename_open = $state(false)
 	let is_delete_open = $state(false)
-	let new_name = $state(symbol.name)
+	// svelte-ignore state_referenced_locally
+	let new_name = $state(symbol?.name ?? '')
 
 	async function handle_rename(e) {
 		e.preventDefault()
-		await actions.rename_library_symbol(symbol.id, new_name)
+		if (!symbol) return
+		symbol.name = new_name
 		is_rename_open = false
 	}
 
 	async function save_symbol(data) {
+		if (!$library) return
 		preview = data.preview
-		await actions.save_library_symbol(symbol.id, data)
+		$library.data.entities.symbols[symbol_id] = data
 		is_editor_open = false
 	}
 
+	const original_group_id = $derived(Object.entries($library?.data.entities.symbol_groups ?? {}).find(([, group]) => symbol && group.symbols.includes(symbol))?.[0])
+	let selected_group_id = $state('')
+	$effect(() => {
+		selected_group_id = original_group_id ?? ''
+	})
+
 	let is_move_open = $state(false)
-	let selected_group_id = $state(symbol.group)
 	async function move_symbol() {
+		if (!$library || !symbol || !original_group_id) return
 		is_move_open = false
-		await actions.move_library_symbol(symbol.id, selected_group_id)
+		$library.data.entities.symbol_groups[selected_group_id].symbols.push(symbol)
+		$library.data.entities.symbol_groups[original_group_id].symbols.filter((s) => s === symbol)
 	}
 
 	let deleting = $state(false)
 	async function delete_library_symbol() {
+		if (!$library || !symbol_id) return
 		is_delete_open = false
-		await actions.delete_library_symbol(symbol.id)
+		delete $library?.data.entities.symbols[symbol_id]
 	}
 </script>
 
@@ -66,7 +79,7 @@
 		<IFrame srcdoc={preview} {head} />
 	</button>
 	<div class="w-full p-3 pt-2 bg-gray-900 truncate flex items-center justify-between">
-		<div class="text-sm font-medium leading-none truncate" style="width: calc(100% - 2rem)">{symbol.name}</div>
+		<div class="text-sm font-medium leading-none truncate" style="width: calc(100% - 2rem)">{symbol?.name}</div>
 		<DropdownMenu.Root>
 			<DropdownMenu.Trigger>
 				<EllipsisVertical size={14} />
@@ -105,10 +118,10 @@
 				<p class="text-muted-foreground text-sm">Select a group for this block</p>
 			</div>
 			<RadioGroup.Root bind:value={selected_group_id}>
-				{#each $page.data.symbol_groups as group}
+				{#each $library?.data.symbol_groups ?? [] as group}
 					<div class="flex items-center space-x-2">
-						<RadioGroup.Item value={group.id} id={group.id} />
-						<Label for={group.id}>{group.name}</Label>
+						<RadioGroup.Item value={group.name} id={group.name} />
+						<Label for={group.name}>{group.name}</Label>
 					</div>
 				{/each}
 			</RadioGroup.Root>
@@ -144,7 +157,7 @@
 		<AlertDialog.Header>
 			<AlertDialog.Title>Are you sure?</AlertDialog.Title>
 			<AlertDialog.Description>
-				This action cannot be undone. This will permanently delete <strong>{symbol.name}</strong>
+				This action cannot be undone. This will permanently delete <strong>{symbol?.name}</strong>
 				and remove all associated data.
 			</AlertDialog.Description>
 		</AlertDialog.Header>
@@ -156,7 +169,7 @@
 						<Loader />
 					</div>
 				{:else}
-					Delete {symbol.name}
+					Delete {symbol?.name}
 				{/if}
 			</AlertDialog.Action>
 		</AlertDialog.Footer>

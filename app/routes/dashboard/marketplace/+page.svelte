@@ -3,6 +3,6 @@
 	import { onMount } from 'svelte'
 
 	onMount(async () => {
-		await goto('/marketplace/starters')
+		await goto('/dashboard/marketplace/starters', { replaceState: true })
 	})
 </script>

@@ -3,30 +3,21 @@
 	const orientation = writable('horizontal')
 </script>
 
-<script>
+<script lang="ts">
 	import { PaneGroup, Pane, PaneResizer } from 'paneforge'
 	import LargeSwitch from '../../../ui/LargeSwitch.svelte'
-	import _, { chain as _chain } from 'lodash-es'
+	import * as _ from 'lodash-es'
 	import ModalHeader from '../ModalHeader.svelte'
 	import FullCodeEditor from './FullCodeEditor.svelte'
 	import ComponentPreview, { refresh_preview, has_error } from '$lib/builder/components/ComponentPreview.svelte'
 	import Fields from '../../../components/Fields/FieldsContent.svelte'
-	import { userRole, locale, onMobile } from '../../../stores/app/misc.js'
-	import symbols from '../../../stores/data/symbols.js'
-	import { get_content_with_synced_values } from '../../../stores/helpers'
+	import { locale } from '../../../stores/app/misc.js'
 	import hotkey_events from '../../../stores/app/hotkey_events.js'
-	import site from '$lib/builder/stores/data/site.js'
-	import active_page from '$lib/builder/stores/data/page'
-	import page_type from '$lib/builder/stores/data/page_type'
+	import type { Resolved } from '$lib/pocketbase/CollectionStore'
+	import type { Section } from '$lib/common/models/Section'
+	import { get_content } from '$lib/builder/stores/helpers'
+	import { ID } from '$lib/common/constants'
 
-	/**
-	 * @typedef {Object} Props
-	 * @property {import('$lib').Section} component
-	 * @property {string} [tab]
-	 * @property {any} [header]
-	 */
-
-	/** @type {Props} */
 	let {
 		component,
 		tab = $bindable('content'),
@@ -41,52 +32,19 @@
 				}
 			}
 		}
-	} = $props()
-
-	const symbol = _.cloneDeep($symbols.find((s) => s.id === (component.symbol || component.master.symbol)))
-
-	let local_code = _.cloneDeep(symbol.code)
-	let local_fields = $state(_.cloneDeep(symbol.fields))
-	let local_entries = $state(_.cloneDeep([...component.entries, ...$site.entries, ...$active_page.entries, ...$page_type.entries]))
-
-	let section_entries = $derived(local_entries.filter((e) => !e.site && !e.page && !e.page_type))
-	let page_entries = $derived(local_entries.filter((e) => e.page))
-	let site_entries = $derived(local_entries.filter((e) => e.site))
+	}: { component: Resolved<typeof Section>; tab: string; header?: any } = $props()
 
 	let loading = false
 
-	// bind raw code to the code editor
-	let raw_html = $state(local_code.html)
-	let raw_css = $state(local_code.css)
-	let raw_js = $state(local_code.js)
-
 	let component_data = $state({})
 	function update_component_data() {
-		component_data = get_content_with_synced_values({
-			fields: local_fields,
-			entries: section_entries,
-			site: { ...$site, entries: site_entries },
-			page: { ...$active_page, entries: page_entries }
-		})[$locale]
+		component_data = get_content(component[ID], component.symbol.fields)[$locale]
 	}
 	$effect.pre(() => {
 		update_component_data()
 	})
 
 	hotkey_events.on('e', toggle_tab)
-
-	// detect hotkeys from within inputs
-	function handle_hotkey(e) {
-		const { metaKey, key } = e
-		if (metaKey && key === 's') {
-			e.preventDefault()
-			save_component()
-		}
-		if (metaKey && key === 'e') {
-			e.preventDefault()
-			toggle_tab()
-		}
-	}
 
 	function toggle_tab() {
 		tab = tab === 'code' ? 'content' : 'code'
@@ -98,15 +56,7 @@
 		// }
 
 		if (!$has_error) {
-			header.button.onclick({
-				code: {
-					html: raw_html,
-					css: raw_css,
-					js: raw_js
-				},
-				entries: local_entries,
-				fields: local_fields
-			})
+			header.button.onclick()
 		}
 	}
 </script>
@@ -114,16 +64,10 @@
 <ModalHeader
 	{...header}
 	warn={() => {
-		const original_entries = [...component.entries, ...$site.entries, ...$active_page.entries, ...$page_type.entries]
-		const code_changed = !_.isEqual(symbol.code, { html: raw_html, css: raw_css, js: raw_js })
-		const data_changed = !_.isEqual(original_entries, local_entries) || !_.isEqual(symbol.fields, local_fields)
-		if (code_changed || data_changed) {
-			const proceed = window.confirm('Unsaved changes will be lost. Continue?')
-			return proceed
-		} else return true
+		return true
 	}}
 	icon="lucide:blocks"
-	title={symbol.name || 'Block'}
+	title={component.symbol.name || 'Block'}
 	button={{
 		...header.button,
 		onclick: save_component,
@@ -133,7 +77,8 @@
 >
 	{#snippet left()}
 		<div>
-			{#if $userRole === 'DEV'}
+			<!-- TODO: $userRole === 'DEV' -->
+			{#if true}
 				<LargeSwitch
 					tabs={[
 						{
@@ -157,35 +102,25 @@
 		<Pane defaultSize={50} class="flex flex-col">
 			{#if tab === 'code'}
 				<FullCodeEditor
-					bind:html={raw_html}
-					bind:css={raw_css}
-					bind:js={raw_js}
+					bind:html={component.symbol.code.html}
+					bind:css={component.symbol.code.css}
+					bind:js={component.symbol.code.js}
 					data={_.cloneDeep(component_data)}
 					on:save={save_component}
 					on:mod-e={toggle_tab}
 					on:mod-r={() => $refresh_preview()}
 				/>
 			{:else if tab === 'content'}
-				<Fields
-					id="section-{component.id}"
-					fields={local_fields}
-					entries={local_entries}
-					on:input={({ detail }) => {
-						local_fields = detail.fields
-						local_entries = detail.entries
-						update_component_data()
-					}}
-					onkeydown={handle_hotkey}
-				/>
+				<Fields id="section-{component[ID]}" entity_id={component[ID]} fields={component.symbol.fields} />
 			{/if}
 		</Pane>
 		<PaneResizer class="PaneResizer" />
 		<Pane defaultSize={50}>
 			<ComponentPreview
 				code={{
-					html: raw_html,
-					css: raw_css,
-					js: raw_js
+					html: component.symbol.code.html,
+					css: component.symbol.code.css,
+					js: component.symbol.code.js
 				}}
 				data={_.cloneDeep(component_data)}
 				bind:orientation={$orientation}

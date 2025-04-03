@@ -1,47 +1,19 @@
-<script>
-	import { fieldTypes } from '$lib/builder/stores/app/index.js'
-	import site from '$lib/builder/stores/data/site.js'
+<script lang="ts">
+	import { SITE } from '$lib/common/constants'
+	import type { SiteFieldField } from '$lib/common/models/fields/SiteFieldField'
+	import { type Id } from '$lib/common/models/Id'
+	import type { Resolved } from '$lib/pocketbase/CollectionStore'
+	import { fieldTypes } from '../stores/app'
+	import { get_direct_entries } from '../stores/helpers'
 
-	let { id, value, fields, field, entries, oninput = /** @type {(val: {id: string, data: any, entries: any[]}) => void} */ () => {} } = $props()
-
-	const source_field = $site.fields.find((f) => f.id === field.source)
-
-	function get_component(field) {
-		const fieldType = $fieldTypes.find((ft) => ft.id === source_field.type)
-		if (fieldType) {
-			return fieldType.component
-		} else {
-			console.warn(`Field type '${field.type}' no longer exists, removing '${field.label}' field`)
-			return null
-		}
-	}
-
-	let all_fields = $derived([...fields, ...$site.fields])
+	const { entity_id, field }: { entity_id: Id; field: Resolved<typeof SiteFieldField> } = $props()
+	const entry = $derived(get_direct_entries(entity_id, field)[0])
+	const fieldType = $derived($fieldTypes.find((ft) => ft.id === entry.value.type))
 </script>
 
-{#if source_field}
-	{@const SvelteComponent = get_component(field)}
-	<SvelteComponent
-		{id}
-		{entries}
-		{value}
-		field={{ ...source_field, label: field.label }}
-		fields={all_fields}
-		on:keydown
-		on:add
-		on:remove
-		on:move
-		oninput={(detail) => {
-			const source_entry_id = detail.id || id
-			const data = detail.data || detail
-			const updated_entries = entries.map((entry) => (entry.id === source_entry_id ? { ...entry, ...data } : entry))
-			oninput({
-				id: source_entry_id,
-				data,
-				entries: updated_entries
-			})
-		}}
-	/>
+{#if entry && fieldType}
+	{@const SvelteComponent = fieldType.component}
+	<SvelteComponent entity_id={SITE} field={{ ...entry.value, label: field.label }} />
 {:else}
 	<span>This field has been deleted</span>
 {/if}

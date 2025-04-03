@@ -1,41 +1,35 @@
-<script>
+<script lang="ts">
 	import { goto } from '$app/navigation'
 	import Item from './Item.svelte'
 	import Button from '$lib/builder/ui/Button.svelte'
-	import page_types from '$lib/builder/stores/data/page_types'
-	import actions from '$lib/builder/actions/page_types'
-	import active_page_type from '$lib/builder/stores/data/page_type'
-	import { editing_context } from '$lib/builder/stores/app/misc'
-	import { id as site_id } from '$lib/builder/stores/data/site'
 	import PageForm from './PageTypeForm.svelte'
 	import modal from '$lib/builder/stores/app/modal'
+	import { page } from '$app/state'
+	import { require_site } from '$lib/loaders'
+	import type { PageType } from '$lib/common/models/PageType'
+	import type { Resolved } from '$lib/pocketbase/CollectionStore'
+	import { ID } from '$lib/common/constants'
 
-	async function create_page_type(new_page_type) {
-		await actions.create(new_page_type)
-		goto(`/${$site_id}/page-type--${new_page_type.id}`)
+	const site_id = $derived(page.params.site)
+	const site = $derived(require_site(site_id))
+
+	async function create_page_type(new_page_type: Resolved<typeof PageType>) {
+		if (!$site) return
+
+		$site.data.page_types.push(new_page_type)
+		const [created_page_type] = $site.data.page_types.slice(-1)
+		goto(`/${$site.id}/page-type--${created_page_type[ID]}`)
 		modal.hide()
-	}
-
-	async function delete_page_type(page_id) {
-		actions.delete(page_id)
 	}
 
 	let creating_page = $state(false)
 </script>
 
-{#if $page_types.length > 0}
+{#if $site?.data.page_types.length}
 	<ul class="page-list root">
-		{#each $page_types.sort((a, b) => a.index - b.index) as page_type}
+		{#each $site.data.page_types as page_type}
 			<li>
-				<Item
-					page={page_type}
-					active={$active_page_type.id === page_type.id && $editing_context === 'page_type'}
-					on:edit={({ detail }) => {
-						console.log({ detail })
-						actions.update(page_type.id, detail)
-					}}
-					on:delete={({ detail: page }) => delete_page_type(page.id)}
-				/>
+				<Item {page_type} active={false} />
 			</li>
 		{/each}
 		{#if creating_page}

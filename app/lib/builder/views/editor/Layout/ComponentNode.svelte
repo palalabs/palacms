@@ -6,7 +6,7 @@
 	})
 </script>
 
-<script>
+<script lang="ts">
 	import { onMount, untrack } from 'svelte'
 	import * as _ from 'lodash-es'
 	import { fade } from 'svelte/transition'
@@ -25,34 +25,23 @@
 	import { hovering_outside } from '$lib/builder/utilities'
 	import { locale } from '$lib/builder/stores/app/misc'
 	import { site_html } from '$lib/builder/stores/app/page'
-	import { update_section_entries } from '$lib/builder/actions/sections'
-	import active_page from '$lib/builder/stores/data/page'
-	import site from '$lib/builder/stores/data/site'
 	import MarkdownButton from './MarkdownButton.svelte'
 	import modal from '$lib/builder/stores/app/modal'
-	import { get_content_with_synced_values } from '$lib/builder/stores/helpers'
 	import { component_iframe_srcdoc } from '$lib/builder/components/misc'
+	import type { Resolved } from '$lib/pocketbase/CollectionStore'
+	import type { Symbol } from '$lib/common/models/Symbol'
+	import type { Section } from '$lib/common/models/Section'
+	import { get_content } from '$lib/builder/stores/helpers'
 
 	const lowlight = createLowlight(all)
 
 	const dispatch = createEventDispatcher()
 
-	let { block, section } = $props()
+	let { block, section }: { block: Resolved<typeof Symbol>; section: Resolved<typeof Section> } = $props()
 
 	let node = $state()
 
-	let component_data = $derived(
-		get_content_with_synced_values({
-			entries: section.entries,
-			fields: block.fields,
-			page: $active_page,
-			site: $site
-		})[$locale]
-	)
-
-	async function save_edited_value({ id, value }) {
-		await update_section_entries({ id, value })
-	}
+	let component_data = $derived(get_content(section)[$locale])
 
 	let floating_menu = $state()
 	let bubble_menu = $state()
@@ -73,8 +62,7 @@
 				head: '',
 				html: code.html,
 				css: code.css,
-				js: code.js,
-				data: _.cloneDeep(component_data)
+				js: code.js
 			},
 			buildStatic: false,
 			hydrated: true
@@ -94,11 +82,6 @@
 	let ignore_next_blur = $state(false)
 
 	let is_local_change = $state(false)
-
-	const debounced_save = _.debounce(async ({ id, value }) => {
-		is_local_change = true
-		await save_edited_value({ id, value })
-	}, 1000)
 
 	async function make_content_editable() {
 		if (!node?.contentDocument) return
@@ -261,16 +244,8 @@
 							dispatch('unlock')
 						},
 						onUpdate: async ({ editor }) => {
-							const updated_html = editor.getHTML()
-							if (updated_html !== html) {
-								debounced_save({
-									id,
-									value: {
-										html: updated_html,
-										markdown: await convert_html_to_markdown(updated_html)
-									}
-								})
-							}
+							// TODO: Implement
+							throw new Error('Not implemented')
 						}
 					})
 				],

@@ -1,12 +1,10 @@
 <script>
 	import UI from '../../ui/index.js'
-	import site from '../../stores/data/site.js'
-	import fieldTypes from '../../stores/app/fieldTypes.js'
 
 	let { field, oninput = /** @type {(val: any) => void} */ () => {} } = $props()
 
 	// fetch fields for site and current page
-	let field_list = $site.fields.filter((f) => !f.parent).sort((a, b) => a.index - b.index)
+	let field_list = []
 </script>
 
 <div class="PageFieldField">
@@ -20,7 +18,7 @@
 			options={field_list.map((f) => ({
 				label: f.label,
 				value: f.id,
-				icon: $fieldTypes.find((ft) => ft.id === f.type).icon
+				icon: undefined
 			}))}
 		/>
 	</div>

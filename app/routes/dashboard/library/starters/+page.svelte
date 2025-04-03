@@ -7,22 +7,8 @@
 	import EmptyState from '$lib/components/EmptyState.svelte'
 	import { CirclePlus, LayoutTemplate } from 'lucide-svelte'
 	import SiteThumbnail from '$lib/components/SiteThumbnail.svelte'
-	import * as actions from '$lib/actions'
-	import { invalidate, goto } from '$app/navigation'
 
-	/**
-	 * @typedef {Object} Props
-	 * @property {any} data
-	 */
-
-	/** @type {Props} */
-	let { data } = $props()
-
-	async function create_starter({ details, site_data, preview }) {
-		await actions.create_starter({ details, site_data, preview })
-		// TODO: Refetch data
-		creating_starter = false
-	}
+	const starters = []
 
 	let creating_starter = $state(false)
 </script>
@@ -33,7 +19,8 @@
 		<Separator orientation="vertical" class="mr-2 h-4" />
 		<div class="text-sm">Starters</div>
 	</div>
-	{#if !data.user.collaborator}
+	<!-- !data.user.collaborator -->
+	{#if false}
 		<div class="ml-auto mr-4">
 			<Button size="sm" variant="outline" onclick={() => (creating_starter = true)}>
 				<CirclePlus class="h-4 w-4" />
@@ -41,17 +28,17 @@
 			</Button>
 			<Dialog.Root bind:open={creating_starter}>
 				<Dialog.Content class="flex flex-col p-4">
-					<CreateStarter onclose={() => (creating_starter = false)} onsubmit={create_starter} />
+					<CreateStarter onclose={() => (creating_starter = false)} />
 				</Dialog.Content>
 			</Dialog.Root>
 		</div>
 	{/if}
 </header>
 <div class="flex flex-1 flex-col gap-4 px-4 pb-4">
-	{#if data.starters.length > 0}
+	{#if starters.length > 0}
 		<div class="sites-container">
 			<ul class="sites">
-				{#each data.starters as site (site.id)}
+				{#each starters as site (site.id)}
 					<li>
 						<SiteThumbnail {site} />
 					</li>

@@ -1,19 +1,14 @@
 <script>
 	import { compilers_registered } from '$lib/stores'
 	import PrimoPage from '$lib/builder/views/editor/Page.svelte'
+	import { page as pageState } from '$app/state'
+	import { require_site } from '$lib/loaders'
 
-	// TODO: Load data with possibility to trigger refetch
-	let data = {
-		site_groups: [],
-		symbol_groups: []
-	}
+	const site_id = $derived(pageState.params.site as Id)
+	const site = $derived(require_site(site_id))
+	const page = $derived($site?.data.root)
 </script>
 
 {#if $compilers_registered}
-	<PrimoPage
-		page={{
-			...data.page,
-			sections: data.sections
-		}}
-	/>
+	<PrimoPage {page} />
 {/if}

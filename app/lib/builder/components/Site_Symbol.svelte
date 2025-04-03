@@ -1,26 +1,21 @@
-<script>
-	import axios from 'axios'
+<script lang="ts">
 	import { fade } from 'svelte/transition'
 	import * as _ from 'lodash-es'
 	import Icon from '@iconify/svelte'
-	import { processCode, processCSS } from '../utils'
-	import { get_content_with_synced_values } from '$lib/builder/stores/helpers'
+	import { processCode } from '../utils'
 	import { locale } from '../stores/app/misc'
 	import IFrame from '../components/IFrame.svelte'
+	import type { Resolved } from '$lib/pocketbase/CollectionStore'
+	import type { Symbol } from '$lib/common/models/Symbol'
+	import { get_content } from '../stores/helpers'
+	import { ID } from '$lib/common/constants'
+	import { page } from '$app/state'
+	import { require_site } from '$lib/loaders'
 
-	/**
-	 * @typedef {Object} Props
-	 * @property {any} symbol
-	 * @property {any} site
-	 * @property {string} [append]
-	 * @property {boolean} [checked]
-	 * @property {function} onclick
-	 * @property {function} onmousedown
-	 * @property {function} onmouseup
-	 */
+	let { symbol = $bindable(), checked = false, onclick }: { symbol: Resolved<typeof Symbol>; checked?: boolean; onclick?: () => void } = $props()
 
-	/** @type {Props} */
-	let { symbol = $bindable(), site, append = '', checked = false, onclick, onmousedown, onmouseup } = $props()
+	const site_id = page.params.site
+	const site = require_site(site_id)
 
 	let name_el
 
@@ -36,19 +31,13 @@
 	let height = $state(0)
 
 	let componentCode = $state()
-	let cachedSymbol = {}
 	let component_error = $state()
-	async function compile_component_code(symbol) {
-		// console.log({ symbol })
-
-		// if (_.isEqual(cachedSymbol.code, symbol.code) && _.isEqual(cachedSymbol.entries, symbol.entries)) {
-		// 	return
-		// }
-		const data = get_content_with_synced_values({ entries: symbol.entries, fields: symbol.fields })[$locale]
+	async function compile_component_code(symbol: Resolved<typeof Symbol>) {
+		const data = get_content(symbol[ID], symbol.fields)[$locale]
 		let res = await processCode({
 			component: {
 				...symbol.code,
-				head: site.code.head,
+				head: $site?.data.code.head,
 				css: symbol.code.css,
 				html: symbol.code.html,
 				data: data
@@ -62,7 +51,6 @@
 			component_error = null
 			res.html = res.html + res.head
 			componentCode = res
-			cachedSymbol = _.cloneDeep({ code: symbol.code, entries: symbol.entries })
 		}
 	}
 
@@ -97,7 +85,7 @@
 			</div>
 		{:else}
 			{#key componentCode}
-				<IFrame bind:height {append} {componentCode} />
+				<IFrame bind:height {componentCode} />
 			{/key}
 		{/if}
 	</div>

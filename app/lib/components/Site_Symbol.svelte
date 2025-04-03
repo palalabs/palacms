@@ -11,9 +11,9 @@
 	 * @property {any} site
 	 * @property {string} [append]
 	 * @property {boolean} [checked]
-	 * @property {function} onclick
-	 * @property {function} onmousedown
-	 * @property {function} onmouseup
+	 * @property {() => void} onclick
+	 * @property {() => void} onmousedown
+	 * @property {() => void} onmouseup
 	 */
 
 	/** @type {Props} */

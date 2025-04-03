@@ -8,7 +8,7 @@
 	export let svg = ''
 	export let title = ''
 
-	/** @type {{ icon: string, label?: string, onclick: function, disabled: boolean } | null} */
+	/** @type {any} */
 	export let button = null
 	export let warn = () => true
 	export let onclose = () => {}
@@ -58,7 +58,7 @@
 				<span>{button.label}</span>
 			</button>
 		{:else if button && button.href}
-			<a class="primo-button primary" disabled={button.loading || button.disabled} href={button.href} target="blank">
+			<a class="primo-button primary" href={button.href} target="blank">
 				{#if button.icon}
 					<Icon icon={button.loading ? 'gg:spinner' : button.icon} />
 				{/if}

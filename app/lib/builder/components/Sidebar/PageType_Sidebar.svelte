@@ -1,44 +1,29 @@
 <script>
 	import * as _ from 'lodash-es'
-	import fileSaver from 'file-saver'
-	import axios from 'axios'
-	import { userRole } from '../../stores/app/misc.js'
-	import modal from '../../stores/app/modal.js'
-	import site from '../../stores/data/site.js'
-	import { page } from '$app/stores'
 	import { goto } from '$app/navigation'
 	import { browser } from '$app/environment'
-	import { dynamic_field_types } from '$lib/builder/field-types'
-	import { remap_entry_and_field_items } from '$lib/builder/actions/_db_utils'
-	import page_type from '../../stores/data/page_type.js'
-	import symbols from '../../stores/data/symbols.js'
 	import UI from '../../ui/index.js'
 	import Icon from '@iconify/svelte'
-	import { debounce } from '$lib/builder/utils'
-	import { site_design_css } from '../../code_generators.js'
+	import { site_design_css } from '../../code_generators'
 	import Sidebar_Symbol from './Sidebar_Symbol.svelte'
 	import Content from '$lib/builder/components/Content.svelte'
-	import { toggle_symbol, update_page_type_entries } from '../../actions/page_types.js'
-	import { move_block, rename_block, update_block, add_block_to_site, delete_block_from_site, add_multiple_symbols } from '$lib/builder/actions/symbols.js'
-	import { v4 as uuidv4 } from 'uuid'
-	import { validate_symbol } from '../../converter.js'
-	import { get_ancestors } from '$lib/builder/actions/_helpers.js'
 	import { flip } from 'svelte/animate'
 	import { dropTargetForElements } from '../../libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
 	import { attachClosestEdge, extractClosestEdge } from '../../libraries/pragmatic-drag-and-drop-hitbox/closest-edge.js'
-	import { site_html } from '$lib/builder/stores/app/page'
-	import * as Dialog from '$lib/components/ui/dialog'
-	import { Button } from '$lib/components/ui/button'
-	import DropZone from '$lib/components/DropZone.svelte'
-	import { Input } from '$lib/components/ui/input'
-	import { Loader } from 'lucide-svelte'
 	import * as Tabs from '$lib/components/ui/tabs'
 	import { Cuboid, SquarePen } from 'lucide-svelte'
+	import { page } from '$app/state'
+	import { require_site } from '$lib/loaders'
+	import { ID } from '$lib/common/constants'
+	import { site_html } from '$lib/builder/stores/app/page.js'
+
+	const site_id = $derived(page.params.site)
+	const site = $derived(require_site(site_id))
 
 	// get the query param to set the tab when navigating from page (i.e. 'Edit Fields')
-	let active_tab = $state($page.url.searchParams.get('t') === 'p' ? 'CONTENT' : 'BLOCKS')
+	let active_tab = $state(page.url.searchParams.get('t') === 'p' ? 'CONTENT' : 'BLOCKS')
 	if (browser) {
-		const url = new URL($page.url)
+		const url = new URL(page.url)
 		url.searchParams.delete('t')
 		goto(url, { replaceState: true })
 	}
@@ -84,7 +69,6 @@
 						icon: 'fas fa-check',
 						onclick: (updated_data) => {
 							modal.hide()
-							update_block({ block, updated_data })
 						}
 					}
 				},
@@ -102,9 +86,8 @@
 			'BLOCK_PICKER',
 			{
 				site: $site,
-				append: site_design_css($site.design),
+				append: site_design_css($site?.data.design),
 				onsave: (symbols) => {
-					add_multiple_symbols(symbols)
 					modal.hide()
 				}
 			},
@@ -112,115 +95,6 @@
 				hideLocaleSelector: true
 			}
 		)
-	}
-
-	async function delete_block(block) {
-		delete_block_from_site(block)
-	}
-
-	async function duplicate_block(block_id, index) {
-		const symbol = $symbols.find((s) => s.id === block_id)
-		const new_symbol = _.cloneDeep(symbol)
-		new_symbol.id = uuidv4()
-		delete new_symbol.created_at
-		new_symbol.name = `${new_symbol.name} (copy)`
-		add_block_to_site({
-			symbol: new_symbol,
-			index
-		})
-	}
-
-	async function upload_block({ target }) {
-		var reader = new window.FileReader()
-		reader.onload = async function ({ target }) {
-			if (typeof target.result !== 'string') return
-			try {
-				const uploaded = JSON.parse(target.result)
-				const validated = validate_symbol(uploaded)
-				add_block_to_site({
-					symbol: validated,
-					index: 0
-				})
-			} catch (error) {
-				console.error(error)
-			}
-		}
-		reader.readAsText(target.files[0])
-	}
-
-	async function download_block(block_id) {
-		const block = $symbols.find((s) => s.id === block_id)
-		const isolated_block = _.cloneDeep(isolate_block(block))
-		remap_entry_and_field_items({
-			fields: isolated_block.fields,
-			entries: isolated_block.entries
-		})
-		const json = JSON.stringify(isolated_block)
-		var blob = new Blob([json], { type: 'application/json' })
-		fileSaver.saveAs(blob, `${block.name || block.id}.json`)
-	}
-
-	function isolate_block(block) {
-		const has_dynamic_field = block.fields.some((f) => dynamic_field_types.includes(f.type))
-		if (!has_dynamic_field) return block
-
-		const isolated_fields = []
-		const isolated_entries = []
-
-		for (const field of block.fields) {
-			const is_dynamic = dynamic_field_types.includes(field.type)
-			if (!is_dynamic) {
-				isolated_fields.push(field)
-				for (const entry of block.entries) {
-					const parent_entry = block.entries.find((e) => e.id === entry.parent)
-					if (entry.field === field.id || parent_entry?.field === field.id) {
-						isolated_entries.push(entry)
-					}
-				}
-			}
-
-			if (field.type === 'site-field') {
-				const source_field = $site.fields.find((f) => f.id === field.source)
-				const dependent_source_fields = $site.fields.filter((site_field) => {
-					const ancestors = get_ancestors(site_field, $site.fields)
-					const is_descendent = ancestors.some((a) => a.id === source_field.id)
-					return is_descendent
-				})
-				const site_fields = [{ ...source_field, key: field.key }, ...dependent_source_fields]
-				isolated_fields.push(...site_fields)
-
-				for (const entry of $site.entries) {
-					const parent_entry = $site.entries.find((e) => e.id === entry.parent)
-					if (site_fields.some((f) => f.id === entry.field || f.id === parent_entry?.field)) {
-						isolated_entries.push(entry)
-					}
-				}
-			}
-
-			if (field.type === 'page-field') {
-				const source_field = $page_type.fields.find((f) => f.id === field.source)
-				const dependent_source_fields = $page_type.fields.filter((pt_field) => {
-					const ancestors = get_ancestors(pt_field, $page_type.fields)
-					const is_descendent = ancestors.some((a) => a.id === source_field.id)
-					return is_descendent
-				})
-				const page_fields = [{ ...source_field, key: field.key }, ...dependent_source_fields]
-				isolated_fields.push(...page_fields)
-
-				for (const entry of $page_type.entries) {
-					const parent_entry = $page_type.entries.find((e) => e.id === entry.parent)
-					if (entry.field === source_field.id || parent_entry?.field === source_field.id) {
-						isolated_entries.push(entry)
-					}
-				}
-			}
-		}
-
-		return {
-			...block,
-			fields: isolated_fields.map((f) => ({ ...f, symbol: null, page_type: null, site: null, owner_site: null })),
-			entries: isolated_entries.map((e) => ({ ...e, symbol: null, page_type: null, site: null, owner_site: null }))
-		}
 	}
 
 	let dragging = $state(null)
@@ -250,13 +124,13 @@
 				// reset_drag()
 			},
 			onDrop({ self, source }) {
-				const block_dragged_over_index = $symbols.find((s) => s.id === self.data.block.id).index
-				const block_being_dragged = source.data.block
 				const closestEdgeOfTarget = extractClosestEdge(self.data)
 				if (closestEdgeOfTarget === 'top') {
-					move_block(block_being_dragged, block_dragged_over_index)
+					// TODO: Implement
+					throw new Error('Not implemented')
 				} else if (closestEdgeOfTarget === 'bottom') {
-					move_block(block_being_dragged, block_dragged_over_index + 1)
+					// TODO: Implement
+					throw new Error('Not implemented')
 				}
 				// reset_drag()
 			}
@@ -277,69 +151,37 @@
 			</Tabs.Trigger>
 		</Tabs.List>
 		<Tabs.Content value="blocks" class="px-1">
-			{#if $symbols.length > 0}
+			{#if Object.values($site?.data.entities.symbols ?? {}).length > 0}
 				<div class="primo-buttons">
 					<button class="primo-button" onclick={show_block_picker}>
 						<Icon icon="mdi:plus" />
 						<span>Add</span>
 					</button>
-					{#if $userRole === 'DEV'}
+					<!-- $userRole === 'DEV' -->
+					{#if true}
 						<button class="primo-button" onclick={create_block}>
 							<Icon icon="mdi:code" />
 							<span>Create</span>
 						</button>
-
-						<!-- <UI.Dropdown>
-							<button class="primo-button" slot="trigger">
-								<Icon icon="mdi:code" />
-								<span>Create</span>
-							</button>
-							<div class="dropdown-content">
-								<button class="dropdown-item" onclick={create_block}>
-									<Icon icon="mdi:code" />
-									<span>From Scratch</span>
-								</button>
-								<button class="dropdown-item" onclick={create_block_from_prompt}>
-									<Icon icon="mdi:robot" />
-									<span>From Prompt</span>
-								</button>
-							</div>
-						</UI.Dropdown> -->
 					{/if}
-					<label class="primo-button">
+					<!-- <label class="primo-button">
 						<input onchange={upload_block} type="file" accept=".json" />
 						<Icon icon="mdi:upload" />
 						<span>Upload</span>
-					</label>
+					</label> -->
 				</div>
-				<!-- svelte-ignore missing_declaration -->
-				<!-- svelte-ignore a11y_no_static_element_interactions -->
 				{#if $site_html !== null}
 					<div class="block-list">
-						{#each $symbols.sort((a, b) => a.index - b.index) as symbol, i (symbol.id)}
-							{@const toggled = symbol.page_types?.includes($page_type.id)}
+						{#each Object.values($site?.data.entities.symbols ?? {}) as symbol (symbol?.[ID])}
 							<div class="block" animate:flip={{ duration: 200 }} use:drag_target={symbol}>
 								<Sidebar_Symbol
 									{symbol}
 									head={$site_html}
-									append={site_design_css($site.design)}
+									append={site_design_css($site?.data.design)}
 									show_toggle={true}
-									{toggled}
-									on:toggle={({ detail }) => {
-										if (detail === toggled) return // dispatches on creation for some reason
-										toggle_symbol({
-											symbol_id: symbol.id,
-											page_type_id: $page_type.id,
-											toggled: detail
-										})
-									}}
-									onmousedown={() => (dragging = symbol._drag_id)}
+									onmousedown={() => (dragging = symbol?.[ID])}
 									onmouseup={() => (dragging = null)}
 									on:edit={() => edit_block(symbol)}
-									on:rename={({ detail: name }) => rename_block({ block: symbol, name })}
-									on:download={() => download_block(symbol.id)}
-									on:delete={() => delete_block(symbol)}
-									on:duplicate={() => duplicate_block(symbol.id, i + 1)}
 								/>
 							</div>
 						{/each}
@@ -370,21 +212,14 @@
 		</Tabs.Content>
 		<Tabs.Content value="content" class="px-1">
 			<div class="page-type-fields">
-				{#if $userRole === 'DEV'}
+				<!-- $userRole === 'DEV' -->
+				{#if true}
 					<button class="primo--link" style="margin-bottom: 1rem" onclick={() => modal.show('PAGE_EDITOR')}>
 						<Icon icon="mdi:code" />
 						<span>Edit Page Type</span>
 					</button>
 				{/if}
-				<Content
-					fields={$page_type.fields}
-					entries={$page_type.entries}
-					on:input={debounce({
-						instant: ({ detail }) => update_page_type_entries.store(detail.updated),
-						delay: ({ detail }) => update_page_type_entries.db(detail.original, detail.updated)
-					})}
-					minimal={true}
-				/>
+				<Content minimal={true} />
 			</div>
 		</Tabs.Content>
 	</Tabs.Root>

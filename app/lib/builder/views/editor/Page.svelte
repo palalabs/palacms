@@ -1,33 +1,28 @@
-<script>
-	// @ts-nocheck
-
+<script lang="ts">
 	import * as _ from 'lodash-es'
-	import { tick, onDestroy } from 'svelte'
-	import { fade } from 'svelte/transition'
+	import { tick } from 'svelte'
 	import { flip } from 'svelte/animate'
 	import UI from '$lib/builder/ui'
 	import ComponentNode from './Layout/ComponentNode.svelte'
 	import BlockToolbar from './Layout/BlockToolbar.svelte'
 	import LockedOverlay from './Layout/LockedOverlay.svelte'
 	import DropIndicator from './Layout/DropIndicator.svelte'
-	import { isEqual, cloneDeep } from 'lodash-es'
-	import { code as siteCode, design as siteDesign } from '$lib/builder/stores/data/site'
 	import { locale, locked_blocks, page_loaded, dragging_symbol, editing_context } from '$lib/builder/stores/app/misc'
 	import modal from '$lib/builder/stores/app/modal'
-	import active_site from '$lib/builder/stores/data/site'
-	import active_page from '$lib/builder/stores/data/page'
-	import sections from '$lib/builder/stores/data/sections'
-	import symbols from '$lib/builder/stores/data/symbols'
-	import { processCode, createUniqueID } from '$lib/builder/utils'
-	import { get_page_data } from '$lib/builder/stores/helpers'
-	import { site_design_css } from '$lib/builder/code_generators.js'
 	import { dropTargetForElements } from '$lib/builder/libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
 	import { attachClosestEdge, extractClosestEdge } from '$lib/builder/libraries/pragmatic-drag-and-drop-hitbox/closest-edge.js'
-	import { page as page_store } from '$app/stores'
 	import { beforeNavigate } from '$app/navigation'
-	import { hydrate_active_page } from '$lib/builder/stores/hydration'
+	import type { Resolved } from '$lib/pocketbase/CollectionStore'
+	import type { Page } from '$lib/common/models/Page'
+	import { ID } from '$lib/common'
+	import { page as pageState } from '$app/state'
+	import { require_site } from '$lib/loaders'
+	import type { Id } from '$lib/common/models/Id'
 
-	let { page } = $props()
+	let { page }: { page: Resolved<typeof Page> } = $props()
+
+	const site_id = $derived(pageState.params.site as Id)
+	const site = $derived(require_site(site_id))
 
 	// Fade in page when all components mounted
 	let page_mounted = $state(false)
@@ -40,26 +35,12 @@
 		sections_mounted = 0
 	})
 
-	const instance_key = createUniqueID()
-
 	async function lock_block(block_id) {
-		realtimeChanged({
-			instance: instance_key,
-			user: $page_store.data.user,
-			data: {
-				active_block: block_id
-			}
-		})
+		// TODO: Implement
 	}
 
 	function unlock_block() {
-		realtimeChanged({
-			instance: instance_key,
-			user: $page_store.data.user,
-			data: {
-				active_block: null
-			}
-		})
+		// TODO: Implement
 	}
 
 	let hovered_section = $state(null)
@@ -161,7 +142,7 @@
 
 	function edit_section(section_id, showIDE = false) {
 		lock_block(section_id)
-		const section = $sections.find((s) => s.id === section_id) // get updated block (necessary if actively editing on-page)
+		const section = page.sections.find((s) => s.id === section_id) // get updated block (necessary if actively editing on-page)
 		modal.show(
 			'SECTION_EDITOR',
 			{
@@ -179,9 +160,6 @@
 						onclick: (updated_data) => {
 							unlock_block()
 							modal.hide()
-							update_section(section_id, {
-								updated_data
-							})
 						}
 					}
 				}
@@ -296,7 +274,7 @@
 			},
 			async onDrop({ self, source }) {
 				const is_first_pallete_section = palette_sections.length === 0
-				const section_dragged_over_index = $sections.find((s) => s.id === self.data.section.id).index
+				const section_dragged_over_index = page.sections.find((s) => s.id === self.data.section.id).index
 				const block_being_dragged = source.data.block
 				const closestEdgeOfTarget = extractClosestEdge(self.data)
 				if (closestEdgeOfTarget === 'top') {
@@ -330,12 +308,8 @@
 		})
 	}
 
-	$effect.pre(() => {
-		hydrate_active_page(page)
-	})
-
-	let page_is_empty = $derived($sections.length === 1) // just has palette
-	let non_palette_sections = $derived($sections.filter((s) => s.palette || s.master?.symbol))
+	let page_is_empty = $derived(page.sections.length === 1) // just has palette
+	let non_palette_sections = $derived(page.sections.filter((s) => s.palette || s.master?.symbol))
 	$effect(() => {
 		if (sections_mounted === non_palette_sections.length && sections_mounted !== 0) {
 			page_mounted = true
@@ -343,7 +317,7 @@
 			page_mounted = true
 		}
 	})
-	let palette_section = $derived($sections.find((s) => !s.symbol && !s.master?.symbol))
+	let palette_section = $derived(page.sections.find((s) => !s.symbol && !s.master?.symbol))
 	let block_toolbar_on_locked_block = $derived($locked_blocks.find((b) => b.block_id === hovered_section?.id))
 	$effect(() => {
 		if (block_toolbar_on_locked_block) hide_block_toolbar()
@@ -352,13 +326,13 @@
 	// on drag, display palette drop zone
 	// only respond to hover within palette drop zone
 
-	let top_level_sections = $derived($sections.filter((s) => !s.palette))
-	let palette_sections = $derived($sections.filter((s) => s.palette))
-	let static_sections = $derived($sections.filter((s) => s.master?.symbol))
+	let top_level_sections = $derived(page.sections.filter((s) => !s.palette))
+	let palette_sections = $derived(page.sections.filter((s) => s.palette))
+	let static_sections = $derived(page.sections.filter((s) => s.master?.symbol))
 </script>
 
 <!-- Loading Spinner -->
-{#if !page_mounted && $sections.length > 1}
+{#if !page_mounted && page.sections.length > 1}
 	<div class="spinner" style="--Spinner-color: var(--color-gray-7);">
 		<UI.Spinner variant="loop" />
 	</div>
@@ -404,19 +378,19 @@
 
 <!-- Page Blocks -->
 <main id="Page" bind:this={page_el} class:fadein={$page_loaded && page_mounted} class:dragging={$dragging_symbol} lang={$locale} use:drag_fallback>
-	{#each top_level_sections.sort((a, b) => a.master.index - b.master.index) as section (section.id)}
+	{#each top_level_sections as section (section.id)}
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<!-- svelte-ignore a11y_mouse_events_have_key_events -->
 		{@const is_palette = !section.symbol && !section.master?.symbol}
 		{@const show_block_toolbar_on_hover = $page_loaded && page_mounted && !moving && !(is_palette && palette_sections.length === 0)}
-		{@const has_page_type_symbols = $symbols.some((s) => s.page_types.includes($active_page.page_type.id))}
+		{@const has_page_type_symbols = false}
 		{@const should_show_palette = has_page_type_symbols || palette_sections.length > 0}
 		{#if is_palette && should_show_palette}
 			<div data-section={section.id} data-type="palette" class:empty={palette_sections.length === 0}>
 				{#if palette_sections.length > 0}
-					{#each palette_sections.sort((a, b) => a.index - b.index) as section (section.id)}
-						{@const block = $symbols.find((symbol) => symbol.id === section.symbol)}
-						{@const locked = $locked_blocks.find((b) => b.block_id === section.id)}
+					{#each palette_sections as section (section[ID])}
+						{@const block = section.symbol}
+						{@const locked = $locked_blocks.find((b) => b.block_id === section[ID])}
 						{@const in_current_tab = locked?.instance === instance_key}
 						<div
 							role="presentation"
@@ -470,8 +444,8 @@
 				{/if}
 			</div>
 		{:else if !is_palette}
-			{@const block = $symbols.find((block) => block.id === section.master.symbol)}
-			{@const locked = $locked_blocks.find((b) => b.block_id === section.id)}
+			{@const block = section.symbol}
+			{@const locked = $locked_blocks.find((b) => b.block_id === section[ID])}
 			{@const in_current_tab = locked?.instance === instance_key}
 			<div
 				role="presentation"
@@ -508,7 +482,7 @@
 			<div class="empty-state" style="height: 100%">
 				<span>Add Blocks to the Page Type to make them available on this page.</span>
 				<br />
-				<a class="button" href="{$active_site.id}/page-type--{$active_page.page_type.id}">Edit Page Type</a>
+				<a class="button" href="{site?.id}/page-type--{page.page_type[ID]}">Edit Page Type</a>
 			</div>
 		{/if}
 	{/each}

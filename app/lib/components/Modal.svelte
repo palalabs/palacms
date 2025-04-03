@@ -1,13 +1,26 @@
 <script module>
 	import { writable } from 'svelte/store'
 
+	/**
+	 * @type {{
+	 * id: string | null,
+	 * props: object,
+	 * 	options: {
+	 * 		disableClose: boolean,
+	 * 		disable_bg_close: boolean,
+	 * 		max_width: string | null,
+	 * 		height: string | null
+	 * 	}
+	 * }}
+	 */
 	const defaultValue = {
 		id: null,
 		props: {},
 		options: {
 			disableClose: false,
 			disable_bg_close: false,
-			max_width: null
+			max_width: null,
+			height: null
 		}
 	}
 

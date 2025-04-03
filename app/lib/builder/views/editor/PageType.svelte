@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import * as _ from 'lodash-es'
 	import { tick } from 'svelte'
 	import { fade } from 'svelte/transition'
@@ -9,21 +9,18 @@
 	import DropIndicator from './Layout/DropIndicator.svelte'
 	import SymbolPalette from './Layout/SymbolPalette.svelte'
 	import LockedOverlay from './Layout/LockedOverlay.svelte'
-	import symbols from '$lib/builder/stores/data/symbols'
-	import { hydrate_page_type } from '$lib/builder/stores/hydration'
-	import { code as siteCode, design as siteDesign } from '../../stores/data/site.js'
 	import { locale, locked_blocks } from '../../stores/app/misc.js'
-	import { add_page_type_section, delete_page_type_section } from '$lib/builder/actions/page_types.js'
-	import { move_section, update_section } from '$lib/builder/actions/sections.js'
 	import modal from '../../stores/app/modal.js'
-	import sections from '../../stores/data/sections.js'
-	import { get_section } from '../../stores/helpers.js'
 	import { dropTargetForElements } from '../../libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
 	import { attachClosestEdge, extractClosestEdge } from '../../libraries/pragmatic-drag-and-drop-hitbox/closest-edge.js'
+	import { require_site } from '$lib/loaders/index.js'
+	import { page } from '$app/state'
+	import { ID } from '$lib/common/constants'
 
-	let { page } = $props()
-
-	hydrate_page_type(page)
+	const site_id = $derived(page.params.site)
+	const page_type_id = $derived(page.params.page_type)
+	const site = $derived(require_site(site_id))
+	const page_type = $derived($site?.data.entities.page_types[page_type_id] ?? null)
 
 	// Fade in page when all components mounted
 	let page_mounted = $state(true)
@@ -360,10 +357,10 @@
 
 <!-- Page Blocks -->
 <main id="#Page" data-test bind:this={page_el} class:fadein={page_mounted} lang={$locale} use:drag_fallback>
-	{#each $sections.sort((a, b) => a.index - b.index) as section (section.id)}
+	{#each page_type?.sections ?? [] as section (section[ID])}
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<!-- svelte-ignore a11y_mouse_events_have_key_events -->
-		{@const locked = $locked_blocks.find((b) => b.active_block === section.id)}
+		{@const locked = undefined}
 		<!-- {@const in_current_tab = locked?.instance_key === instance_key} -->
 		{@const in_current_tab = false}
 		<div
@@ -391,20 +388,19 @@
 			onmouseleave={hide_block_toolbar}
 			in:fade={{ duration: 100 }}
 			animate:flip={{ duration: 100 }}
-			data-test-id="page-type-section-{section.id}"
+			data-test-id="page-type-section-{section[ID]}"
 			style="min-height: 3rem;overflow:hidden;position: relative;"
 		>
 			{#if !section.symbol}
-				<SymbolPalette {section} on:mount={() => sections_mounted++} />
+				<SymbolPalette on:mount={() => sections_mounted++} />
 			{:else}
-				{@const block = $symbols.find((block) => block.id === section.symbol)}
 				{#if locked && !in_current_tab}
 					<LockedOverlay {locked} />
 				{/if}
 				<ComponentNode
 					{section}
-					{block}
-					on:lock={() => lock_block(section.id)}
+					block={section.symbol}
+					on:lock={() => lock_block(section[ID])}
 					on:unlock={() => unlock_block()}
 					on:mount={() => sections_mounted++}
 					on:resize={() => {

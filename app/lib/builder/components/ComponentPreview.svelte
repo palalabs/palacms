@@ -16,11 +16,11 @@
 	import { highlightedElement } from '../stores/app/misc'
 	import { Inspect } from 'svelte-inspect-value'
 	import Icon from '@iconify/svelte'
-	import { design as siteDesign, code as siteCode } from '$lib/builder/stores/data/site.js'
-	import { site_design_css } from '$lib/builder/code_generators.js'
-	import { get_site_data } from '$lib/builder/stores/helpers.js'
+	import { site_design_css } from '$lib/builder/code_generators'
 	import { content_editable } from '../utilities'
 	import { processCode } from '../utils.js'
+	import { page } from '$app/state'
+	import { require_site } from '$lib/loaders'
 
 	/**
 	 * @typedef {Object} Props
@@ -30,7 +30,6 @@
 	 * @property {boolean} [loading]?
 	 * @property {boolean} [hideControls]?
 	 * @property {any} [preview]?
-	 * @property {any} [data]
 	 * @property {string | null} [head]?
 	 * @property {string} [append]?
 	 */
@@ -47,10 +46,12 @@
 		loading = $bindable(false),
 		hideControls = false,
 		preview = null,
-		data = {},
 		head = null,
 		append = ''
 	} = $props()
+
+	const site_id = $derived(page.params.site)
+	const site = $derived(require_site(site_id))
 
 	$preview_updated = false
 
@@ -71,12 +72,13 @@
 		}, 200)
 
 		async function compile() {
+			if (!$site) return
+
 			const compiled_head = await processCode({
 				component: {
-					html: `<svelte:head>${$siteCode.head + site_design_css($siteDesign)}</svelte:head>`,
+					html: `<svelte:head>${$site.data.code.head + site_design_css($site.data.design)}</svelte:head>`,
 					css: '',
-					js: '',
-					data: get_site_data({})
+					js: ''
 				}
 			})
 
@@ -104,8 +106,7 @@
 					// head: code.head,
 					html: code.html,
 					css: code.css,
-					js: code.js,
-					data: _.cloneDeep(data)
+					js: code.js
 				},
 				buildStatic: false
 			})
@@ -203,7 +204,7 @@
 		if (iframeLoaded) {
 			channel.postMessage({
 				event: 'SET_APP',
-				payload: { componentApp, data: _.cloneDeep(data) }
+				payload: { componentApp }
 			})
 		}
 	}

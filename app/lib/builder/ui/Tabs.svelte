@@ -2,7 +2,7 @@
 	import Icon from '@iconify/svelte'
 	import { fade } from 'svelte/transition'
 	import { createEventDispatcher } from 'svelte'
-	import { mod_key_held } from '../stores/app/misc.js'
+	import { mod_key_held } from '../stores/app/misc'
 	import hotkey_events from '../stores/app/hotkey_events.js'
 	const dispatch = createEventDispatcher()
 

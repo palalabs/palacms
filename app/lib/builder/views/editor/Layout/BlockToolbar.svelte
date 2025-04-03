@@ -1,12 +1,10 @@
 <script>
 	import { browser } from '$app/environment'
-	import { onDestroy, createEventDispatcher, getContext } from 'svelte'
+	import { createEventDispatcher, getContext } from 'svelte'
 	import { fade } from 'svelte/transition'
-	import sections from '../../../stores/data/sections.js'
-	import { userRole, mod_key_held } from '../../../stores/app/misc'
+	import { mod_key_held } from '../../../stores/app/misc'
 	import { click_to_copy } from '../../../utilities'
 	import Icon from '@iconify/svelte'
-	import { page } from '$app/stores'
 
 	const dispatch = createEventDispatcher()
 
@@ -33,7 +31,8 @@
 <div in:fade={{ duration: 100 }} class="BlockToolbar primo-reset" bind:this={node}>
 	<div class="top">
 		<div class="component-button">
-			{#if $userRole === 'DEV'}
+			<!-- TODO: $userRole === 'DEV' -->
+			{#if true}
 				<button class:showing_key_hint={$mod_key_held} onclick={() => dispatch('edit-code')} aria-label="Edit Block Code">
 					{#if $mod_key_held}
 						<span class="key-hint">&#8984; E</span>
@@ -50,7 +49,8 @@
 				<span class="icon">
 					<Icon icon="material-symbols:edit-square-outline-rounded" />
 				</span>
-				{#if $userRole !== 'DEV'}
+				<!-- TODO: $userRole !== 'DEV' -->
+				{#if false}
 					<span>Edit Content</span>
 				{/if}
 			</button>

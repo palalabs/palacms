@@ -1,24 +1,27 @@
 <script lang="ts">
-	import * as actions from '$lib/actions'
-	import { create_library_symbol_group } from '$lib/actions'
 	import * as Dialog from '$lib/components/ui/dialog'
-	import { goto, invalidate } from '$app/navigation'
+	import { goto } from '$app/navigation'
 	import { page } from '$app/stores'
 	import * as Avatar from '$lib/components/ui/avatar/index.js'
 	import { Input } from '$lib/components/ui/input'
-	import { Button, buttonVariants } from '$lib/components/ui/button'
-	import { Globe, Library, Store, ChevronsUpDown, LogOut, BookText, ChevronRight, Plus, LayoutTemplate, Cuboid, Ellipsis, Trash2, SquarePen } from 'lucide-svelte'
+	import { Button } from '$lib/components/ui/button'
+	import { Globe, Library, Store, ChevronsUpDown, LogOut, ChevronRight, Plus, LayoutTemplate, Cuboid } from 'lucide-svelte'
 	import * as Sidebar from '$lib/components/ui/sidebar'
 	import * as Collapsible from '$lib/components/ui/collapsible'
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
 	import { useSidebar } from '$lib/components/ui/sidebar/index.js'
-	import { user } from '$lib/pocketbase/PocketBase'
+	import { pb, user } from '$lib/pocketbase/PocketBase'
+	import type { Component } from 'svelte'
+	import { require_library, require_site_groups } from '$lib/loaders'
+	import { SiteGroups } from '$lib/pocketbase/collections'
+	import { ID } from '$lib/common'
 
 	const sidebar = useSidebar()
+	const library = require_library()
 
 	interface MenuItem {
 		title: string
-		icon: ComponentType<SvelteComponent>
+		icon: Component
 		url: string
 	}
 
@@ -41,16 +44,21 @@
 	let new_site_group_name = $state('')
 	async function create_site_group(e) {
 		e.preventDefault()
-		await actions.create_site_group(new_site_group_name)
+		const userId = user()?.id
+		if (!userId) return
+		SiteGroups.create({ name: new_site_group_name, owner: userId, index: 0 })
+		require_site_groups.refresh()
 		is_creating_site_group = false
 	}
 
-	let is_dialog_open = $state(false)
-	let new_group_name = $state('')
-	async function create_group(e) {
+	let is_creating_symbol_group = $state(false)
+	let new_symbol_group_name = $state('')
+	async function create_symbol_group(e) {
 		e.preventDefault()
-		await create_library_symbol_group(new_group_name)
-		is_dialog_open = false
+		if (!$library) return
+		$library.data.symbol_groups.push({ name: new_symbol_group_name, symbols: [] })
+		require_library.refresh()
+		is_creating_symbol_group = false
 	}
 
 	const path = $derived($page.url.pathname.split('/').slice(0, 3).join('/'))
@@ -69,13 +77,13 @@
 	</Dialog.Content>
 </Dialog.Root>
 
-<Dialog.Root bind:open={is_dialog_open}>
+<Dialog.Root bind:open={is_creating_symbol_group}>
 	<Dialog.Content class="sm:max-w-[425px] pt-12 gap-0">
 		<h2 class="text-lg font-semibold leading-none tracking-tight">Create Group</h2>
-		<form onsubmit={create_group}>
-			<Input bind:value={new_group_name} placeholder="Enter new Group name" class="my-4" />
+		<form onsubmit={create_symbol_group}>
+			<Input bind:value={new_symbol_group_name} placeholder="Enter new Group name" class="my-4" />
 			<Dialog.Footer>
-				<Button type="button" variant="outline" onclick={() => (is_dialog_open = false)}>Cancel</Button>
+				<Button type="button" variant="outline" onclick={() => (is_creating_symbol_group = false)}>Cancel</Button>
 				<Button type="submit">Create</Button>
 			</Dialog.Footer>
 		</form>
@@ -175,10 +183,10 @@
 								<Sidebar.MenuButton {...props} size="lg" class="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground md:h-8 md:p-0">
 									<Avatar.Root class="h-8 w-8 rounded-lg">
 										<!-- <Avatar.Image src={user.avatar} alt={user.name} /> -->
-										<Avatar.Fallback class="rounded-lg uppercase">{user().email.slice(0, 2)}</Avatar.Fallback>
+										<Avatar.Fallback class="rounded-lg uppercase">{user()?.email.slice(0, 2)}</Avatar.Fallback>
 									</Avatar.Root>
 									<div class="grid flex-1 text-left text-sm leading-tight">
-										<span class="truncate font-semibold">{user().email}</span>
+										<span class="truncate font-semibold">{user()?.email}</span>
 										<!-- <span class="truncate text-xs">{user.email}</span> -->
 									</div>
 									<ChevronsUpDown class="ml-auto size-4" />
@@ -190,10 +198,10 @@
 								<div class="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
 									<Avatar.Root class="h-8 w-8 rounded-lg">
 										<!-- <Avatar.Image src={user.avatar} alt={user.name} /> -->
-										<Avatar.Fallback class="rounded-lg uppercase">{user().email.slice(0, 2)}</Avatar.Fallback>
+										<Avatar.Fallback class="rounded-lg uppercase">{user()?.email.slice(0, 2)}</Avatar.Fallback>
 									</Avatar.Root>
 									<div class="grid flex-1 text-left text-sm leading-tight">
-										<span class="truncate font-semibold">{user().email}</span>
+										<span class="truncate font-semibold">{user()?.email}</span>
 										<!-- <span class="truncate text-xs">{user.email}</span> -->
 									</div>
 								</div>
@@ -201,8 +209,8 @@
 							<DropdownMenu.Separator />
 							<DropdownMenu.Item
 								onclick={async () => {
-									// TODO: Implement
-									throw new Error('Not implemented')
+									pb.authStore.clear()
+									await goto('/auth')
 								}}
 							>
 								<LogOut />
@@ -285,8 +293,8 @@
 								<Collapsible.Content>
 									<Sidebar.GroupContent>
 										<Sidebar.Menu>
-											{#each $page.data.symbol_groups as group}
-												{@const url = `/dashboard/library/blocks?group=${group.id}`}
+											{#each sidebar_menu.symbol_groups as group}
+												{@const url = `/dashboard/library/blocks?group=${group[ID]}`}
 												<Sidebar.MenuItem>
 													<Sidebar.MenuButton isActive={$page.url.pathname + $page.url.search === url}>
 														{#snippet child({ props })}
@@ -300,7 +308,7 @@
 											<Sidebar.MenuItem>
 												<Sidebar.MenuButton class="text-sidebar-foreground/70">
 													{#snippet child({ props })}
-														<button {...props} onclick={() => (is_dialog_open = true)}>
+														<button {...props} onclick={() => (is_creating_symbol_group = true)}>
 															<span>Create Group</span>
 															<Plus />
 														</button>
@@ -351,7 +359,7 @@
 								<Collapsible.Content>
 									<Sidebar.GroupContent>
 										<Sidebar.Menu>
-											{#each $page.data.marketplace_symbol_groups as group}
+											{#each sidebar_menu.marketplace_symbol_groups as group}
 												{@const url = `/dashboard/marketplace/blocks?group=${group.id}`}
 												<Sidebar.MenuItem>
 													<Sidebar.MenuButton isActive={$page.url.pathname + $page.url.search === url}>

@@ -18,21 +18,19 @@
 	import { flattenDeep as _flattenDeep } from 'lodash-es'
 	import { createEventDispatcher } from 'svelte'
 	import { createDebouncer } from '../../utils'
-	const slowDebounce = createDebouncer(1000)
 	import { abbreviationTracker } from '../../libraries/emmet/plugin'
-
 	import { highlightedElement } from '../../stores/app/misc'
-	import { code as site_code, design as site_design } from '../../stores/data/site'
-	import page_type from '../../stores/data/page_type'
 	import { basicSetup } from 'codemirror'
 	import { EditorView, keymap } from '@codemirror/view'
 	import { standardKeymap, indentWithTab } from '@codemirror/commands'
 	import { EditorState, Compartment } from '@codemirror/state'
 	import { oneDarkTheme, ThemeHighlighting } from './theme'
-	import { svelteCompletions, cssCompletions, extract_css_variables } from './extensions/autocomplete'
+	import { svelteCompletions, cssCompletions } from './extensions/autocomplete'
 	import { getLanguage } from './extensions'
 	import highlight_active_line from './extensions/inspector'
 	import { design_tokens } from '$lib/builder/constants.js'
+
+	const slowDebounce = createDebouncer(1000)
 
 	/**
 	 * @typedef {Object} Props

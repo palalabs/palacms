@@ -3,12 +3,13 @@
 	import PageList from './PageList/PageList.svelte'
 	import Page_Types_List from './Page_Types_List/Page_Types_List.svelte'
 	import Icon from '@iconify/svelte'
-	import { userRole, editing_context } from '$lib/builder/stores/app/misc'
+	import { editing_context } from '$lib/builder/stores/app/misc'
 </script>
 
 <ModalHeader>
 	{#snippet title()}
-		{#if $userRole === 'DEV'}
+		<!-- $userRole === 'DEV' -->
+		{#if true}
 			<div class="tabs">
 				<button class="title" class:active={$editing_context === 'page'} onclick={() => ($editing_context = 'page')}>
 					<Icon icon="iconoir:multiple-pages" />

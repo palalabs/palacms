@@ -3,30 +3,24 @@
 	const orientation = writable('horizontal')
 </script>
 
-<script>
+<script lang="ts">
 	import { PaneGroup, Pane, PaneResizer } from 'paneforge'
 	import LargeSwitch from '$lib/builder/ui/LargeSwitch.svelte'
-	import _, { chain as _chain } from 'lodash-es'
+	import * as _ from 'lodash-es'
 	import ModalHeader from './ModalHeader.svelte'
 	import FullCodeEditor from './SectionEditor/FullCodeEditor.svelte'
 	import ComponentPreview, { has_error } from '$lib/builder/components/ComponentPreview.svelte'
 	import Fields from '$lib/builder/components/Fields/FieldsContent.svelte'
-	import { locale, onMobile, userRole } from '$lib/builder/stores/app/misc.js'
-	import { Symbol } from '$lib/builder/factories.js'
-	import { get_content_with_synced_values } from '$lib/builder/stores/helpers.js'
+	import { locale } from '$lib/builder/stores/app/misc.js'
 	import hotkey_events from '$lib/builder/stores/app/hotkey_events.js'
-	import site from '$lib/builder/stores/data/site.js'
+	import { get_content } from '$lib/builder/stores/helpers'
+	import { Symbol } from '$lib/common/models/Symbol'
+	import { Id } from '$lib/common/models/Id'
+	import { ID } from '$lib/common/constants'
+	import type { Resolved } from '$lib/pocketbase/CollectionStore'
 
-	/**
-	 * @typedef {Object} Props
-	 * @property {import('$lib').Symbol} [block]
-	 * @property {string} [tab]
-	 * @property {any} [header]
-	 */
-
-	/** @type {Props} */
 	let {
-		block = Symbol(),
+		block = { [ID]: '' as Id, name: '', code: { css: '', html: '', js: '' }, fields: [] },
 		tab = $bindable('content'),
 		header = {
 			label: 'Create Component',
@@ -39,26 +33,11 @@
 				}
 			}
 		}
-	} = $props()
-
-	let local_code = _.cloneDeep(block.code)
-	let local_fields = $state(_.cloneDeep(block.fields))
-	let local_entries = $state(_.cloneDeep([...block.entries, ...$site.entries]))
+	}: { block?: Resolved<typeof Symbol>; tab?: string; header?: any } = $props()
 
 	let loading = false
 
-	// raw code bound to code editor
-	let raw_html = $state(local_code.html)
-	let raw_css = $state(local_code.css)
-	let raw_js = $state(local_code.js)
-
-	let component_data = $derived(
-		get_content_with_synced_values({
-			entries: local_entries.filter((e) => !e.site && !e.page),
-			fields: local_fields,
-			site: { ...$site, entries: local_entries.filter((e) => e.site) }
-		})[$locale]
-	)
+	let component_data = $derived(get_content(block[ID], block.fields)[$locale])
 
 	hotkey_events.on('e', toggle_tab)
 
@@ -80,31 +59,15 @@
 	}
 
 	async function save_component() {
-		if (!$has_error) {
-			console.log({ local_code })
-			header.button.onclick({
-				code: {
-					html: raw_html,
-					css: raw_css,
-					js: raw_js
-				},
-				entries: local_entries,
-				fields: local_fields
-			})
-		}
+		// TODO: Implement
+		throw new Error('Not implemented')
 	}
 </script>
 
 <ModalHeader
 	{...header}
 	warn={() => {
-		const original_entries = [...block.entries, ...$site.entries]
-		const code_changed = !_.isEqual(block.code, { html: raw_html, css: raw_css, js: raw_js })
-		const data_changed = !_.isEqual(original_entries, local_entries) || !_.isEqual(block.fields, local_fields)
-		if (code_changed || data_changed) {
-			const proceed = window.confirm('Unsaved changes will be lost. Continue?')
-			return proceed
-		} else return true
+		return true
 	}}
 	icon="lucide:blocks"
 	title={block.name || 'Block'}
@@ -117,7 +80,8 @@
 >
 	{#snippet left()}
 		<div>
-			{#if $userRole === 'DEV'}
+			<!-- TODO: $userRole === 'DEV' -->
+			{#if true}
 				<LargeSwitch bind:active_tab_id={tab} />
 			{/if}
 		</div>
@@ -128,33 +92,14 @@
 	<PaneGroup direction={$orientation} style="display: flex;">
 		<Pane defaultSize={50}>
 			{#if tab === 'code'}
-				<FullCodeEditor bind:html={raw_html} bind:css={raw_css} bind:js={raw_js} data={component_data} on:save={save_component} on:mod-e={toggle_tab} />
+				<FullCodeEditor bind:html={block.code.html} bind:css={block.code.css} bind:js={block.code.js} data={component_data} on:save={save_component} on:mod-e={toggle_tab} />
 			{:else if tab === 'content'}
-				<Fields
-					id={block.id}
-					fields={local_fields}
-					entries={local_entries}
-					on:input={({ detail }) => {
-						local_fields = detail.fields
-						local_entries = detail.entries
-					}}
-					onkeydown={handle_hotkey}
-				/>
+				<Fields id={block[ID]} entity_id={block[ID]} fields={block.fields} />
 			{/if}
 		</Pane>
 		<PaneResizer class="PaneResizer" />
 		<Pane defaultSize={50}>
-			<ComponentPreview
-				bind:orientation={$orientation}
-				view="small"
-				{loading}
-				code={{
-					html: raw_html,
-					css: raw_css,
-					js: raw_js
-				}}
-				data={component_data}
-			/>
+			<ComponentPreview bind:orientation={$orientation} view="small" {loading} code={block.code} data={component_data} />
 		</Pane>
 	</PaneGroup>
 </main>

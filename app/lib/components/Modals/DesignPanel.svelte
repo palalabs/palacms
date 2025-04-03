@@ -1,5 +1,5 @@
 <script module>
-	import { writable, get } from 'svelte/store'
+	import { writable, get, type Readable } from 'svelte/store'
 
 	const leftPaneSize = writable(get(onMobile) ? '100%' : '50%')
 	const rightPaneSize = writable('50%')
@@ -8,23 +8,22 @@
 	const orientation = writable('horizontal')
 </script>
 
-<script>
+<script lang="ts">
 	import Icon from '@iconify/svelte'
 	import { PaneGroup, Pane, PaneResizer } from 'paneforge'
 	import * as _ from 'lodash-es'
 	import { cloneDeep, chain as _chain } from 'lodash-es'
 	import { ComponentPreview } from '$lib/builder/components'
 	import { onMobile } from '$lib/builder/stores/app'
-	// import { sites } from '../../../actions'
-	import active_site from '$lib/builder/actions/active_site'
-	import { page } from '$app/stores'
-	import { site } from '$lib/builder/stores/data/site'
-	import UI from '$lib/builder/ui'
 	import * as code_generators from '$lib/builder/code_generators'
 	import DesignFields from './DesignFields.svelte'
 	import ModalHeader from '$lib/components/ModalHeader.svelte'
+	import { require_site } from '$lib/loaders'
+	import { page } from '$app/state'
 
-	const local_design_values = $state(cloneDeep($site.design))
+	const site_id = $derived(page.params.site)
+	const site = $derived(require_site(site_id))
+	const local_design_values = $state(cloneDeep($site?.data.design!))
 	let design_variables_css = $state(code_generators.site_design_css(local_design_values))
 
 	let loading = $state(false)
@@ -49,7 +48,8 @@
 		}, 200)
 
 		async function compile() {
-			preview = (await code_generators.page_html({ no_js: true, site: { ...$page.data.site, design: local_design_values } }))?.html
+			if (!$site) return
+			preview = (await code_generators.page_html({ no_js: true, site: { ...$site, data: { ...$site.data, design: local_design_values } } }))?.html
 			previewUpToDate = true
 		}
 	}
@@ -60,10 +60,8 @@
 	}) // reset when code changes
 
 	async function saveComponent() {
-		if (!disableSave) {
-			active_site.update({
-				design: local_design_values
-			})
+		if (!disableSave && $site) {
+			$site.data.design = local_design_values
 		}
 	}
 </script>
