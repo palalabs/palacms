@@ -116,7 +116,7 @@
 		</Tabs.Trigger>
 		<Tabs.Trigger value="starter" class="flex-1 flex items-center gap-2">
 			<LayoutTemplate class="h-5 w-5" />
-			Starter
+			Starter Site
 		</Tabs.Trigger>
 	</Tabs.List>
 
@@ -145,7 +145,7 @@
 		<Tabs.Content value="starter" class="h-full">
 			<div class="flex flex-col h-full space-y-2">
 				<div class="flex justify-between items-center">
-					<h3>Choose a Starter</h3>
+					<h3>Choose a Starter Site</h3>
 					<Button variant="outline" size="sm">
 						<label class="flex items-center gap-2 cursor-pointer">
 							<input onchange={duplicate_site_file} type="file" class="sr-only" />

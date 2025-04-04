@@ -261,65 +261,32 @@
 			<Sidebar.Header class="gap-3.5 border-b p-4">
 				<div class="flex w-full text-foreground text-base font-medium gap-2">
 					<Library class="w-4" />
-					<span>Library</span>
+					<span>Block Library</span>
 				</div>
 			</Sidebar.Header>
 			<Sidebar.Content class="p-2">
 				<Sidebar.Menu>
-					<!-- Starters -->
+					{#each sidebar_menu.symbol_groups as group}
+						{@const url = `/dashboard/library/blocks?group=${group[ID]}`}
+						<Sidebar.MenuItem>
+							<Sidebar.MenuButton isActive={$page.url.pathname + $page.url.search === url}>
+								{#snippet child({ props })}
+									<a href={url} {...props}>
+										<span>{group.name}</span>
+									</a>
+								{/snippet}
+							</Sidebar.MenuButton>
+						</Sidebar.MenuItem>
+					{/each}
 					<Sidebar.MenuItem>
-						<Sidebar.MenuButton class="font-medium" isActive={$page.url.pathname === '/dashboard/library/starters'}>
+						<Sidebar.MenuButton class="text-sidebar-foreground/70">
 							{#snippet child({ props })}
-								<a href="/dashboard/library/starters" {...props}>
-									<LayoutTemplate />
-									<span>Starters</span>
-								</a>
+								<button {...props} onclick={() => (is_creating_symbol_group = true)}>
+									<span>Create Group</span>
+									<Plus />
+								</button>
 							{/snippet}
 						</Sidebar.MenuButton>
-					</Sidebar.MenuItem>
-					<!-- Blocks -->
-					<Sidebar.MenuItem>
-						<Collapsible.Root title="Blocks" open={true} class="group/collapsible">
-							<Sidebar.Group class="p-0">
-								<Sidebar.GroupLabel class="group/label text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sm">
-									{#snippet child({ props })}
-										<Collapsible.Trigger {...props}>
-											<Cuboid />
-											<span class="pl-2">Blocks</span>
-											<ChevronRight class="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
-										</Collapsible.Trigger>
-									{/snippet}
-								</Sidebar.GroupLabel>
-								<Collapsible.Content>
-									<Sidebar.GroupContent>
-										<Sidebar.Menu>
-											{#each sidebar_menu.symbol_groups as group}
-												{@const url = `/dashboard/library/blocks?group=${group[ID]}`}
-												<Sidebar.MenuItem>
-													<Sidebar.MenuButton isActive={$page.url.pathname + $page.url.search === url}>
-														{#snippet child({ props })}
-															<a href={url} {...props}>
-																<span>{group.name}</span>
-															</a>
-														{/snippet}
-													</Sidebar.MenuButton>
-												</Sidebar.MenuItem>
-											{/each}
-											<Sidebar.MenuItem>
-												<Sidebar.MenuButton class="text-sidebar-foreground/70">
-													{#snippet child({ props })}
-														<button {...props} onclick={() => (is_creating_symbol_group = true)}>
-															<span>Create Group</span>
-															<Plus />
-														</button>
-													{/snippet}
-												</Sidebar.MenuButton>
-											</Sidebar.MenuItem>
-										</Sidebar.Menu>
-									</Sidebar.GroupContent>
-								</Collapsible.Content>
-							</Sidebar.Group>
-						</Collapsible.Root>
 					</Sidebar.MenuItem>
 				</Sidebar.Menu>
 			</Sidebar.Content>

@@ -30,23 +30,9 @@
 				site_groups: $site_groups
 			},
 			'/dashboard/library': {
-				title: 'Library',
+				title: 'Block Library',
 				icon: Library,
-				symbol_groups: $library?.data.symbol_groups ?? [],
-				buttons: [
-					{
-						icon: LayoutTemplate,
-						label: 'Starters',
-						url: '/dashboard/library/starters',
-						isActive: pathname === '/dashboard/library/starters'
-					},
-					{
-						icon: Cuboid,
-						label: 'Blocks',
-						url: '/dashboard/library/blocks',
-						isActive: pathname === '/dashboard/library/blocks'
-					}
-				]
+				symbol_groups: $library?.data.symbol_groups ?? []
 			},
 			'/dashboard/marketplace': {
 				title: 'Marketplace',

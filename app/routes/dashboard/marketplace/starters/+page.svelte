@@ -13,7 +13,7 @@
 	<div class="flex flex-1 items-center gap-2 px-3">
 		<Sidebar.Trigger />
 		<Separator orientation="vertical" class="mr-2 h-4" />
-		<div class="text-sm">Starters</div>
+		<div class="text-sm">Starter Sites</div>
 	</div>
 </header>
 <div class="flex flex-1 flex-col gap-4 px-4 pb-4">
