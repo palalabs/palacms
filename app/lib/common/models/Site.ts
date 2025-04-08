@@ -31,6 +31,7 @@ export const Site = z.object({
 			page_types: z.record(Id, PageType),
 			pages: z.record(Id, Page)
 		} satisfies Record<SiteEntityType, unknown>),
+		symbols: z.array(SiteEntityReference('symbols')),
 		fields: z.array(SiteEntityReference('fields')),
 		page_types: z.array(SiteEntityReference('page_types')),
 		root: SiteEntityReference('pages')

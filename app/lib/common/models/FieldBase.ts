@@ -1,10 +1,7 @@
-import { Id } from './Id'
-import { ID } from '../constants'
 import { z } from 'zod'
 import { SiteEntityReference } from './SiteEntityReference'
 
 export const FieldBase = z.object({
-	[ID]: Id,
 	type: z.string(),
 	key: z.string().nonempty(),
 	label: z.string().nonempty(),

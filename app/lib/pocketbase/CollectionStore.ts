@@ -6,9 +6,8 @@ import { SITE_ENTITY_REFERENCE, type SiteEntityType } from '$lib/common/models/S
 import type { Site } from '$lib/common/models/Site'
 import { LIBRARY_ENTITY_REFERENCE, type LibraryEntityType } from '$lib/common/models/LibraryEntityReference'
 import type { Library } from '$lib/common/models/Library'
-import { v4 as uuid } from 'uuid'
 import { ID } from '$lib/common'
-import { newId } from '$lib/common/models/Id'
+import { Id, newId } from '$lib/common/models/Id'
 
 const updateIntervalMs = 1000
 
@@ -18,11 +17,11 @@ type OptionalProperties<T extends Record<string, unknown>> = { [K in keyof T]: T
 export type Resolved<T extends z.ZodTypeAny> = T extends {
 	[SITE_ENTITY_REFERENCE]: SiteEntityType
 }
-	? Resolved<(typeof Site)['shape']['data']['shape']['entities']['shape'][T[typeof SITE_ENTITY_REFERENCE]]['element']>
+	? Resolved<(typeof Site)['shape']['data']['shape']['entities']['shape'][T[typeof SITE_ENTITY_REFERENCE]]['element']> & { [ID]: Id }
 	: T extends {
 				[LIBRARY_ENTITY_REFERENCE]: LibraryEntityType
 		  }
-		? Resolved<(typeof Library)['shape']['data']['shape']['entities']['shape'][T[typeof LIBRARY_ENTITY_REFERENCE]]['element']>
+		? Resolved<(typeof Library)['shape']['data']['shape']['entities']['shape'][T[typeof LIBRARY_ENTITY_REFERENCE]]['element']> & { [ID]: Id }
 		: T extends z.AnyZodObject
 			? {
 					[K in RequiredProperties<T['_output']>]: Resolved<T['shape'][K]>

@@ -1,10 +1,7 @@
 import { z } from 'zod'
 import { SiteEntityReference } from './SiteEntityReference'
-import { Id } from './Id'
-import { ID } from '../constants'
 
 export const PageType = z.object({
-	[ID]: Id,
 	name: z.string().nonempty(),
 	code: z.object({
 		head: z.string(),
@@ -13,7 +10,8 @@ export const PageType = z.object({
 	color: z.string(),
 	icon: z.string(),
 	fields: z.array(SiteEntityReference('fields')),
-	sections: z.array(SiteEntityReference('sections'))
+	sections: z.array(SiteEntityReference('sections')),
+	symbols: z.array(SiteEntityReference('symbols'))
 })
 
 export type PageType = z.infer<typeof PageType>

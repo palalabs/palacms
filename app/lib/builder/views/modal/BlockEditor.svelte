@@ -15,12 +15,11 @@
 	import hotkey_events from '$lib/builder/stores/app/hotkey_events.js'
 	import { get_content } from '$lib/builder/stores/helpers'
 	import { Symbol } from '$lib/common/models/Symbol'
-	import { Id } from '$lib/common/models/Id'
 	import { ID } from '$lib/common/constants'
 	import type { Resolved } from '$lib/pocketbase/CollectionStore'
 
 	let {
-		block = { [ID]: '' as Id, name: '', code: { css: '', html: '', js: '' }, fields: [] },
+		block = { name: '', code: { css: '', html: '', js: '' }, fields: [] },
 		tab = $bindable('content'),
 		header = {
 			label: 'Create Component',
