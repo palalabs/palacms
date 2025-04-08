@@ -7,7 +7,7 @@
 	import Card from '../../ui/Card.svelte'
 	import { get } from 'idb-keyval'
 	import { mod_key_held } from '../../stores/app/misc.js'
-	import type { Resolved } from '$lib/pocketbase/CollectionStore'
+	import type { Resolved } from '$lib/pocketbase/Resolved'
 	import type { Field } from '$lib/common/models/Field'
 	import { Id } from '$lib/common/models/Id'
 	import { ID } from '$lib/common/constants'

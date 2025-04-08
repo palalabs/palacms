@@ -1,6 +1,6 @@
 import { find as _find, chain as _chain, flattenDeep as _flattenDeep } from 'lodash-es'
 import * as _ from 'lodash-es'
-import type { Resolved } from '$lib/pocketbase/CollectionStore.js'
+import type { Resolved } from '$lib/pocketbase/Resolved'
 import type { Field } from '$lib/common/models/Field.js'
 import { ID, locales, SITE } from '$lib/common/constants'
 import type { Entry } from '$lib/common/models/Entry.js'

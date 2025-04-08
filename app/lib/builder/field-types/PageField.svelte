@@ -4,7 +4,7 @@
 	import type { PageField } from '$lib/common/models/fields/PageField'
 	import type { Id } from '$lib/common/models/Id'
 	import { require_site } from '$lib/loaders/index.js'
-	import type { Resolved } from '$lib/pocketbase/CollectionStore.js'
+	import type { Resolved } from '$lib/pocketbase/Resolved'
 	import { get_direct_entries } from '../stores/helpers.js'
 	import UI from '../ui/index.js'
 

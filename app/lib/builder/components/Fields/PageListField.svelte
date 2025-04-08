@@ -1,6 +1,6 @@
 <script lang="ts">
 	import UI from '../../ui/index.js'
-	import type { Resolved } from '$lib/pocketbase/CollectionStore.js'
+	import type { Resolved } from '$lib/pocketbase/Resolved'
 	import type { PageListField } from '$lib/common/models/fields/PageListField.js'
 	import type { Id } from '$lib/common/models/Id.js'
 	import { page } from '$app/state'

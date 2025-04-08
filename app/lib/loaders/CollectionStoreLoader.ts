@@ -1,11 +1,14 @@
 import { readonly, writable, type Readable, type Unsubscriber } from 'svelte/store'
-import { createCollectionStore, type Resolved } from '../pocketbase/CollectionStore'
+import { createCollectionStore } from '../pocketbase/CollectionStore'
 import type { z } from 'zod'
 import type { ValidatedCollection } from '../pocketbase/ValidatedCollection'
 import { paramsMatch } from './utils'
+import type { ID } from '$lib/common'
+import type { Id } from '$lib/common/models/Id'
+import type { Resolved } from '$lib/pocketbase/Resolved'
 
 export type CollectionStoreLoader<T extends z.AnyZodObject, P extends (string | number)[]> = {
-	(...params: [...P]): Readable<Resolved<T> | null>
+	(...params: [...P]): Readable<Resolved<T, { [ID]: Id }> | null>
 	refresh: () => void
 }
 

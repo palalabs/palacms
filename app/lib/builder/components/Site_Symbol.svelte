@@ -5,7 +5,7 @@
 	import { processCode } from '../utils'
 	import { locale } from '../stores/app/misc'
 	import IFrame from '../components/IFrame.svelte'
-	import type { Resolved } from '$lib/pocketbase/CollectionStore'
+	import type { Resolved } from '$lib/pocketbase/Resolved'
 	import type { Symbol } from '$lib/common/models/Symbol'
 	import { get_content } from '../stores/helpers'
 	import { ID } from '$lib/common/constants'

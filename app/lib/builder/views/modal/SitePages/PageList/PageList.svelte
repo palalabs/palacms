@@ -7,7 +7,7 @@
 	import { page } from '$app/state'
 	import { ID } from '$lib/common/constants'
 	import { Page } from '$lib/common/models/Page'
-	import type { Resolved } from '$lib/pocketbase/CollectionStore'
+	import type { Resolved } from '$lib/pocketbase/Resolved'
 
 	const site_id = $derived(page.params.site)
 	const site = $derived(require_site(site_id))

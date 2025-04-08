@@ -1,13 +1,14 @@
 import { z } from 'zod'
 import type { RecordAuthResponse, RecordFullListOptions, RecordListOptions } from 'pocketbase'
 import { pb } from './PocketBase'
+import { serialize, type Resolved } from './Resolved'
 
 export type ValidatedCollection<T extends z.AnyZodObject> = {
 	model: z.AnyZodObject
 	getOne: (id: string) => Promise<z.TypeOf<T>>
 	getList: (page?: number, perPage?: number, options?: RecordListOptions) => Promise<z.TypeOf<T>[]>
 	getFullList: (options?: RecordFullListOptions) => Promise<z.TypeOf<T>[]>
-	create: (values: Omit<z.TypeOf<T>, 'id'> & { id?: string }) => Promise<z.TypeOf<T>>
+	create: (values: Omit<Resolved<T>, 'id'> & { id?: string }) => Promise<z.TypeOf<T>>
 	update: (id: string, values: Partial<z.TypeOf<T>>) => Promise<z.TypeOf<T>>
 	delete: (id: string) => Promise<boolean>
 	authWithPassword: (usernameOrEmail: string, password: string) => Promise<RecordAuthResponse<z.TypeOf<T>>>
@@ -33,7 +34,8 @@ export const createValidatedCollection = <T extends z.AnyZodObject>(idOrName: st
 			return records.map((record) => model.parse(record))
 		},
 		create: async (values) => {
-			const input = schemaWithOptionalId.parse(values)
+			const serialized = serialize(model, values)
+			const input = schemaWithOptionalId.parse(serialized)
 			const record = await collection.create(input)
 			const output = model.parse(record)
 			return output

@@ -35,10 +35,42 @@ export type Resolved<T extends z.ZodTypeAny, P extends object = object> = T exte
 							? { [K in keyof Types]: Resolved<Types[K]> }[number]
 							: T['_output']
 
-export const resolve = <T extends z.AnyZodObject>(collection: ValidatedCollection<T>, value: z.TypeOf<T>, onUpdate?: () => void): Resolved<T, { [ID]: Id }> =>
-	proxy({ value, collection, record: value, onUpdate })
+export const resolve = <T extends z.AnyZodObject>(model: T, value: z.TypeOf<T>, onUpdate?: () => void): Resolved<T, { [ID]: Id }> => proxy({ value, model, record: value, onUpdate })
 
-const proxy = ({ value, collection, record, path = [], onUpdate }: { value: object; collection: ValidatedCollection<z.AnyZodObject>; record: any; path?: string[]; onUpdate?: () => void }): any =>
+export const serialize = <T extends z.AnyZodObject>(model: T, value: Omit<Resolved<T>, 'id'>): z.TypeOf<T> => serializeRecursive<T>({ value, model })
+
+const serializeRecursive = <T extends z.AnyZodObject>({ value, model, result = {}, record = {}, path = [] }: { value: object; model: T; result?: any; record?: any; path?: string[] }): z.TypeOf<T> => {
+	for (const key in value) {
+		const valueType = walkToType(model, [...path, key])
+		const referenceType: SiteEntityType | LibraryEntityType | null = valueType[SITE_ENTITY_REFERENCE] ?? valueType[LIBRARY_ENTITY_REFERENCE] ?? null
+
+		// Set reference
+		if (referenceType) {
+			const id = value[key][ID] ?? newId()
+			if (!record.data) record.data = {}
+			if (!record.data.entities) record.data.entities = {}
+			if (!record.data.entities[referenceType]) record.data.entities[referenceType] = {}
+			record.data.entities[referenceType][id] = value[key]
+			result[key] = { $ref: `#/data/entities/${referenceType}/${id}` }
+			continue
+		}
+
+		// Set object, merging if exists already in result
+		if (value && typeof value === 'object') {
+			result[key] = serializeRecursive({ value: value[key], model, result: record[key] ?? {}, record, path: [...path, key] })
+			continue
+		}
+
+		// Set directly without overwriting
+		if (!(key in result)) {
+			result[key] = value[key]
+			continue
+		}
+	}
+	return result
+}
+
+const proxy = ({ value, model, record, path = [], onUpdate }: { value: object; model: z.AnyZodObject; record: any; path?: string[]; onUpdate?: () => void }): any =>
 	new Proxy(value, {
 		get(target, key) {
 			const [propertyKey, id] = path.slice(-2)
@@ -61,7 +93,7 @@ const proxy = ({ value, collection, record, path = [], onUpdate }: { value: obje
 			if (val && typeof val === 'object') {
 				return proxy({
 					value: val,
-					collection,
+					model,
 					record,
 					path: [...path, key],
 					onUpdate
@@ -82,7 +114,7 @@ const proxy = ({ value, collection, record, path = [], onUpdate }: { value: obje
 				return true
 			}
 
-			const valueType = walkToType(collection.model, [...path, key])
+			const valueType = walkToType(model, [...path, key])
 			const referenceType: SiteEntityType | LibraryEntityType | null = valueType[SITE_ENTITY_REFERENCE] ?? valueType[LIBRARY_ENTITY_REFERENCE] ?? null
 			if (referenceType && !(key in target)) {
 				const id = newId()

@@ -7,7 +7,7 @@
 	import { page } from '$app/state'
 	import { require_site } from '$lib/loaders'
 	import type { PageType } from '$lib/common/models/PageType'
-	import type { Resolved } from '$lib/pocketbase/CollectionStore'
+	import type { Resolved } from '$lib/pocketbase/Resolved'
 	import { ID } from '$lib/common/constants'
 
 	const site_id = $derived(page.params.site)

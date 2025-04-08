@@ -4,7 +4,7 @@
 	import PageForm from './PageTypeForm.svelte'
 	import MenuPopup from '$lib/builder/ui/Dropdown.svelte'
 	import modal from '$lib/builder/stores/app/modal'
-	import type { Resolved } from '$lib/pocketbase/CollectionStore'
+	import type { Resolved } from '$lib/pocketbase/Resolved'
 	import type { PageType } from '$lib/common/models/PageType'
 	import { ID } from '$lib/common/constants'
 	import { require_site } from '$lib/loaders'

@@ -28,7 +28,7 @@
 	import MarkdownButton from './MarkdownButton.svelte'
 	import modal from '$lib/builder/stores/app/modal'
 	import { component_iframe_srcdoc } from '$lib/builder/components/misc'
-	import type { Resolved } from '$lib/pocketbase/CollectionStore'
+	import type { Resolved } from '$lib/pocketbase/Resolved'
 	import type { Symbol } from '$lib/common/models/Symbol'
 	import type { Section } from '$lib/common/models/Section'
 	import { get_content } from '$lib/builder/stores/helpers'

@@ -2,7 +2,7 @@
 	import { SITE } from '$lib/common/constants'
 	import type { SiteFieldField } from '$lib/common/models/fields/SiteFieldField'
 	import { type Id } from '$lib/common/models/Id'
-	import type { Resolved } from '$lib/pocketbase/CollectionStore'
+	import type { Resolved } from '$lib/pocketbase/Resolved'
 	import { fieldTypes } from '../stores/app'
 	import { get_direct_entries } from '../stores/helpers'
 

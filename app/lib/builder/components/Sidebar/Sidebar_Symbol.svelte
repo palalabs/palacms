@@ -10,7 +10,7 @@
 	import { draggable } from '../../libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
 	import { browser } from '$app/environment'
 	import IFrame from '../../components/IFrame.svelte'
-	import type { Resolved } from '$lib/pocketbase/CollectionStore'
+	import type { Resolved } from '$lib/pocketbase/Resolved'
 	import type { Symbol } from '$lib/common/models/Symbol'
 	import { get_content } from '$lib/builder/stores/helpers'
 	import { ID } from '$lib/common/constants'

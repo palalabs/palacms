@@ -8,7 +8,7 @@
 	import * as Dialog from '$lib/components/ui/dialog'
 	import { static_iframe_srcdoc } from '$lib/builder/components/misc'
 	import { block_html } from '$lib/builder/code_generators.js'
-	import type { Resolved } from '$lib/pocketbase/CollectionStore'
+	import type { Resolved } from '$lib/pocketbase/Resolved'
 	import type { Symbol } from '$lib/common/models/Symbol'
 	import { get_content } from '$lib/builder/stores/helpers'
 	import { ID } from '$lib/common'
