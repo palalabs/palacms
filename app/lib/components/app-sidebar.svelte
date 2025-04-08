@@ -46,7 +46,7 @@
 		e.preventDefault()
 		const userId = user()?.id
 		if (!userId) return
-		SiteGroups.create({ name: new_site_group_name, owner: userId, index: 0 })
+		await SiteGroups.create({ name: new_site_group_name, owner: userId, index: 0 })
 		require_site_groups.refresh()
 		is_creating_site_group = false
 	}
@@ -57,7 +57,6 @@
 		e.preventDefault()
 		if (!$library) return
 		$library.data.symbol_groups.push({ name: new_symbol_group_name, symbols: [] })
-		require_library.refresh()
 		is_creating_symbol_group = false
 	}
 
