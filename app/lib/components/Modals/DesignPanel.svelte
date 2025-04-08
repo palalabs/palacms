@@ -1,5 +1,5 @@
 <script module>
-	import { writable, get, type Readable } from 'svelte/store'
+	import { writable, get } from 'svelte/store'
 
 	const leftPaneSize = writable(get(onMobile) ? '100%' : '50%')
 	const rightPaneSize = writable('50%')
