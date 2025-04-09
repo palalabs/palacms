@@ -37,9 +37,13 @@ export type Resolved<T extends z.ZodTypeAny, P extends object = object> = T exte
 
 export const resolve = <T extends z.AnyZodObject>(model: T, value: z.TypeOf<T>, onUpdate?: () => void): Resolved<T, { [ID]: Id }> => proxy({ value, model, record: value, onUpdate })
 
-export const serialize = <T extends z.AnyZodObject>(model: T, value: Omit<Resolved<T>, 'id'>): z.TypeOf<T> => serializeRecursive<T>({ value, model })
+export const serialize = <T extends z.AnyZodObject>(model: T, value: Omit<Resolved<T>, 'id'>): z.TypeOf<T> => {
+	const record = {}
+	serializeRecursive<T>({ value, model, record, result: record })
+	return record
+}
 
-const serializeRecursive = <T extends z.AnyZodObject>({ value, model, result = {}, record = {}, path = [] }: { value: object; model: T; result?: any; record?: any; path?: string[] }): z.TypeOf<T> => {
+const serializeRecursive = <T extends z.AnyZodObject>({ value, model, record, result, path = [] }: { value: object; model: T; result: any; record: any; path?: string[] }): void => {
 	for (const key in value) {
 		if (value[key] && typeof value[key] === 'object') {
 			const valueType = walkToType(model, [...path, key])
@@ -51,15 +55,17 @@ const serializeRecursive = <T extends z.AnyZodObject>({ value, model, result = {
 				if (!record.data) record.data = {}
 				if (!record.data.entities) record.data.entities = {}
 				if (!record.data.entities[referenceType]) record.data.entities[referenceType] = {}
-				record.data.entities[referenceType][id] = value[key]
+				record.data.entities[referenceType][id] = serializeRecursive({ value: value[key], model, record, result: {}, path: ['data', 'entities', referenceType, id] })
 				result[key] = { $ref: `#/data/entities/${referenceType}/${id}` }
 				continue
 			} else if (Array.isArray(value[key])) {
 				// Set array, overwriting if already in result
-				result[key] = serializeRecursive({ value: value[key], model, result: [...value[key]], record, path: [...path, key] })
+				result[key] = []
+				serializeRecursive({ value: value[key], model, record, result: result[key], path: [...path, key] })
 			} else {
 				// Set object, merging if exists already in result
-				result[key] = serializeRecursive({ value: value[key], model, result: record[key] ?? {}, record, path: [...path, key] })
+				result[key] = result[key] ?? {}
+				result[key] = serializeRecursive({ value: value[key], model, record, result: result[key], path: [...path, key] })
 				continue
 			}
 		}
