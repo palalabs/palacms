@@ -14,25 +14,25 @@ type OptionalProperties<T extends Record<string, unknown>> = { [K in keyof T]: T
 export type Resolved<T extends z.ZodTypeAny, P extends object = object> = T extends {
 	[SITE_ENTITY_REFERENCE]: SiteEntityType
 }
-	? Resolved<(typeof Site)['shape']['data']['shape']['entities']['shape'][T[typeof SITE_ENTITY_REFERENCE]]['element']> & P
+	? Resolved<(typeof Site)['shape']['data']['shape']['entities']['shape'][T[typeof SITE_ENTITY_REFERENCE]]['element'], P> & P
 	: T extends {
 				[LIBRARY_ENTITY_REFERENCE]: LibraryEntityType
 		  }
-		? Resolved<(typeof Library)['shape']['data']['shape']['entities']['shape'][T[typeof LIBRARY_ENTITY_REFERENCE]]['element']> & P
+		? Resolved<(typeof Library)['shape']['data']['shape']['entities']['shape'][T[typeof LIBRARY_ENTITY_REFERENCE]]['element'], P> & P
 		: T extends z.AnyZodObject
 			? {
-					[K in RequiredProperties<T['_output']>]: Resolved<T['shape'][K]>
+					[K in RequiredProperties<T['_output']>]: Resolved<T['shape'][K], P>
 				} & {
-					[K in OptionalProperties<T['_output']>]?: Resolved<T['shape'][K]>
+					[K in OptionalProperties<T['_output']>]?: Resolved<T['shape'][K], P>
 				}
 			: T extends z.ZodArray<z.ZodTypeAny>
-				? Resolved<T['element']>[]
+				? Resolved<T['element'], P>[]
 				: T extends z.ZodRecord<z.ZodString, z.ZodTypeAny>
-					? Record<string, Resolved<T['element']>>
+					? Record<string, Resolved<T['element'], P>>
 					: T extends z.ZodRecord<z.ZodNumber, z.ZodTypeAny>
-						? Record<number, Resolved<T['element']>>
+						? Record<number, Resolved<T['element'], P>>
 						: T extends z.ZodUnion<infer Types>
-							? { [K in keyof Types]: Resolved<Types[K]> }[number]
+							? { [K in keyof Types]: Resolved<Types[K], P> }[number]
 							: T['_output']
 
 export const resolve = <T extends z.AnyZodObject>(model: T, value: z.TypeOf<T>, onUpdate?: () => void): Resolved<T, { [ID]: Id }> => proxy({ value, model, record: value, onUpdate })
@@ -41,28 +41,31 @@ export const serialize = <T extends z.AnyZodObject>(model: T, value: Omit<Resolv
 
 const serializeRecursive = <T extends z.AnyZodObject>({ value, model, result = {}, record = {}, path = [] }: { value: object; model: T; result?: any; record?: any; path?: string[] }): z.TypeOf<T> => {
 	for (const key in value) {
-		const valueType = walkToType(model, [...path, key])
-		const referenceType: SiteEntityType | LibraryEntityType | null = valueType[SITE_ENTITY_REFERENCE] ?? valueType[LIBRARY_ENTITY_REFERENCE] ?? null
+		if (value[key] && typeof value[key] === 'object') {
+			const valueType = walkToType(model, [...path, key])
+			const referenceType: SiteEntityType | LibraryEntityType | null = valueType[SITE_ENTITY_REFERENCE] ?? valueType[LIBRARY_ENTITY_REFERENCE] ?? null
 
-		// Set reference
-		if (referenceType) {
-			const id = value[key][ID] ?? newId()
-			if (!record.data) record.data = {}
-			if (!record.data.entities) record.data.entities = {}
-			if (!record.data.entities[referenceType]) record.data.entities[referenceType] = {}
-			record.data.entities[referenceType][id] = value[key]
-			result[key] = { $ref: `#/data/entities/${referenceType}/${id}` }
-			continue
+			if (referenceType) {
+				// Set reference
+				const id = value[key][ID] ?? newId()
+				if (!record.data) record.data = {}
+				if (!record.data.entities) record.data.entities = {}
+				if (!record.data.entities[referenceType]) record.data.entities[referenceType] = {}
+				record.data.entities[referenceType][id] = value[key]
+				result[key] = { $ref: `#/data/entities/${referenceType}/${id}` }
+				continue
+			} else if (Array.isArray(value[key])) {
+				// Set array, overwriting if already in result
+				result[key] = serializeRecursive({ value: value[key], model, result: [...value[key]], record, path: [...path, key] })
+			} else {
+				// Set object, merging if exists already in result
+				result[key] = serializeRecursive({ value: value[key], model, result: record[key] ?? {}, record, path: [...path, key] })
+				continue
+			}
 		}
 
-		// Set object, merging if exists already in result
-		if (value && typeof value === 'object') {
-			result[key] = serializeRecursive({ value: value[key], model, result: record[key] ?? {}, record, path: [...path, key] })
-			continue
-		}
-
-		// Set directly without overwriting
 		if (!(key in result)) {
+			// Set directly without overwriting
 			result[key] = value[key]
 			continue
 		}

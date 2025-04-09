@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { RecordAuthResponse, RecordFullListOptions, RecordListOptions } from 'pocketbase'
+import type { CommonOptions, ListOptions, RecordAuthResponse, RecordFullListOptions, RecordListOptions, RecordOptions } from 'pocketbase'
 import { pb } from './PocketBase'
 import { serialize, type Resolved } from './Resolved'
 
@@ -19,6 +19,15 @@ export type ValidatedCollection<T extends z.AnyZodObject> = {
 export const createValidatedCollection = <T extends z.AnyZodObject>(idOrName: string, model: T): ValidatedCollection<T> => {
 	const collection = pb.collection(idOrName)
 	const schemaWithOptionalId = model.extend({ id: z.string().nonempty().optional() })
+	const getModel = (options?: RecordOptions) => {
+		let transformedModel: z.AnyZodObject = model
+		if (options?.fields) {
+			const fields = Object.fromEntries(options?.fields?.split(',').map((f) => [f.trim(), true as const]))
+			transformedModel = model.pick(fields)
+		}
+		return transformedModel
+	}
+
 	return {
 		model,
 		getOne: async (id) => {
@@ -26,12 +35,14 @@ export const createValidatedCollection = <T extends z.AnyZodObject>(idOrName: st
 			return model.parse(record)
 		},
 		getList: async (page, perPage, options) => {
+			const transformedModel = getModel(options)
 			const result = await collection.getList(page, perPage, options)
-			return result.items.map((record) => model.parse(record))
+			return result.items.map((record) => transformedModel.parse(record))
 		},
 		getFullList: async (options) => {
+			const transformedModel = getModel(options)
 			const records = await collection.getFullList(options)
-			return records.map((record) => model.parse(record))
+			return records.map((record) => transformedModel.parse(record))
 		},
 		create: async (values) => {
 			const serialized = serialize(model, values)

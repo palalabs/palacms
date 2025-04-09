@@ -2,12 +2,14 @@ import { z } from 'zod'
 import { type ValidatedCollection } from './ValidatedCollection'
 import { readonly, writable } from 'svelte/store'
 import { resolve, type Resolved } from './Resolved'
+import type { ID } from '$lib/common'
+import type { Id } from '$lib/common/models/Id'
 
 const updateIntervalMs = 1000
 
 export const createCollectionStore = <T extends z.AnyZodObject>(collection: ValidatedCollection<T>, idOrRecord: string | z.infer<T>) => {
 	type Record = z.infer<T>
-	type ResolvedRecord = Resolved<T>
+	type ResolvedRecord = Resolved<T, { [ID]: Id }>
 
 	let record: Record | null = null
 	let store = writable<ResolvedRecord | null>(null)
@@ -23,7 +25,7 @@ export const createCollectionStore = <T extends z.AnyZodObject>(collection: Vali
 				// TODO: JSON Patch
 				collection.update(record.id, record).then((value) => {
 					record = value
-					const resolved: ResolvedRecord = resolve(collection, record, onUpdate)
+					const resolved = resolve(collection.model, record, onUpdate) as ResolvedRecord
 					store.set(resolved)
 					updateTask = null
 				})
@@ -37,7 +39,7 @@ export const createCollectionStore = <T extends z.AnyZodObject>(collection: Vali
 		const id = typeof idOrRecord === 'string' ? idOrRecord : idOrRecord.id
 		collection.getOne(id).then((value) => {
 			record = value
-			const resolved: ResolvedRecord = resolve(collection, record, onUpdate)
+			const resolved = resolve(collection.model, record, onUpdate) as ResolvedRecord
 			store.set(resolved)
 		})
 	}
@@ -45,7 +47,7 @@ export const createCollectionStore = <T extends z.AnyZodObject>(collection: Vali
 		refresh()
 	} else {
 		record = idOrRecord
-		const resolved: ResolvedRecord = resolve(collection, record, onUpdate)
+		const resolved = resolve(collection.model, record, onUpdate) as ResolvedRecord
 		store.set(resolved)
 	}
 

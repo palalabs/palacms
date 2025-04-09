@@ -7,16 +7,16 @@ import type { ID } from '$lib/common'
 import type { Id } from '$lib/common/models/Id'
 import type { Resolved } from '$lib/pocketbase/Resolved'
 
-export type CollectionStoreLoader<T extends z.AnyZodObject, P extends (string | number)[]> = {
+export type CollectionStoreLoader<T extends z.AnyZodObject, P extends (string | number | undefined | null)[]> = {
 	(...params: [...P]): Readable<Resolved<T, { [ID]: Id }> | null>
 	refresh: () => void
 }
 
-export const createCollectionStoreLoader = <T extends z.AnyZodObject, P extends (string | number)[]>(
+export const createCollectionStoreLoader = <T extends z.AnyZodObject, P extends (string | number | undefined | null)[]>(
 	collection: ValidatedCollection<T>,
 	load: (...params: [...P]) => Promise<z.TypeOf<T> | string>
 ): CollectionStoreLoader<T, P> => {
-	const store = writable<Resolved<T> | null>(null)
+	const store = writable<Resolved<T, { [ID]: Id }> | null>(null)
 	let refresh: (() => void) | undefined
 	let unsubscribe: Unsubscriber | undefined
 	let loaded: boolean | P = false

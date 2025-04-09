@@ -1,4 +1,4 @@
-export const paramsMatch = <T extends (string | number)[]>(array1: [...T], array2: [...T]) => {
+export const paramsMatch = <T extends (string | number | undefined | null)[]>(array1: [...T], array2: [...T]) => {
 	if (array1.length != array2.length) {
 		return false
 	}

@@ -1,25 +1,12 @@
 import { readonly, writable, type Readable } from 'svelte/store'
+import { paramsMatch } from './utils'
 
-export type StoreLoader<T, P extends (string | number)[] = []> = {
+export type StoreLoader<T, P extends (string | number | undefined | null)[] = []> = {
 	(...params: [...P]): Readable<T>
 	refresh: () => void
 }
 
-const paramsMatch = <T extends (string | number)[]>(array1: [...T], array2: [...T]) => {
-	if (array1.length != array2.length) {
-		return false
-	}
-
-	for (let index = 0; index < array1.length; index++) {
-		if (array1[index] !== array2[index]) {
-			return false
-		}
-	}
-
-	return true
-}
-
-export const createStoreLoader = <T, P extends (string | number)[] = []>(load: (...params: [...P]) => Promise<T>, defaultValue?: T): StoreLoader<T, P> => {
+export const createStoreLoader = <T, P extends (string | number | undefined | null)[] = []>(load: (...params: [...P]) => Promise<T>, defaultValue?: T): StoreLoader<T, P> => {
 	const store = writable(defaultValue)
 	let loaded: boolean | P = false
 	return Object.assign(

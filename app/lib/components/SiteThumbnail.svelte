@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import SitePreview from '$lib/components/SitePreview.svelte'
 	import { EllipsisVertical, SquarePen, Trash2, Download, Loader, ArrowLeftRight } from 'lucide-svelte'
 	import { find as _find } from 'lodash-es'
@@ -9,96 +9,47 @@
 	import * as Dialog from '$lib/components/ui/dialog'
 	import { Input } from '$lib/components/ui/input'
 	import * as AlertDialog from '$lib/components/ui/alert-dialog'
-	import { require_site, require_site_groups } from '$lib/loaders'
+	import { require_site_groups, require_site_list } from '$lib/loaders'
 	import { Sites } from '$lib/pocketbase/collections'
+	import type { Resolved } from '$lib/pocketbase/Resolved'
+	import type { Site } from '$lib/common/models/Site'
 
-	/**
-	 * @typedef {Object} Props
-	 * @property {string} site_id
-	 * @property {any} [preview]
-	 * @property {string} [append]
-	 * @property {string} [style]
-	 * @property {any} [src]
-	 */
-
-	/** @type {Props} */
-	let { site_id, preview = $bindable(null), append = '', style = '', src = null } = $props()
-	const site = require_site(site_id)
+	let { site }: { site: Pick<Resolved<typeof Site>, 'id' | 'name' | 'group'> } = $props()
 	const site_groups = require_site_groups()
-
-	if (!preview && $site) {
-		get_preview()
-	}
-
-	async function get_preview() {
-		// TODO: Implement
-		throw new Error('Not implemented')
-	}
 
 	async function download_site_file() {
 		// TODO: Implement
 		throw new Error('Not implemented')
 	}
 
-	let container = $state()
-	let scale = $state()
-	let iframeHeight = $state()
-	let iframe = $state()
-
-	function resizePreview() {
-		const { clientWidth: parentWidth } = container
-		const { clientWidth: childWidth } = iframe
-		scale = parentWidth / childWidth
-		iframeHeight = `${100 / scale}%`
-	}
-
-	function append_to_iframe(code) {
-		var container = document.createElement('div')
-
-		// Set the innerHTML of the container to your HTML string
-		container.innerHTML = code
-
-		// Append each element in the container to the document head
-		Array.from(container.childNodes).forEach((node) => {
-			iframe.contentWindow.document.body.appendChild(node)
-		})
-	}
-
-	// wait for processor to load before building preview
-	let processorLoaded = false
-	setTimeout(() => {
-		processorLoaded = true
-	}, 500)
-	$effect(() => {
-		iframe && append_to_iframe(append)
-	})
-
 	let is_rename_open = $state(false)
 	let is_delete_open = $state(false)
-	let new_name = $state($site?.name ?? '')
+	let new_name = $state('')
+	$effect(() => {
+		new_name = site.name || ''
+	})
 
 	async function handle_rename() {
-		if (!$site) return
+		await Sites.update(site.id, { name: new_name })
+		require_site_list.refresh()
 		is_rename_open = false
-		$site.name = new_name
 	}
 
 	let deleting = $state(false)
 	async function delete_site() {
 		is_delete_open = false
-		await Sites.delete(site_id)
+		await Sites.delete(site.id)
+		require_site_list.refresh()
 	}
 
 	let is_move_open = $state(false)
-	let selected_group_id = $state($site?.group ?? $site_groups[0].id ?? '')
+	let selected_group_id = $state(site.group ?? $site_groups[0].id ?? '')
 	async function move_site() {
-		if (!$site) return
+		await Sites.update(site.id, { group: selected_group_id })
+		require_site_list.refresh()
 		is_move_open = false
-		$site.group = selected_group_id
 	}
 </script>
-
-<svelte:window onresize={resizePreview} />
 
 <Dialog.Root bind:open={is_move_open}>
 	<Dialog.Content class="sm:max-w-[425px] pt-12 gap-0">
@@ -124,12 +75,12 @@
 
 <div class="space-y-3 relative w-full bg-gray-900">
 	<div class="rounded-tl rounded-tr overflow-hidden">
-		<a data-sveltekit-prefetch href="/{$site?.id}">
-			<SitePreview {preview} {append} />
+		<a data-sveltekit-prefetch href="/{site.id}">
+			<SitePreview />
 		</a>
 	</div>
 	<div class="absolute -bottom-2 rounded-bl rounded-br w-full p-3 z-20 bg-gray-900 truncate flex items-center justify-between">
-		<a data-sveltekit-prefetch href="/{$site?.id}" class="text-sm font-medium leading-none hover:underline">{$site?.data.name}</a>
+		<a data-sveltekit-prefetch href="/{site.id}" class="text-sm font-medium leading-none hover:underline">{site.name}</a>
 		<DropdownMenu.Root>
 			<DropdownMenu.Trigger>
 				<EllipsisVertical size={14} />
@@ -175,7 +126,7 @@
 		<AlertDialog.Header>
 			<AlertDialog.Title>Are you sure?</AlertDialog.Title>
 			<AlertDialog.Description>
-				This action cannot be undone. This will permanently delete <strong>{$site?.data.name}</strong>
+				This action cannot be undone. This will permanently delete <strong>{site.name}</strong>
 				and remove all associated data.
 			</AlertDialog.Description>
 		</AlertDialog.Header>
@@ -187,7 +138,7 @@
 						<Loader />
 					</div>
 				{:else}
-					Delete {$site?.data.name}
+					Delete {site.name}
 				{/if}
 			</AlertDialog.Action>
 		</AlertDialog.Footer>

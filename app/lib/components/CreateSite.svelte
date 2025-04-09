@@ -12,12 +12,20 @@
 	import Themes from './Themes.svelte'
 	import * as code_generators from '$lib/builder/code_generators'
 	import EmptyState from '$lib/components/EmptyState.svelte'
-	import { require_library } from '$lib/loaders'
-	import type { Site } from '$lib/common/models/Site'
+	import { require_library, require_site, require_site_groups, require_site_list } from '$lib/loaders'
+	import { Site } from '$lib/common/models/Site'
+	import type { Resolved } from '$lib/pocketbase/Resolved'
+	import { Sites } from '$lib/pocketbase/collections'
+	import { ID } from '$lib/common'
+	import type { Readable } from 'svelte/store'
+	import { page } from '$app/state'
 
-	let { onclose, onsubmit } = $props()
+	let { onclose } = $props()
 
-	const library = require_library()
+	const site_group_id = $derived(page.url.searchParams.get('group'))
+	const themes = require_site_list(null)
+	const site_groups = require_site_groups()
+	const active_site_group = $derived($site_groups?.find((group) => group.id === site_group_id))
 
 	let site_name = $state(``)
 
@@ -52,6 +60,7 @@
 	}
 
 	let selected_theme_id = $state(``)
+	let theme: Readable<Resolved<typeof Site> | null> = $derived(require_site(selected_theme_id))
 	function select_theme(theme) {
 		preview = theme.preview
 		selected_theme_id = theme.id
@@ -80,16 +89,34 @@
 		}
 	}
 
-	let completed = $derived(!!site_name && (selected_theme_id || duplicated_site_data))
+	let completed = $derived(!!site_name && ($theme || duplicated_site_data))
 	let loading = $state(false)
-	function create_site() {
+	async function create_site() {
+		if (!$theme || !active_site_group) return
 		loading = true
-		onsubmit({
-			starter_id: selected_theme_id,
-			duplication_source: duplicated_site_data,
-			details: { name: site_name, design: design_values },
-			preview
+		await Sites.create({
+			name: site_name,
+			description: '',
+			group: active_site_group.id,
+			data: {
+				code: $theme.data.code,
+				design: design_values,
+				entities: {
+					symbols: {},
+					fields: {},
+					sections: {},
+					page_types: {},
+					pages: {}
+				},
+				symbols: [],
+				fields: [],
+				page_types: [],
+				root: $theme.data.root
+			},
+			index: 0
 		})
+		require_site_list.refresh()
+		onclose()
 	}
 </script>
 
@@ -154,7 +181,7 @@
 						</label>
 					</Button>
 				</div>
-				{#if $library?.data.starters.length || duplicated_site_data}
+				{#if $themes.length || duplicated_site_data}
 					<div class="split-container flex-1">
 						<div class="h-[77vh] overflow-auto">
 							<Themes on:select={({ detail }) => select_theme(detail)} append={design_variables_css} />
