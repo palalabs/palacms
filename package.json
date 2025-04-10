@@ -3,7 +3,7 @@
 	"version": "3.0.0--beta.1",
 	"private": true,
 	"scripts": {
-		"dev": "vite dev",
+		"dev": "devenv up",
 		"test": "playwright test",
 		"build": "NODE_OPTIONS=--max_old_space_size=16384 vite build",
 		"preview": "vite preview",
