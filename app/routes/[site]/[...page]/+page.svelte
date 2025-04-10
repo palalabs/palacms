@@ -6,11 +6,11 @@
 	import type { Id } from '$lib/common/models/Id'
 
 	const site_id = $derived(pageState.params.site as Id)
-	const page_id = $derived(pageState.params.page as Id)
+	const slug = $derived(pageState.params.page as Id)
 	const site = $derived(require_site(site_id))
-	const page = $derived($site?.data.entities.pages[page_id])
+	const page = $derived(Object.values($site?.data.entities.pages ?? {}).find((page) => page?.slug == slug))
 </script>
 
-{#if $compilers_registered}
+{#if $compilers_registered && page}
 	<PrimoPage {page} />
 {/if}

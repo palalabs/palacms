@@ -143,10 +143,11 @@
 	// Generate <head> tag code
 	let previous
 	$effect.pre(() => {
-		if (_.isEqual(previous, { head: $site?.data.code.head, design: $site?.data.design })) return
-		compile_component_head(`<svelte:head>${site_design_css($site?.data.design) + $site?.data.code.head}</svelte:head>`).then((generated_code) => {
+		if (!$site) return
+		if (_.isEqual(previous, { head: $site.data.code.head, design: $site.data.design })) return
+		compile_component_head(`<svelte:head>${site_design_css($site.data.design) + $site.data.code.head}</svelte:head>`).then((generated_code) => {
 			$site_html = generated_code
-			previous = _.cloneDeep({ head: $site?.data.code.head, design: $site?.data.design })
+			previous = _.cloneDeep({ head: $site.data.code.head, design: $site.data.design })
 		})
 	})
 
@@ -191,7 +192,7 @@
 			{#if showing_sidebar}
 				{#if page.params.page_type}
 					<PageType_Sidebar />
-				{:else}page.params.page_type
+				{:else}
 					<Page_Sidebar />
 				{/if}
 			{:else if !$onMobile}

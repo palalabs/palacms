@@ -33,7 +33,7 @@
 <ul class="page-list root">
 	{#each $site ? [$site.data.root] : [] as page (page[ID])}
 		<li animate:flip={{ duration: 200 }}>
-			<Item {page} active={false} on:create={({ detail }) => create_page(detail.page, page)} on:delete={({ detail: terminal_page }) => delete_page(terminal_page)} />
+			<Item {page} active={false} on:create={({ detail: new_page }) => create_page(new_page, page)} on:delete={({ detail: terminal_page }) => delete_page(terminal_page)} />
 		</li>
 	{/each}
 	{#if creating_page}

@@ -1,12 +1,11 @@
 import { z } from 'zod'
-import { JsonPointer } from 'json-ptr'
+import { decodeUriFragmentIdentifier, JsonPointer } from 'json-ptr'
 import { SITE_ENTITY_REFERENCE, type SiteEntityType } from '$lib/common/models/SiteEntityReference'
 import type { Site } from '$lib/common/models/Site'
 import { LIBRARY_ENTITY_REFERENCE, type LibraryEntityType } from '$lib/common/models/LibraryEntityReference'
 import type { Library } from '$lib/common/models/Library'
 import { ID } from '$lib/common'
 import { Id, newId } from '$lib/common/models/Id'
-import type { ValidatedCollection } from './ValidatedCollection'
 
 type RequiredProperties<T extends Record<string, unknown>> = { [K in keyof T]: T extends undefined ? never : K }[keyof T]
 type OptionalProperties<T extends Record<string, unknown>> = { [K in keyof T]: T extends undefined ? K : never }[keyof T]
@@ -49,10 +48,10 @@ const serializeRecursive = <T extends z.AnyZodObject>({ value, model, record, re
 
 			if (referenceType) {
 				// Set reference
-				const id = value[key][ID] ?? newId()
 				if (!record.data) record.data = {}
 				if (!record.data.entities) record.data.entities = {}
 				if (!record.data.entities[referenceType]) record.data.entities[referenceType] = {}
+				const id = value[key][ID] ?? newId()
 				record.data.entities[referenceType][id] = serializeRecursive({ value: value[key], model, record, result: {}, path: ['data', 'entities', referenceType, id] })
 				result[key] = { $ref: `#/data/entities/${referenceType}/${id}` }
 				continue
@@ -77,10 +76,10 @@ const serializeRecursive = <T extends z.AnyZodObject>({ value, model, record, re
 	return result
 }
 
-const proxy = ({ value, model, record, path = [], onUpdate }: { value: object; model: z.AnyZodObject; record: any; path?: string[]; onUpdate?: () => void }): any =>
+const proxy = ({ value, model, record, path = [], onUpdate }: { value: object; model: z.AnyZodObject; record: any; path?: (string | number)[]; onUpdate?: () => void }): any =>
 	new Proxy(value, {
 		get(target, key) {
-			const [propertyKey, id] = path.slice(-2)
+			const [propertyKey, _entityType, id] = path.slice(-3)
 			if (propertyKey === 'entities' && key === ID) {
 				return id
 			}
@@ -92,8 +91,13 @@ const proxy = ({ value, model, record, path = [], onUpdate }: { value: object; m
 			}
 
 			// Resolve reference
-			if (val && typeof val === 'object' && '$ref' in val) {
-				val = JsonPointer.get(record, target[key].$ref)
+			let innerPath = [...path, key]
+			const valueType = walkToType(model, innerPath)
+			const referenceType: SiteEntityType | LibraryEntityType | null = valueType[SITE_ENTITY_REFERENCE] ?? valueType[LIBRARY_ENTITY_REFERENCE] ?? null
+			if (referenceType) {
+				const pointer = val.$ref
+				val = JsonPointer.get(record, pointer)
+				innerPath = decodeUriFragmentIdentifier(pointer)
 			}
 
 			// Return proxy if val is object (or array)
@@ -102,7 +106,7 @@ const proxy = ({ value, model, record, path = [], onUpdate }: { value: object; m
 					value: val,
 					model,
 					record,
-					path: [...path, key],
+					path: innerPath,
 					onUpdate
 				})
 			} else {
@@ -138,22 +142,39 @@ const proxy = ({ value, model, record, path = [], onUpdate }: { value: object; m
 		}
 	})
 
-const walkToType = (model: z.ZodTypeAny, path: string[]): z.ZodTypeAny => {
+const walkToType = (model: z.ZodTypeAny | undefined, path: (string | number)[], root?: z.ZodTypeAny): z.ZodTypeAny => {
+	root = root ?? model
+	if (!model) {
+		return z.unknown()
+	}
 	if (path.length === 0) {
 		return model
 	}
 
 	const [key, ...restOfPath] = path
-	if (model instanceof z.ZodObject) {
-		return walkToType(model.shape[key], restOfPath)
-	} else if (model instanceof z.ZodArray || model instanceof z.ZodRecord) {
-		return walkToType(model.element, restOfPath)
+	const referenceType: SiteEntityType | LibraryEntityType | null = model[SITE_ENTITY_REFERENCE] ?? model[LIBRARY_ENTITY_REFERENCE] ?? null
+	if (referenceType) {
+		// Walk through reference
+		model = walkToType(root, ['data', 'entities', referenceType, key], root)
+		return walkToType(model, restOfPath, root)
+	} else if (model instanceof z.ZodObject) {
+		return walkToType(model.shape[key], restOfPath, root)
+	} else if (model instanceof z.ZodArray) {
+		if (!Number.isInteger(key)) {
+			return z.unknown()
+		}
+		return walkToType(model.element, restOfPath, root)
+	} else if (model instanceof z.ZodRecord) {
+		if (!model.keySchema.safeParse(key).success) {
+			return z.unknown()
+		}
+		return walkToType(model.element, restOfPath, root)
 	} else if (model instanceof z.ZodUnion) {
 		return z.union(
 			model.options
 				.map((model: z.ZodTypeAny) => {
 					try {
-						return walkToType(model, [key, ...restOfPath])
+						return walkToType(model, [key, ...restOfPath], root)
 					} catch {
 						return null
 					}

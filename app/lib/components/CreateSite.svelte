@@ -98,21 +98,7 @@
 			name: site_name,
 			description: '',
 			group: active_site_group.id,
-			data: {
-				code: $theme.data.code,
-				design: design_values,
-				entities: {
-					symbols: {},
-					fields: {},
-					sections: {},
-					page_types: {},
-					pages: {}
-				},
-				symbols: [],
-				fields: [],
-				page_types: [],
-				root: $theme.data.root
-			},
+			data: $theme.data,
 			index: 0
 		})
 		require_site_list.refresh()

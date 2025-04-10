@@ -10,6 +10,6 @@
 	const page = $derived($site?.data.root)
 </script>
 
-{#if $compilers_registered}
+{#if $compilers_registered && page}
 	<PrimoPage {page} />
 {/if}

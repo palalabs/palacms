@@ -11,7 +11,6 @@
 	import type { Page } from '$lib/common/models/Page'
 	import { page as pageState } from '$app/state'
 	import { ID } from '$lib/common/constants'
-	import { require_site } from '$lib/loaders'
 
 	const dispatch = createEventDispatcher()
 
@@ -20,9 +19,8 @@
 	/** @type {Props} */
 	let { parent, page, active }: { parent?: Resolved<typeof Page>; page: Resolved<typeof Page>; active: boolean } = $props()
 
-	const site_id = pageState.params.site
-	const site = $derived(require_site(site_id))
-	const full_url = `/${site_id}/${page.slug}`
+	const site_id = $derived(pageState.params.site)
+	const full_url = $derived(`/${site_id}/${page.slug}`)
 
 	let showing_children = $state(false)
 	let has_children = $derived(page.children.length > 0)

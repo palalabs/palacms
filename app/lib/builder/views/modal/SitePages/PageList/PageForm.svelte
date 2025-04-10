@@ -17,12 +17,15 @@
 	const dispatch = createEventDispatcher()
 
 	// set page type equal to the last type used under this parent
-	const default_page_type = parent?.children[0]?.page_type
+	const default_page_type = $derived(parent?.children[0]?.page_type ?? $site?.data.page_types[0])
 
-	const new_page = $state({
-		name: '',
-		slug: '',
-		page_type: default_page_type
+	let new_page = $state()
+	$effect.pre(() => {
+		new_page = {
+			name: '',
+			slug: '',
+			page_type: default_page_type
+		}
 	})
 
 	let page_creation_disabled = $derived(!new_page.name || !new_page.slug)
