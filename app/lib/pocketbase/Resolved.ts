@@ -25,15 +25,13 @@ export type Resolved<T extends z.ZodTypeAny, P extends object = object> = T exte
 				} & {
 					[K in OptionalProperties<T['_output']>]?: Resolved<T['shape'][K], P>
 				}
-			: T extends z.ZodArray<z.ZodTypeAny>
-				? Resolved<T['element'], P>[]
-				: T extends z.ZodRecord<z.ZodString, z.ZodTypeAny>
-					? Record<string, Resolved<T['element'], P>>
-					: T extends z.ZodRecord<z.ZodNumber, z.ZodTypeAny>
-						? Record<number, Resolved<T['element'], P>>
-						: T extends z.ZodUnion<infer Types>
-							? { [K in keyof Types]: Resolved<Types[K], P> }[number]
-							: T['_output']
+			: T extends z.ZodArray<infer Element>
+				? Resolved<Element, P>[]
+				: T extends z.ZodRecord<infer Key, infer Element>
+					? Record<z.TypeOf<Key>, Resolved<Element, P>>
+					: T extends z.ZodUnion<infer Types>
+						? { [K in keyof Types]: Resolved<Types[K], P> }[number]
+						: T['_output']
 
 export const resolve = <T extends z.AnyZodObject>(model: T, value: z.TypeOf<T>, onUpdate?: () => void): Resolved<T, { [ID]: Id }> => proxy({ value, model, record: value, onUpdate })
 
