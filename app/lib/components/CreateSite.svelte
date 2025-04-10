@@ -9,21 +9,19 @@
 	import { Label } from '$lib/components/ui/label/index.js'
 	import { convert_site_v3 } from '$lib/builder/new_converter'
 	import DesignFields from './Modals/DesignFields.svelte'
-	import Themes from './Themes.svelte'
+	import SiteThumbnail from '$lib/components/SiteThumbnail.svelte'
 	import * as code_generators from '$lib/builder/code_generators'
-	import EmptyState from '$lib/components/EmptyState.svelte'
-	import { require_library, require_site, require_site_groups, require_site_list } from '$lib/loaders'
+	import { require_site, require_site_groups, require_site_list } from '$lib/loaders'
 	import { Site } from '$lib/common/models/Site'
 	import type { Resolved } from '$lib/pocketbase/Resolved'
 	import { Sites } from '$lib/pocketbase/collections'
-	import { ID } from '$lib/common'
 	import type { Readable } from 'svelte/store'
 	import { page } from '$app/state'
 
 	let { onclose } = $props()
 
 	const site_group_id = $derived(page.url.searchParams.get('group'))
-	const themes = require_site_list(null)
+	const starter_sites = require_site_list(null)
 	const site_groups = require_site_groups()
 	const active_site_group = $derived($site_groups?.find((group) => group.id === site_group_id))
 
@@ -89,7 +87,7 @@
 		}
 	}
 
-	let completed = $derived(!!site_name && ($theme || duplicated_site_data))
+	let completed = $derived(!!site_name)
 	let loading = $state(false)
 	async function create_site() {
 		if (!$theme || !active_site_group) return
@@ -162,7 +160,7 @@
 				</div>
 				<div class="design-preview border">
 					{@html design_variables_css}
-					<h1>{site_name || 'Welcome to Primo'}</h1>
+					<h1>{site_name || 'Welcome to Pala'}</h1>
 					<h2>We're happy you're here</h2>
 					<button>Button</button>
 				</div>
@@ -181,41 +179,24 @@
 						</label>
 					</Button>
 				</div>
-				{#if $themes.length || duplicated_site_data}
-					<div class="split-container flex-1">
-						<div class="h-[77vh] overflow-auto">
-							<Themes on:select={({ detail }) => select_theme(detail)} append={design_variables_css} />
-						</div>
-						<div style="background: #222;" class="rounded">
-							{#if preview}
-								<SitePreview style="height: 100%" site_id={selected_theme_id} {preview} append={design_variables_css} />
-							{/if}
+				<div class="split-container flex-1">
+					<div class="h-[77vh] overflow-auto">
+						<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+							{#each $starter_sites as site}
+								<SiteThumbnail {site} onclick={({ detail }) => select_theme(detail)} append={design_variables_css} />
+							{/each}
 						</div>
 					</div>
-				{:else}
-					<EmptyState
-						icon={LayoutTemplate}
-						title="You don't have any Starters"
-						description="You need at least one Starter before you can build a site, or duplicate from a site file."
-						link={{ icon: ArrowUpRight, label: 'Go to Starters', url: '/dashboard/library/starters' }}
-					/>
-				{/if}
+					<div style="background: #222;" class="rounded">
+						{#if preview}
+							<SitePreview style="height: 100%" site_id={selected_theme_id} {preview} append={design_variables_css} />
+						{/if}
+					</div>
+				</div>
 			</div>
 		</Tabs.Content>
 	</div>
 </Tabs.Root>
-
-<!-- <div class="flex justify-end gap-3">
-	<Button variant="outline" onclick={onclose}>Cancel</Button>
-	<Button variant="default" onclick={create_site} disabled={loading || !completed} class="inline-flex justify-center items-center">
-		<span class:invisible={loading}>Create Site</span>
-		{#if loading}
-			<div class="animate-spin absolute">
-				<Loader />
-			</div>
-		{/if}
-	</Button>
-</div> -->
 
 <style lang="postcss">
 	.design-preview {
