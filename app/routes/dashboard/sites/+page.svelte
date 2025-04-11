@@ -5,7 +5,7 @@
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
 	import * as RadioGroup from '$lib/components/ui/radio-group'
 	import { Label } from '$lib/components/ui/label'
-	import SiteThumbnail from '$lib/components/SiteThumbnail.svelte'
+	import SitePreview from '$lib/components/SitePreview.svelte'
 	import { Input } from '$lib/components/ui/input'
 	import EmptyState from '$lib/components/EmptyState.svelte'
 	import { Separator } from '$lib/components/ui/separator'
@@ -138,55 +138,67 @@
 	{#if $sites?.length}
 		<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 			{#each $sites as site}
-				<SiteThumbnail {site}>
-					<DropdownMenu.Root>
-						<DropdownMenu.Trigger>
-							<EllipsisVertical size={14} />
-						</DropdownMenu.Trigger>
-						<DropdownMenu.Content>
-							<DropdownMenu.Item
-								onclick={() => {
-									current_site = site
-									is_rename_site_open = true
-								}}
-							>
-								<SquarePen class="h-4 w-4" />
-								<span>Rename</span>
-							</DropdownMenu.Item>
-							{#if $site_groups.length > 1}
-								<DropdownMenu.Item
-									onclick={() => {
-										current_site = site
-										is_move_site_open = true
-									}}
-								>
-									<ArrowLeftRight class="h-4 w-4" />
-									<span>Move</span>
-								</DropdownMenu.Item>
-							{/if}
-							<DropdownMenu.Item onclick={download_site_file}>
-								<Download class="h-4 w-4" />
-								<span>Download</span>
-							</DropdownMenu.Item>
-							<DropdownMenu.Item
-								onclick={() => {
-									current_site = site
-									is_delete_site_open = true
-								}}
-								class="text-red-500 hover:text-red-600 focus:text-red-600"
-							>
-								<Trash2 class="h-4 w-4" />
-								<span>Delete</span>
-							</DropdownMenu.Item>
-						</DropdownMenu.Content>
-					</DropdownMenu.Root>
-				</SiteThumbnail>
+				{@render SiteButton(site)}
 			{/each}
 		</div>
 	{:else}
 		<EmptyState icon={Globe} title="No Sites to display" description="It looks like you haven't created any websites yet." />
 	{/if}
 </div>
+
+{#snippet SiteButton(site)}
+	<div class="space-y-3 relative w-full bg-gray-900">
+		<div class="rounded-tl rounded-tr overflow-hidden">
+			<a data-sveltekit-prefetch href="/{site.id}">
+				<SitePreview />
+			</a>
+		</div>
+		<div class="absolute -bottom-2 rounded-bl rounded-br w-full p-3 z-20 bg-gray-900 truncate flex items-center justify-between">
+			<a data-sveltekit-prefetch href="/{site.id}" class="text-sm font-medium leading-none">{site.name}</a>
+			<DropdownMenu.Root>
+				<DropdownMenu.Trigger>
+					<EllipsisVertical size={14} />
+				</DropdownMenu.Trigger>
+				<DropdownMenu.Content>
+					<DropdownMenu.Item
+						onclick={() => {
+							current_site = site
+							is_rename_site_open = true
+						}}
+					>
+						<SquarePen class="h-4 w-4" />
+						<span>Rename</span>
+					</DropdownMenu.Item>
+					{#if $site_groups.length > 1}
+						<DropdownMenu.Item
+							onclick={() => {
+								current_site = site
+								is_move_site_open = true
+							}}
+						>
+							<ArrowLeftRight class="h-4 w-4" />
+							<span>Move</span>
+						</DropdownMenu.Item>
+					{/if}
+					<DropdownMenu.Item onclick={download_site_file}>
+						<Download class="h-4 w-4" />
+						<span>Download</span>
+					</DropdownMenu.Item>
+					<DropdownMenu.Item
+						onclick={() => {
+							current_site = site
+							is_delete_site_open = true
+						}}
+						class="text-red-500 hover:text-red-600 focus:text-red-600"
+					>
+						<Trash2 class="h-4 w-4" />
+						<span>Delete</span>
+					</DropdownMenu.Item>
+				</DropdownMenu.Content>
+			</DropdownMenu.Root>
+		</div>
+	</div>
+{/snippet}
 
 <Dialog.Root bind:open={is_rename_group_open}>
 	<Dialog.Content class="sm:max-w-[425px] pt-12 gap-0">
