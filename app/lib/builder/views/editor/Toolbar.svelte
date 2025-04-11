@@ -2,6 +2,8 @@
 	import { fade } from 'svelte/transition'
 	import { find as _find } from 'lodash-es'
 	import Icon from '@iconify/svelte'
+	import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
+	import { LayoutTemplate, Trash2, ChevronDown } from 'lucide-svelte'
 	import ToolbarButton from './ToolbarButton.svelte'
 	import Letter from '$lib/builder/ui/Letter.svelte'
 	import { PrimoButton } from '$lib/builder/components/buttons'
@@ -24,6 +26,8 @@
 
 	let going_up = $state(false)
 	let going_down = $state(false)
+
+	let customAnchor = $state<HTMLElement>(null!)
 </script>
 
 <nav aria-label="toolbar" id="primo-toolbar" class="primo-reset">
@@ -49,7 +53,25 @@
 						<div style:color={going_down ? 'var(--weave-primary-color)' : 'inherit'} style:opacity={1}>&#8984; ↓</div>
 					</div>
 				{:else}
-					<ToolbarButton label="Pages" icon="iconoir:multiple-pages" on:click={() => modal.show('SITE_PAGES', {}, { hideLocaleSelector: true, maxWidth: '1200px', showSwitch: false })} />
+					<div class="flex rounded" style="border: 1px solid #222" bind:this={customAnchor}>
+						<ToolbarButton label="Pages" icon="iconoir:multiple-pages" on:click={() => modal.show('SITE_PAGES', {}, { hideLocaleSelector: true, maxWidth: '1200px', showSwitch: false })} />
+						<DropdownMenu.Root>
+							<DropdownMenu.Trigger>
+								{#snippet child({ props })}
+									<button {...props} class="hover:bg-[#1f1f1f]" style="border-left: 1px solid #222">
+										<ChevronDown class="h-4" />
+										<span class="sr-only">More</span>
+									</button>
+								{/snippet}
+							</DropdownMenu.Trigger>
+							<DropdownMenu.Content side="bottom" class="z-[999]" align="start" sideOffset={4} {customAnchor}>
+								<DropdownMenu.Item onclick={() => modal.show('PAGE_TYPES', {}, { hideLocaleSelector: true, maxWidth: '1200px', showSwitch: false })} class="text-xs cursor-pointer">
+									<LayoutTemplate style="width: .75rem" />
+									<span>Page Types</span>
+								</DropdownMenu.Item>
+							</DropdownMenu.Content>
+						</DropdownMenu.Root>
+					</div>
 				{/if}
 			</div>
 

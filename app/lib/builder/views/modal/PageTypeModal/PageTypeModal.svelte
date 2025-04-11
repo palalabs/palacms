@@ -1,6 +1,5 @@
 <script>
 	import ModalHeader from '../ModalHeader.svelte'
-	import PageList from './PageList/PageList.svelte'
 	import Page_Types_List from './Page_Types_List/Page_Types_List.svelte'
 	import Icon from '@iconify/svelte'
 	import { editing_context } from '$lib/builder/stores/app/misc'
@@ -8,15 +7,15 @@
 
 <ModalHeader>
 	{#snippet title()}
-		<div class="title">
-			<Icon icon="iconoir:multiple-pages" />
-			<span>Pages</span>
-		</div>
+		<button class="title" class:active={$editing_context === 'page_type'} onclick={() => ($editing_context = 'page_type')}>
+			<Icon icon="carbon:template" />
+			<span>Page Types</span>
+		</button>
 	{/snippet}
 </ModalHeader>
 
 <main>
-	<PageList />
+	<Page_Types_List />
 </main>
 
 <style lang="postcss">
@@ -26,6 +25,7 @@
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
+		transition: 0.1s;
 	}
 	main {
 		padding: 1rem;

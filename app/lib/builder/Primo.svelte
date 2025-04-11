@@ -41,6 +41,7 @@
 	function getActiveModal(modalType) {
 		return modalType
 			? {
+					PAGE_TYPES: modals.PageTypes,
 					SITE_PAGES: modals.SitePages,
 					SECTION_EDITOR: modals.SectionEditor,
 					BLOCK_EDITOR: modals.BlockEditor,
