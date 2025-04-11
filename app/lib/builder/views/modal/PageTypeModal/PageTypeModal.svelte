@@ -2,15 +2,14 @@
 	import ModalHeader from '../ModalHeader.svelte'
 	import Page_Types_List from './Page_Types_List/Page_Types_List.svelte'
 	import Icon from '@iconify/svelte'
-	import { editing_context } from '$lib/builder/stores/app/misc'
 </script>
 
 <ModalHeader>
 	{#snippet title()}
-		<button class="title" class:active={$editing_context === 'page_type'} onclick={() => ($editing_context = 'page_type')}>
+		<div class="title">
 			<Icon icon="carbon:template" />
 			<span>Page Types</span>
-		</button>
+		</div>
 	{/snippet}
 </ModalHeader>
 

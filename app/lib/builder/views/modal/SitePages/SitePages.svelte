@@ -1,9 +1,7 @@
 <script>
 	import ModalHeader from '../ModalHeader.svelte'
 	import PageList from './PageList/PageList.svelte'
-	import Page_Types_List from './Page_Types_List/Page_Types_List.svelte'
 	import Icon from '@iconify/svelte'
-	import { editing_context } from '$lib/builder/stores/app/misc'
 </script>
 
 <ModalHeader>

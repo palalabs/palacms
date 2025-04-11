@@ -42,10 +42,6 @@
 </div>
 
 <style lang="postcss">
-	hr {
-		border-color: var(--color-gray-9);
-		margin: 1rem 0;
-	}
 	.Deploy.primo-reset {
 		color: white;
 		background: var(--primo-color-black);
@@ -59,7 +55,7 @@
 		gap: 1rem;
 	}
 
-	.dns-record {
+	/* .dns-record {
 		background: var(--color-gray-9);
 		border-radius: var(--primo-border-radius);
 		margin-bottom: 1rem;
@@ -81,7 +77,7 @@
 			gap: 0.5rem;
 			padding: 1rem;
 		}
-	}
+	} */
 
 	.error {
 		padding: 0.5rem;

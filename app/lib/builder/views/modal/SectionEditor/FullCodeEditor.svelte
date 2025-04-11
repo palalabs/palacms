@@ -269,23 +269,6 @@
 </footer> -->
 
 <style lang="postcss">
-	[slot] {
-		width: 100%;
-		display: flex;
-		flex-direction: column;
-	}
-
-	.mobile-tabs {
-		display: flex;
-		flex-direction: column;
-		overflow: scroll;
-
-		ul {
-			color: var(--color-gray-2);
-			border: 1px solid var(--color-gray-9);
-		}
-	}
-
 	.tabs {
 		width: 100%;
 		height: 100%;
@@ -327,7 +310,7 @@
 		}
 	}
 
-	footer {
+	/* footer {
 		position: sticky;
 		bottom: 0.25rem;
 		left: 100%;
@@ -354,5 +337,5 @@
 				background: var(--color-gray-8);
 			}
 		}
-	}
+	} */
 </style>

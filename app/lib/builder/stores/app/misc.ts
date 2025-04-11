@@ -18,6 +18,3 @@ export const active_users = writable([])
 export const page_loaded = writable(false)
 
 export const dragging_symbol = writable(false)
-
-/** @type {import('svelte/store').Writable<'page'|'page_type'>} */
-export const editing_context = writable('page')

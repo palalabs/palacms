@@ -7,7 +7,7 @@
 	import BlockToolbar from './Layout/BlockToolbar.svelte'
 	import LockedOverlay from './Layout/LockedOverlay.svelte'
 	import DropIndicator from './Layout/DropIndicator.svelte'
-	import { locale, locked_blocks, page_loaded, dragging_symbol, editing_context } from '$lib/builder/stores/app/misc'
+	import { locale, locked_blocks, page_loaded, dragging_symbol } from '$lib/builder/stores/app/misc'
 	import modal from '$lib/builder/stores/app/modal'
 	import { dropTargetForElements } from '$lib/builder/libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
 	import { attachClosestEdge, extractClosestEdge } from '$lib/builder/libraries/pragmatic-drag-and-drop-hitbox/closest-edge.js'
