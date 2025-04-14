@@ -49,6 +49,7 @@
 		await SiteGroups.delete(active_site_group.id)
 		require_site_groups.refresh()
 		deleting_group = false
+		is_delete_group_open = false
 	}
 
 	async function download_site_file() {
