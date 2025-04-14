@@ -160,7 +160,7 @@ const walkToType = (model: z.ZodTypeAny | undefined, path: (string | number)[], 
 	} else if (model instanceof z.ZodObject) {
 		return walkToType(model.shape[key], restOfPath, root)
 	} else if (model instanceof z.ZodArray) {
-		if (!Number.isInteger(key)) {
+		if (!isIntegerString(key.toString())) {
 			return z.unknown()
 		}
 		return walkToType(model.element, restOfPath, root)
@@ -185,3 +185,5 @@ const walkToType = (model: z.ZodTypeAny | undefined, path: (string | number)[], 
 		throw new Error('Cannot walk to type through unimplemented type')
 	}
 }
+
+const isIntegerString = (value: string) => value === parseInt(value).toString()
