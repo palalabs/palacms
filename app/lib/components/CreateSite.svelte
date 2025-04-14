@@ -14,7 +14,7 @@
 	import { Site } from '$lib/common/models/Site'
 	import type { Resolved } from '$lib/pocketbase/Resolved'
 	import { Sites } from '$lib/pocketbase/collections'
-	import type { Readable } from 'svelte/store'
+	import { readable, type Readable } from 'svelte/store'
 	import { page } from '$app/state'
 	import type { PageType } from '$lib/common/models/PageType'
 
@@ -58,7 +58,7 @@
 	}
 
 	let selected_starter_id = $state(``)
-	let selected_starter: Readable<Resolved<typeof Site> | null> = $derived(require_site(selected_starter_id))
+	let selected_starter: Readable<Resolved<typeof Site> | null> = $derived(selected_starter_id === 'blank' ? readable(null) : require_site(selected_starter_id))
 	function select_starter(site_id) {
 		selected_starter_id = site_id
 		preview = ''
