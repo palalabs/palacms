@@ -51,11 +51,11 @@ const normalizeRecursive = <T extends z.AnyZodObject>({ value, model, record, re
 				if (!record.data) record.data = {}
 				if (!record.data.entities) record.data.entities = {}
 				if (!record.data.entities[referenceType]) record.data.entities[referenceType] = {}
-				const id = value[key][ID] ?? newId()
-				value[key][ID] = id
-				record.data.entities[referenceType][id] = {}
-				normalizeRecursive({ value: value[key], model, record, result: record.data.entities[referenceType][id], path: ['data', 'entities', referenceType, id] })
-				result[key] = { $ref: `#/data/entities/${referenceType}/${id}` }
+				const entityId = value[key][ID] ?? newId()
+				value[key][ID] = entityId
+				record.data.entities[referenceType][entityId] = {}
+				normalizeRecursive({ value: value[key], model, record, result: record.data.entities[referenceType][entityId], path: ['data', 'entities', referenceType, entityId] })
+				result[key] = { $ref: `#/data/entities/${referenceType}/${entityId}` }
 				continue
 			} else if (Array.isArray(value[key])) {
 				// Set array, overwriting if already in result
@@ -80,9 +80,9 @@ const normalizeRecursive = <T extends z.AnyZodObject>({ value, model, record, re
 const proxy = ({ value, model, record, path = [], onUpdate }: { value: object; model: z.AnyZodObject; record: any; path?: (string | number)[]; onUpdate?: () => void }): any =>
 	new Proxy(value, {
 		get(target, key) {
-			const [propertyKey, _entityType, id] = path.slice(-3)
+			const [propertyKey, _entityType, entityId] = path.slice(-3)
 			if (propertyKey === 'entities' && key === ID) {
-				return id
+				return entityId
 			}
 
 			let val = target[key]
@@ -119,7 +119,7 @@ const proxy = ({ value, model, record, path = [], onUpdate }: { value: object; m
 			}
 		},
 		set(target, key, val) {
-			const [propertyKey, _entityType, _id] = path.slice(-3)
+			const [propertyKey, _entityType, _entityId] = path.slice(-3)
 			if (propertyKey === 'entities' && key === ID) {
 				throw new Error('Cannot set ID, it is virtual')
 			}
@@ -134,11 +134,11 @@ const proxy = ({ value, model, record, path = [], onUpdate }: { value: object; m
 			const referenceType: SiteEntityType | LibraryEntityType | null = valueType[SITE_ENTITY_REFERENCE] ?? valueType[LIBRARY_ENTITY_REFERENCE] ?? null
 			if (referenceType) {
 				// Set reference after normalizing
-				const id = val[ID] ?? newId()
-				val[ID] = id
-				record.data.entities[referenceType][id] = {}
-				normalizeRecursive({ value: val, model, record, result: record.data.entities[referenceType][id], path: ['data', 'entities', referenceType, id] })
-				target[key] = { $ref: `#/data/entities/${referenceType}/${id}` }
+				const entityId = val[ID] ?? newId()
+				val[ID] = entityId
+				record.data.entities[referenceType][entityId] = {}
+				normalizeRecursive({ value: val, model, record, result: record.data.entities[referenceType][entityId], path: ['data', 'entities', referenceType, entityId] })
+				target[key] = { $ref: `#/data/entities/${referenceType}/${entityId}` }
 				onUpdate?.()
 				return true
 			} else if (typeof val === 'object') {
@@ -155,47 +155,71 @@ const proxy = ({ value, model, record, path = [], onUpdate }: { value: object; m
 			}
 		},
 		deleteProperty(target, key) {
-			const [propertyKey, _entityType, _id] = path.slice(-3)
-			if (propertyKey === 'entities' && key === ID) {
-				throw new Error('Cannot delete ID, it is virtual')
+			if (typeof key === 'symbol') {
+				// Could be internal value that is not part of the JSON document
+				delete target[key]
+				return true
 			}
 
-			delete target[key]
-			onUpdate?.()
-			return true
+			if (target[key] === undefined) {
+				// Unset or property with undefined value, delete anyway to make sure that it's gone
+				delete target[key]
+				return true
+			}
+
+			const valueType = walkToType(model, [...path, key])
+			const referenceType: SiteEntityType | LibraryEntityType | null = valueType[SITE_ENTITY_REFERENCE] ?? valueType[LIBRARY_ENTITY_REFERENCE] ?? null
+			const [propertyKey, entityType] = path.slice(-2)
+			if (referenceType) {
+				const pointer = target[key].$ref
+				const pointedPath = decodeUriFragmentIdentifier(pointer)
+				const [entityId] = pointedPath.slice(-1)
+				deleteEntity({ model, record, entityType: referenceType, entityId })
+				onUpdate?.()
+				return true
+			} else if (propertyKey === 'entities') {
+				deleteEntity({ model, record, entityType: entityType as SiteEntityType | LibraryEntityType, entityId: key })
+				onUpdate?.()
+				return true
+			} else {
+				// Delete directly
+				delete target[key]
+				onUpdate?.()
+				return true
+			}
 		}
 	})
 
-const walkToType = (model: z.ZodTypeAny | undefined, path: (string | number)[], root?: z.ZodTypeAny): z.ZodTypeAny => {
-	root = root ?? model
-	if (!model) {
+const walkToType = (type: z.ZodTypeAny | undefined, path: (string | number)[], root?: z.ZodTypeAny): z.ZodTypeAny => {
+	root = root ?? type
+	if (!type) {
 		return z.unknown()
 	}
 	if (path.length === 0) {
-		return model
+		return type
 	}
 
 	const [key, ...restOfPath] = path
-	const referenceType: SiteEntityType | LibraryEntityType | null = model[SITE_ENTITY_REFERENCE] ?? model[LIBRARY_ENTITY_REFERENCE] ?? null
+	const referenceType: SiteEntityType | LibraryEntityType | null = type[SITE_ENTITY_REFERENCE] ?? type[LIBRARY_ENTITY_REFERENCE] ?? null
 	if (referenceType) {
 		// Walk through reference
-		model = walkToType(root, ['data', 'entities', referenceType, key], root)
-		return walkToType(model, restOfPath, root)
-	} else if (model instanceof z.ZodObject) {
-		return walkToType(model.shape[key], restOfPath, root)
-	} else if (model instanceof z.ZodArray) {
+		type = walkToType(root, ['data', 'entities', referenceType, key], root)
+		return walkToType(type, restOfPath, root)
+	} else if (type instanceof z.ZodObject) {
+		return walkToType(type.shape[key], restOfPath, root)
+	} else if (type instanceof z.ZodArray) {
 		if (!isIntegerString(key.toString())) {
 			return z.unknown()
 		}
-		return walkToType(model.element, restOfPath, root)
-	} else if (model instanceof z.ZodRecord) {
-		if (!model.keySchema.safeParse(key).success) {
+		return walkToType(type.element, restOfPath, root)
+	} else if (type instanceof z.ZodRecord) {
+		if (!type.keySchema.safeParse(key).success) {
 			return z.unknown()
 		}
-		return walkToType(model.element, restOfPath, root)
-	} else if (model instanceof z.ZodUnion) {
+		return walkToType(type.element, restOfPath, root)
+	} else if (type instanceof z.ZodUnion) {
 		return z.union(
-			model.options
+			type.options
 				.map((model: z.ZodTypeAny) => {
 					try {
 						return walkToType(model, [key, ...restOfPath], root)
@@ -208,6 +232,61 @@ const walkToType = (model: z.ZodTypeAny | undefined, path: (string | number)[], 
 	} else {
 		throw new Error('Cannot walk to type through unimplemented type')
 	}
+}
+
+const walk = (value: unknown, callback: (value: unknown, path: (string | number)[]) => void, path: (string | number)[] = [], root?: unknown): void => {
+	root = root ?? value
+	if (!value) {
+		return
+	} else {
+		callback(value, path)
+	}
+
+	if (Array.isArray(value)) {
+		for (let index = 0; index < value.length; index++) {
+			walk(value[index], callback, [...path, index], root)
+		}
+	} else if (typeof value === 'object') {
+		for (const key in value) {
+			walk(value[key], callback, [...path, key], root)
+		}
+	}
+}
+
+const deleteEntity = ({ model, record, entityType, entityId }: { model: z.AnyZodObject; record: any; entityType: SiteEntityType | LibraryEntityType; entityId: string | number }): void => {
+	// Delete the actual entity first
+	delete record.data.entities[entityType][entityId]
+
+	// Delete all references to the entity
+	walk(record, (value, path) => {
+		if (!value || typeof value !== 'object') {
+			return
+		}
+
+		const valueType = walkToType(model, [...path, 0])
+		const referenceType: SiteEntityType | LibraryEntityType | null = valueType[SITE_ENTITY_REFERENCE] ?? valueType[LIBRARY_ENTITY_REFERENCE] ?? null
+		if (referenceType !== entityType) {
+			return
+		}
+
+		for (const key in value) {
+			const reference = value[key]
+			if (!reference || typeof reference !== 'object' || !('$ref' in reference) || typeof reference.$ref !== 'string') {
+				return
+			}
+
+			const pointer = reference.$ref
+			const pointedPath = decodeUriFragmentIdentifier(pointer)
+			const [referencedId] = pointedPath.slice(-1)
+			if (referencedId === entityId) {
+				if (Array.isArray(value)) {
+					value.splice(+key, 1)
+				} else {
+					delete value[key]
+				}
+			}
+		}
+	})
 }
 
 const isIntegerString = (value: string) => value === parseInt(value).toString()
