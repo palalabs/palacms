@@ -16,6 +16,7 @@
 	import { Sites } from '$lib/pocketbase/collections'
 	import type { Readable } from 'svelte/store'
 	import { page } from '$app/state'
+	import type { PageType } from '$lib/common/models/PageType'
 
 	let { onclose } = $props()
 
@@ -86,8 +87,50 @@
 		}
 	}
 
-	// TODO: add hardcoded blank site object
-	const blank_site_data = {}
+	const blank_site_home_page_type: Resolved<typeof PageType> = {
+		name: 'Home',
+		code: {
+			head: '',
+			foot: ''
+		},
+		color: '',
+		icon: '',
+		fields: [],
+		sections: [],
+		symbols: []
+	}
+
+	const blank_site_data: Resolved<typeof Site>['data'] = {
+		code: {
+			head: '',
+			foot: ''
+		},
+		design: {
+			heading_font: '',
+			body_font: '',
+			primary_color: '',
+			radius: '',
+			shadow: ''
+		},
+		entities: {
+			symbols: {},
+			sections: {},
+			fields: {},
+			page_types: {},
+			pages: {}
+		},
+		symbols: [],
+		fields: [],
+		page_types: [blank_site_home_page_type],
+		root: {
+			name: 'Home',
+			slug: '',
+			page_type: blank_site_home_page_type,
+			fields: [],
+			sections: [],
+			children: []
+		}
+	}
 
 	let completed = $derived(!!site_name && (selected_starter_id || !!duplicated_site_data))
 	let loading = $state(false)
