@@ -3,7 +3,6 @@
 	import Icon from '@iconify/svelte'
 	import { onMount } from 'svelte'
 	import { get, set } from 'idb-keyval'
-	import { createEventDispatcher } from 'svelte'
 	import { content_editable, validate_url } from '$lib/builder/utilities'
 	import PageForm from './PageForm.svelte'
 	import MenuPopup from '$lib/builder/ui/Dropdown.svelte'
@@ -11,8 +10,7 @@
 	import type { Page } from '$lib/common/models/Page'
 	import { page as pageState } from '$app/state'
 	import { ID } from '$lib/common/constants'
-
-	const dispatch = createEventDispatcher()
+	import { require_site } from '$lib/loaders'
 
 	let editing_page = $state(false)
 
@@ -20,6 +18,7 @@
 	let { parent, page, active }: { parent?: Resolved<typeof Page>; page: Resolved<typeof Page>; active: boolean } = $props()
 
 	const site_id = $derived(pageState.params.site)
+	const site = $derived(require_site(site_id))
 	const full_url = $derived(`/${site_id}/${page.slug}`)
 
 	let showing_children = $state(false)
@@ -143,7 +142,7 @@
 			<MenuPopup
 				icon="carbon:overflow-menu-vertical"
 				options={[
-					...(page.slug !== '' && !creating_page
+					...(!creating_page
 						? [
 								{
 									label: `Create Child Page`,
@@ -166,7 +165,10 @@
 								{
 									label: 'Delete',
 									icon: 'ic:outline-delete',
-									on_click: () => dispatch('delete', page)
+									on_click: () => {
+										if (!$site) return
+										delete $site.data.entities.pages[page[ID]]
+									}
 								}
 							]
 						: [])
@@ -190,7 +192,13 @@
 				on:create={({ detail: new_page }) => {
 					creating_page = false
 					showing_children = true
-					dispatch('create', new_page)
+					if (!$site) return
+					const url_taken = Object.values($site.data.entities.pages).some((page) => page?.slug === new_page.slug)
+					if (url_taken) {
+						alert(`That URL is already in use`)
+					} else {
+						page.children.push(new_page)
+					}
 				}}
 			/>
 		</div>
