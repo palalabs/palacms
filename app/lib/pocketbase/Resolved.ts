@@ -91,6 +91,10 @@ const proxy = ({ value, model, record, path = [], onUpdate }: { value: object; m
 				return val
 			}
 
+			if (val === undefined) {
+				return undefined
+			}
+
 			// Resolve reference
 			let innerPath = [...path, key]
 			const valueType = walkToType(model, innerPath)
@@ -102,7 +106,7 @@ const proxy = ({ value, model, record, path = [], onUpdate }: { value: object; m
 			}
 
 			// Return proxy if val is object (or array)
-			if (val && typeof val === 'object') {
+			if (typeof val === 'object') {
 				return proxy({
 					value: val,
 					model,
@@ -149,6 +153,16 @@ const proxy = ({ value, model, record, path = [], onUpdate }: { value: object; m
 				onUpdate?.()
 				return true
 			}
+		},
+		deleteProperty(target, key) {
+			const [propertyKey, _entityType, _id] = path.slice(-3)
+			if (propertyKey === 'entities' && key === ID) {
+				throw new Error('Cannot delete ID, it is virtual')
+			}
+
+			delete target[key]
+			onUpdate?.()
+			return true
 		}
 	})
 
