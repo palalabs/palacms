@@ -8,6 +8,7 @@
 	import type { Resolved } from '$lib/pocketbase/Resolved'
 	import { page } from '$app/state'
 	import { require_site } from '$lib/loaders'
+	import { ID } from '$lib/common'
 
 	let { parent }: { parent?: Resolved<typeof Page> } = $props()
 
@@ -59,9 +60,9 @@
 		<UI.Select
 			fullwidth={true}
 			label="Page Type"
-			value={new_page.page_type}
-			options={$site.data.page_types.map((p) => ({ value: p, icon: p.icon, label: p.name }))}
-			on:input={({ detail }) => (new_page.page_type = detail)}
+			value={new_page.page_type[ID]}
+			options={$site.data.page_types.map((p) => ({ value: p[ID], icon: p.icon, label: p.name }))}
+			on:input={({ detail: page_type_id }) => (new_page.page_type = $site.data.entities.page_types[page_type_id])}
 		/>
 	{/if}
 	<button disabled={page_creation_disabled}>

@@ -40,7 +40,7 @@ export const serialize = <T extends z.AnyZodObject>(model: T, value: Omit<Resolv
 	return record
 }
 
-const serializeRecursive = <T extends z.AnyZodObject>({ value, model, record, result, path = [] }: { value: object; model: T; result: any; record: any; path?: string[] }): void => {
+const serializeRecursive = <T extends z.AnyZodObject>({ value, model, record, result, path = [] }: { value: object; model: T; result: any; record: any; path?: (string | number)[] }): void => {
 	for (const key in value) {
 		if (value[key] && typeof value[key] === 'object') {
 			const valueType = walkToType(model, [...path, key])
@@ -53,7 +53,8 @@ const serializeRecursive = <T extends z.AnyZodObject>({ value, model, record, re
 				if (!record.data.entities[referenceType]) record.data.entities[referenceType] = {}
 				const id = value[key][ID] ?? newId()
 				value[key][ID] = id
-				record.data.entities[referenceType][id] = serializeRecursive({ value: value[key], model, record, result: {}, path: ['data', 'entities', referenceType, id] })
+				record.data.entities[referenceType][id] = {}
+				serializeRecursive({ value: value[key], model, record, result: record.data.entities[referenceType][id], path: ['data', 'entities', referenceType, id] })
 				result[key] = { $ref: `#/data/entities/${referenceType}/${id}` }
 				continue
 			} else if (Array.isArray(value[key])) {
@@ -63,7 +64,7 @@ const serializeRecursive = <T extends z.AnyZodObject>({ value, model, record, re
 			} else {
 				// Set object, merging if exists already in result
 				result[key] = result[key] ?? {}
-				result[key] = serializeRecursive({ value: value[key], model, record, result: result[key], path: [...path, key] })
+				serializeRecursive({ value: value[key], model, record, result: result[key], path: [...path, key] })
 				continue
 			}
 		}
@@ -74,7 +75,6 @@ const serializeRecursive = <T extends z.AnyZodObject>({ value, model, record, re
 			continue
 		}
 	}
-	return result
 }
 
 const proxy = ({ value, model, record, path = [], onUpdate }: { value: object; model: z.AnyZodObject; record: any; path?: (string | number)[]; onUpdate?: () => void }): any =>
@@ -115,7 +115,7 @@ const proxy = ({ value, model, record, path = [], onUpdate }: { value: object; m
 			}
 		},
 		set(target, key, val) {
-			const [propertyKey] = path.slice(-2)
+			const [propertyKey, _entityType, _id] = path.slice(-3)
 			if (propertyKey === 'entities' && key === ID) {
 				throw new Error('Cannot set ID, it is virtual')
 			}
@@ -128,10 +128,19 @@ const proxy = ({ value, model, record, path = [], onUpdate }: { value: object; m
 
 			const valueType = walkToType(model, [...path, key])
 			const referenceType: SiteEntityType | LibraryEntityType | null = valueType[SITE_ENTITY_REFERENCE] ?? valueType[LIBRARY_ENTITY_REFERENCE] ?? null
-			if (referenceType && !(key in target)) {
-				const id = newId()
-				record.data.entities[referenceType][id] = val
+			if (referenceType) {
+				// Set reference after serializing
+				const id = val[ID] ?? newId()
+				val[ID] = id
+				record.data.entities[referenceType][id] = {}
+				serializeRecursive({ value: val, model, record, result: record.data.entities[referenceType][id], path: ['data', 'entities', referenceType, id] })
 				target[key] = { $ref: `#/data/entities/${referenceType}/${id}` }
+				onUpdate?.()
+				return true
+			} else if (typeof val === 'object') {
+				// Set object after serializing
+				target[key] = {}
+				serializeRecursive({ value: val, model, record, result: target[key], path: [...path, key] })
 				onUpdate?.()
 				return true
 			} else {
