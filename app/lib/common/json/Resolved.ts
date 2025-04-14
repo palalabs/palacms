@@ -133,7 +133,7 @@ const proxy = ({ value, model, record, path = [], onUpdate }: { value: object; m
 			const valueType = walkToType(model, [...path, key])
 			const referenceType: SiteEntityType | LibraryEntityType | null = valueType[SITE_ENTITY_REFERENCE] ?? valueType[LIBRARY_ENTITY_REFERENCE] ?? null
 			if (referenceType) {
-				// Set reference after serializing
+				// Set reference after normalizing
 				const id = val[ID] ?? newId()
 				val[ID] = id
 				record.data.entities[referenceType][id] = {}

@@ -45,8 +45,8 @@ export const createValidatedCollection = <T extends z.AnyZodObject>(idOrName: st
 			return records.map((record) => transformedModel.parse(record))
 		},
 		create: async (values) => {
-			const serialized = normalize(model, values)
-			const input = schemaWithOptionalId.parse(serialized)
+			const normalized = normalize(model, values)
+			const input = schemaWithOptionalId.parse(normalized)
 			const record = await collection.create(input)
 			const output = model.parse(record)
 			return output
