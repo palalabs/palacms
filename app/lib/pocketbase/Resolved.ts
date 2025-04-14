@@ -52,6 +52,7 @@ const serializeRecursive = <T extends z.AnyZodObject>({ value, model, record, re
 				if (!record.data.entities) record.data.entities = {}
 				if (!record.data.entities[referenceType]) record.data.entities[referenceType] = {}
 				const id = value[key][ID] ?? newId()
+				value[key][ID] = id
 				record.data.entities[referenceType][id] = serializeRecursive({ value: value[key], model, record, result: {}, path: ['data', 'entities', referenceType, id] })
 				result[key] = { $ref: `#/data/entities/${referenceType}/${id}` }
 				continue
