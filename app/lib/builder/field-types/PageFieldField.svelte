@@ -2,7 +2,7 @@
 	import { ID } from '$lib/common/constants'
 	import type { PageFieldField } from '$lib/common/models/fields/PageFieldField'
 	import type { Id } from '$lib/common/models/Id'
-	import type { Resolved } from '$lib/pocketbase/Resolved'
+	import type { Resolved } from '$lib/common/json'
 	import { fieldTypes } from '../stores/app'
 	import { get_direct_entries } from '../stores/helpers'
 

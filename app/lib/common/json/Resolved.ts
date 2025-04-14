@@ -1,11 +1,11 @@
 import { z } from 'zod'
 import { decodeUriFragmentIdentifier, JsonPointer } from 'json-ptr'
-import { SITE_ENTITY_REFERENCE, type SiteEntityType } from '$lib/common/models/SiteEntityReference'
-import type { Site } from '$lib/common/models/Site'
-import { LIBRARY_ENTITY_REFERENCE, type LibraryEntityType } from '$lib/common/models/LibraryEntityReference'
-import type { Library } from '$lib/common/models/Library'
-import { ID } from '$lib/common'
-import { Id, newId } from '$lib/common/models/Id'
+import { SITE_ENTITY_REFERENCE, type SiteEntityType } from '../models/SiteEntityReference'
+import type { Site } from '../models/Site'
+import { LIBRARY_ENTITY_REFERENCE, type LibraryEntityType } from '../models/LibraryEntityReference'
+import type { Library } from '../models/Library'
+import { ID } from '../constants'
+import { Id, newId } from '../models/Id'
 
 type RequiredProperties<T extends Record<string, unknown>> = { [K in keyof T]: T extends undefined ? never : K }[keyof T]
 type OptionalProperties<T extends Record<string, unknown>> = { [K in keyof T]: T extends undefined ? K : never }[keyof T]
@@ -34,13 +34,13 @@ export type Resolved<T extends z.ZodTypeAny, P extends object = object> = T exte
 
 export const resolve = <T extends z.AnyZodObject>(model: T, value: z.TypeOf<T>, onUpdate?: () => void): Resolved<T, { [ID]: Id }> => proxy({ value, model, record: value, onUpdate })
 
-export const serialize = <T extends z.AnyZodObject>(model: T, value: Omit<Resolved<T>, 'id'>): z.TypeOf<T> => {
+export const normalize = <T extends z.AnyZodObject>(model: T, value: Omit<Resolved<T>, 'id'>): z.TypeOf<T> => {
 	const record = {}
-	serializeRecursive<T>({ value, model, record, result: record })
+	normalizeRecursive<T>({ value, model, record, result: record })
 	return record
 }
 
-const serializeRecursive = <T extends z.AnyZodObject>({ value, model, record, result, path = [] }: { value: object; model: T; result: any; record: any; path?: (string | number)[] }): void => {
+const normalizeRecursive = <T extends z.AnyZodObject>({ value, model, record, result, path = [] }: { value: object; model: T; result: any; record: any; path?: (string | number)[] }): void => {
 	for (const key in value) {
 		if (value[key] && typeof value[key] === 'object') {
 			const valueType = walkToType(model, [...path, key])
@@ -54,17 +54,17 @@ const serializeRecursive = <T extends z.AnyZodObject>({ value, model, record, re
 				const id = value[key][ID] ?? newId()
 				value[key][ID] = id
 				record.data.entities[referenceType][id] = {}
-				serializeRecursive({ value: value[key], model, record, result: record.data.entities[referenceType][id], path: ['data', 'entities', referenceType, id] })
+				normalizeRecursive({ value: value[key], model, record, result: record.data.entities[referenceType][id], path: ['data', 'entities', referenceType, id] })
 				result[key] = { $ref: `#/data/entities/${referenceType}/${id}` }
 				continue
 			} else if (Array.isArray(value[key])) {
 				// Set array, overwriting if already in result
 				result[key] = []
-				serializeRecursive({ value: value[key], model, record, result: result[key], path: [...path, key] })
+				normalizeRecursive({ value: value[key], model, record, result: result[key], path: [...path, key] })
 			} else {
 				// Set object, merging if exists already in result
 				result[key] = result[key] ?? {}
-				serializeRecursive({ value: value[key], model, record, result: result[key], path: [...path, key] })
+				normalizeRecursive({ value: value[key], model, record, result: result[key], path: [...path, key] })
 				continue
 			}
 		}
@@ -137,14 +137,14 @@ const proxy = ({ value, model, record, path = [], onUpdate }: { value: object; m
 				const id = val[ID] ?? newId()
 				val[ID] = id
 				record.data.entities[referenceType][id] = {}
-				serializeRecursive({ value: val, model, record, result: record.data.entities[referenceType][id], path: ['data', 'entities', referenceType, id] })
+				normalizeRecursive({ value: val, model, record, result: record.data.entities[referenceType][id], path: ['data', 'entities', referenceType, id] })
 				target[key] = { $ref: `#/data/entities/${referenceType}/${id}` }
 				onUpdate?.()
 				return true
 			} else if (typeof val === 'object') {
 				// Set object after serializing
 				target[key] = {}
-				serializeRecursive({ value: val, model, record, result: target[key], path: [...path, key] })
+				normalizeRecursive({ value: val, model, record, result: target[key], path: [...path, key] })
 				onUpdate?.()
 				return true
 			} else {

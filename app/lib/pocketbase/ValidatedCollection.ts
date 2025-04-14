@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import type { CommonOptions, ListOptions, RecordAuthResponse, RecordFullListOptions, RecordListOptions, RecordOptions } from 'pocketbase'
 import { pb } from './PocketBase'
-import { serialize, type Resolved } from './Resolved'
+import { normalize, type Resolved } from '../common/json'
 
 export type ValidatedCollection<T extends z.AnyZodObject> = {
 	model: z.AnyZodObject
@@ -45,7 +45,7 @@ export const createValidatedCollection = <T extends z.AnyZodObject>(idOrName: st
 			return records.map((record) => transformedModel.parse(record))
 		},
 		create: async (values) => {
-			const serialized = serialize(model, values)
+			const serialized = normalize(model, values)
 			const input = schemaWithOptionalId.parse(serialized)
 			const record = await collection.create(input)
 			const output = model.parse(record)

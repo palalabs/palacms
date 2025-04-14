@@ -12,7 +12,7 @@
 	import * as code_generators from '$lib/builder/code_generators'
 	import { require_site, require_site_groups, require_site_list } from '$lib/loaders'
 	import { Site } from '$lib/common/models/Site'
-	import type { Resolved } from '$lib/pocketbase/Resolved'
+	import type { Resolved } from '$lib/common/json'
 	import { Sites } from '$lib/pocketbase/collections'
 	import { readable, type Readable } from 'svelte/store'
 	import { page } from '$app/state'

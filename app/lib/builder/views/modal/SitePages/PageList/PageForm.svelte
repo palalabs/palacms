@@ -5,7 +5,7 @@
 	import Icon from '@iconify/svelte'
 	import { validate_url } from '../../../../utilities'
 	import { Page } from '$lib/common/models/Page'
-	import type { Resolved } from '$lib/pocketbase/Resolved'
+	import type { Resolved } from '$lib/common/json'
 	import { page } from '$app/state'
 	import { require_site } from '$lib/loaders'
 	import { ID } from '$lib/common'

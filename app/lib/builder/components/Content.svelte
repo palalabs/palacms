@@ -4,7 +4,7 @@
 	import { fieldTypes } from '../stores/app'
 	import { is_regex } from '../utils'
 	import type { Field } from '$lib/common/models/Field'
-	import type { Resolved } from '$lib/pocketbase/Resolved'
+	import type { Resolved } from '$lib/common/json'
 	import { get_resolved_entries } from '../stores/helpers'
 	import type { Id } from '$lib/common/models/Id'
 

@@ -3,7 +3,7 @@
 	import type { PageFieldField } from '$lib/common/models/fields/PageFieldField.js'
 	import type { Id } from '$lib/common/models/Id.js'
 	import { require_site } from '$lib/loaders/index.js'
-	import type { Resolved } from '$lib/pocketbase/Resolved'
+	import type { Resolved } from '$lib/common/json/index.js'
 	import UI from '../../ui/index.js'
 
 	const site_id = page.params.site

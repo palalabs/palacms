@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { SelectField } from '$lib/common/models/fields/SelectField'
-	import type { Resolved } from '$lib/pocketbase/Resolved'
+	import type { Resolved } from '$lib/common/json'
 	import IconPicker from '../../components/IconPicker.svelte'
 	import UI from '../../ui/index.js'
 	import Icon from '@iconify/svelte'

@@ -4,7 +4,7 @@
 	import UI from '../ui'
 	import { locale } from '../stores/app'
 	import type { Id } from '$lib/common/models/Id'
-	import type { Resolved } from '$lib/pocketbase/Resolved'
+	import type { Resolved } from '$lib/common/json'
 	import type { LinkField } from '$lib/common/models/fields/LinkField'
 	import { page } from '$app/state'
 	import { require_site } from '$lib/loaders'

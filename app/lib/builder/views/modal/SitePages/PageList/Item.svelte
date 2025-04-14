@@ -6,7 +6,7 @@
 	import { content_editable, validate_url } from '$lib/builder/utilities'
 	import PageForm from './PageForm.svelte'
 	import MenuPopup from '$lib/builder/ui/Dropdown.svelte'
-	import type { Resolved } from '$lib/pocketbase/Resolved'
+	import type { Resolved } from '$lib/common/json'
 	import type { Page } from '$lib/common/models/Page'
 	import { page as pageState } from '$app/state'
 	import { ID } from '$lib/common/constants'

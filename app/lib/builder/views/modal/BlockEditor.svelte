@@ -16,7 +16,7 @@
 	import { get_content } from '$lib/builder/stores/helpers'
 	import { Symbol } from '$lib/common/models/Symbol'
 	import { ID } from '$lib/common/constants'
-	import type { Resolved } from '$lib/pocketbase/Resolved'
+	import type { Resolved } from '$lib/common/json'
 
 	let {
 		block = { name: '', code: { css: '', html: '', js: '' }, fields: [] },
