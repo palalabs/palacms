@@ -3,7 +3,7 @@ import { SiteEntityReference } from './SiteEntityReference'
 
 export const Page = z.object({
 	name: z.string().nonempty(),
-	slug: z.string().nonempty(),
+	slug: z.string(),
 	page_type: SiteEntityReference('page_types'),
 	fields: z.array(SiteEntityReference('fields')),
 	sections: z.array(SiteEntityReference('sections')),
