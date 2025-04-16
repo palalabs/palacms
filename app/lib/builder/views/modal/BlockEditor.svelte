@@ -33,14 +33,14 @@
 				}
 			}
 		}
-	}: { block?: Resolved<typeof Symbol> & { [ID]: Id }; tab?: string; header?: any } = $props()
+	}: { block?: Resolved<typeof Symbol>; tab?: string; header?: any } = $props()
 
-	let block = $state({} as Resolved<typeof Symbol> & { [ID]: Id })
+	let block = $state({} as Resolved<typeof Symbol>)
 	$effect.pre(() => {
 		if (existing_block) {
 			block = existing_block
 		} else {
-			block = { [ID]: newId(), code: { css: '', html: '', js: '' }, fields: [], name: 'New Block' }
+			block = { code: { css: '', html: '', js: '' }, fields: [], name: 'New Block' }
 		}
 	})
 

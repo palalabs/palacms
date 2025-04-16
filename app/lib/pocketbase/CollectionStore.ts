@@ -9,7 +9,7 @@ const updateIntervalMs = 1000
 
 export const createCollectionStore = <T extends z.AnyZodObject>(collection: ValidatedCollection<T>, idOrRecord: string | z.infer<T>) => {
 	type Record = z.infer<T>
-	type ResolvedRecord = Resolved<T, { [ID]: Id }>
+	type ResolvedRecord = Resolved<T>
 
 	let record: Record | null = null
 	let store = writable<ResolvedRecord | null>(null)

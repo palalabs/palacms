@@ -10,29 +10,29 @@ import { Id, newId } from '../models/Id'
 type RequiredProperties<T extends Record<string, unknown>> = { [K in keyof T]: T extends undefined ? never : K }[keyof T]
 type OptionalProperties<T extends Record<string, unknown>> = { [K in keyof T]: T extends undefined ? K : never }[keyof T]
 
-export type Resolved<T extends z.ZodTypeAny, P extends object = object> = T extends {
+export type Resolved<T extends z.ZodTypeAny> = T extends {
 	[SITE_ENTITY_REFERENCE]: SiteEntityType
 }
-	? Resolved<(typeof Site)['shape']['data']['shape']['entities']['shape'][T[typeof SITE_ENTITY_REFERENCE]]['element'], P> & P
+	? Resolved<(typeof Site)['shape']['data']['shape']['entities']['shape'][T[typeof SITE_ENTITY_REFERENCE]]['element']>
 	: T extends {
 				[LIBRARY_ENTITY_REFERENCE]: LibraryEntityType
 		  }
-		? Resolved<(typeof Library)['shape']['data']['shape']['entities']['shape'][T[typeof LIBRARY_ENTITY_REFERENCE]]['element'], P> & P
+		? Resolved<(typeof Library)['shape']['data']['shape']['entities']['shape'][T[typeof LIBRARY_ENTITY_REFERENCE]]['element']>
 		: T extends z.AnyZodObject
 			? {
-					[K in RequiredProperties<T['_output']>]: Resolved<T['shape'][K], P>
+					[K in RequiredProperties<T['_output']>]: Resolved<T['shape'][K]>
 				} & {
-					[K in OptionalProperties<T['_output']>]?: Resolved<T['shape'][K], P>
+					[K in OptionalProperties<T['_output']>]?: Resolved<T['shape'][K]>
 				}
 			: T extends z.ZodArray<infer Element>
-				? Resolved<Element, P>[]
+				? Resolved<Element>[]
 				: T extends z.ZodRecord<infer Key, infer Element>
-					? Record<z.TypeOf<Key>, Resolved<Element, P>>
+					? Record<z.TypeOf<Key>, Resolved<Element>>
 					: T extends z.ZodUnion<infer Types>
-						? { [K in keyof Types]: Resolved<Types[K], P> }[number]
+						? { [K in keyof Types]: Resolved<Types[K]> }[number]
 						: T['_output']
 
-export const resolve = <T extends z.AnyZodObject>(model: T, value: z.TypeOf<T>, onUpdate?: () => void): Resolved<T, { [ID]: Id }> => proxy({ value, model, record: value, onUpdate })
+export const resolve = <T extends z.AnyZodObject>(model: T, value: z.TypeOf<T>, onUpdate?: () => void): Resolved<T> => proxy({ value, model, record: value, onUpdate })
 
 export const normalize = <T extends z.AnyZodObject>(model: T, value: Omit<Resolved<T>, 'id'>): z.TypeOf<T> => {
 	const record = {}
@@ -52,8 +52,9 @@ const normalizeRecursive = <T extends z.AnyZodObject>({ value, model, record, re
 				if (!record.data.entities) record.data.entities = {}
 				if (!record.data.entities[referenceType]) record.data.entities[referenceType] = {}
 				const entityId = value[key][ID] ?? (value[key][ID] = newId())
-				record.data.entities[referenceType][entityId] = {}
-				normalizeRecursive({ value: value[key], model, record, result: record.data.entities[referenceType][entityId], path: ['data', 'entities', referenceType, entityId] })
+				const entity = {}
+				normalizeRecursive({ value: value[key], model, record, result: entity, path: ['data', 'entities', referenceType, entityId] })
+				record.data.entities[referenceType][entityId] = entity
 				result[key] = { $ref: `#/data/entities/${referenceType}/${entityId}` }
 				continue
 			} else if (Array.isArray(value[key])) {
@@ -134,8 +135,9 @@ const proxy = ({ value, model, record, path = [], onUpdate }: { value: object; m
 			if (referenceType) {
 				// Set reference after normalizing
 				const entityId = val[ID] ?? (val[ID] = newId())
-				record.data.entities[referenceType][entityId] = {}
-				normalizeRecursive({ value: val, model, record, result: record.data.entities[referenceType][entityId], path: ['data', 'entities', referenceType, entityId] })
+				const entity = {}
+				normalizeRecursive({ value: val, model, record, result: entity, path: ['data', 'entities', referenceType, entityId] })
+				record.data.entities[referenceType][entityId] = entity
 				target[key] = { $ref: `#/data/entities/${referenceType}/${entityId}` }
 				onUpdate?.()
 				return true

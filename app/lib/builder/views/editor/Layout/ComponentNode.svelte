@@ -32,6 +32,7 @@
 	import type { Symbol } from '$lib/common/models/Symbol'
 	import type { Section } from '$lib/common/models/Section'
 	import { get_content } from '$lib/builder/stores/helpers'
+	import { ID } from '$lib/common'
 
 	const lowlight = createLowlight(all)
 
@@ -41,7 +42,7 @@
 
 	let node = $state()
 
-	let component_data = $derived(get_content(section)[$locale])
+	let component_data = $derived(get_content(section[ID], section.symbol.fields)[$locale] ?? {})
 
 	let floating_menu = $state()
 	let bubble_menu = $state()
@@ -62,7 +63,8 @@
 				head: '',
 				html: code.html,
 				css: code.css,
-				js: code.js
+				js: code.js,
+				data: component_data
 			},
 			buildStatic: false,
 			hydrated: true

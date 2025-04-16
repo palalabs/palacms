@@ -103,8 +103,6 @@
 		)
 	}
 
-	let dragging = $state(null)
-
 	function drag_target(element, block) {
 		dropTargetForElements({
 			element,
@@ -118,27 +116,19 @@
 					}
 				)
 			},
-			onDrag({ self, source }) {
-				// if (dragging.id !== self.data.block.id) {
-				// 	// dragging = {
-				// 	// 	id: self.data.block.id,
-				// 	// 	position: extractClosestEdge(self.data)
-				// 	// }
-				// }
-			},
-			onDragLeave() {
-				// reset_drag()
-			},
 			onDrop({ self, source }) {
+				if (!$site) return
+				const { data } = $site
 				const closestEdgeOfTarget = extractClosestEdge(self.data)
-				if (closestEdgeOfTarget === 'top') {
-					// TODO: Implement
-					throw new Error('Not implemented')
-				} else if (closestEdgeOfTarget === 'bottom') {
-					// TODO: Implement
-					throw new Error('Not implemented')
-				}
-				// reset_drag()
+				const block_dragged_over = self.data.block
+				const block_being_dragged = source.data.block
+				const block_dragged_over_index = data.symbols.findIndex((symbol) => symbol[ID] === block_dragged_over[ID])
+				const target_index = closestEdgeOfTarget === 'top' ? block_dragged_over_index : block_dragged_over_index + 1
+				data.symbols = [
+					...data.symbols.slice(0, target_index).filter((symbol) => symbol[ID] !== block_being_dragged[ID]),
+					block_being_dragged,
+					...data.symbols.slice(target_index).filter((symbol) => symbol[ID] !== block_being_dragged[ID])
+				]
 			}
 		})
 	}
@@ -195,8 +185,6 @@
 											page_type.symbols.push(symbol)
 										}
 									}}
-									onmousedown={() => (dragging = symbol?.[ID])}
-									onmouseup={() => (dragging = null)}
 									on:edit={() => edit_block(symbol)}
 								/>
 							</div>

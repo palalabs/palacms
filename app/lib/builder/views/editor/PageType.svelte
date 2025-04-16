@@ -17,6 +17,8 @@
 	import { page } from '$app/state'
 	import { ID } from '$lib/common/constants'
 	import type { Id } from '$lib/common/models/Id.js'
+	import type { Resolved } from '$lib/common/index.js'
+	import type { Section } from '$lib/common/models/Section.js'
 
 	const site_id = $derived(page.params.site as Id)
 	const page_type_id = $derived(page.params.page_type as Id)
@@ -37,7 +39,7 @@
 		// TODO
 	}
 
-	let hovered_section = $state(null)
+	let hovered_section_id: Resolved<typeof Section> | null = $state(null)
 
 	let block_toolbar_element = $state()
 	let page_el = $state()
@@ -74,8 +76,9 @@
 	}
 
 	function edit_component(section_id, showIDE = false) {
+		const section = page_type?.sections.find((s) => s[ID] === section_id)
+		if (!section) return
 		lock_block(section_id)
-		const section = get_section(section_id) // get updated section (necessary if actively editing on-page)
 		modal.show(
 			'SECTION_EDITOR',
 			{
@@ -91,10 +94,7 @@
 						icon: 'fas fa-check',
 						label: 'Save',
 						onclick: (updated_data) => {
-							update_section(section_id, {
-								updated_data,
-								build_page: false
-							})
+							Object.assign(section, updated_data)
 							modal.hide()
 						}
 					}
@@ -181,13 +181,13 @@
 		drop_indicator_element.style.right = `${block_positions.right}px`
 
 		// surround placeholder palette
-		if (dragging.position === 'top' || sections.length === 0) {
+		if (dragging.position === 'top' || !page_type?.sections.length) {
 			drop_indicator_element.style.top = `${block_positions.top}px`
 		} else {
 			drop_indicator_element.style.top = `initial`
 		}
 
-		if (dragging.position === 'bottom' || sections.length === 0) {
+		if (dragging.position === 'bottom' || !page_type?.sections.length) {
 			drop_indicator_element.style.bottom = `${block_positions.bottom}px`
 		} else {
 			drop_indicator_element.style.bottom = `initial`
@@ -211,6 +211,48 @@
 		hide_drop_indicator()
 	}
 
+	let dragging_over_section = false
+
+	// detect drags over the page
+	function drag_fallback(element) {
+		dropTargetForElements({
+			element,
+			getData({ input, element }) {
+				return attachClosestEdge(
+					{},
+					{
+						element,
+						input,
+						allowedEdges: ['top', 'bottom']
+					}
+				)
+			},
+			async onDrag({ self, source }) {
+				if (dragging_over_section) return // prevent double-adding block
+
+				if (!showing_drop_indicator) {
+					await show_drop_indicator()
+				}
+				position_drop_indicator()
+				if (dragging.id !== 'PAGE' || dragging.position !== extractClosestEdge(self.data)) {
+					dragging = {
+						id: 'PAGE',
+						position: extractClosestEdge(self.data)
+					}
+				}
+			},
+			onDragLeave() {
+				reset_drag()
+			},
+			async onDrop({ source }) {
+				if (!page_type || dragging_over_section) return // prevent double-adding block
+				const block_being_dragged = source.data.block
+				page_type.sections.push({ symbol: block_being_dragged })
+				reset_drag()
+			}
+		})
+	}
+
 	function drag_item(element, section) {
 		dropTargetForElements({
 			element,
@@ -230,9 +272,9 @@
 					await show_drop_indicator()
 				}
 				position_drop_indicator()
-				if (dragging.id !== self.data.section.id || dragging.position !== extractClosestEdge(self.data)) {
+				if (dragging.id !== self.data.section[ID] || dragging.position !== extractClosestEdge(self.data)) {
 					dragging = {
-						id: self.data.section.id,
+						id: self.data.section[ID],
 						position: extractClosestEdge(self.data)
 					}
 				}
@@ -245,8 +287,13 @@
 				dragging_over_section = false
 			},
 			onDrop({ self, source }) {
-				// TODO: Implement
-				throw new Error('Not implemented')
+				if (!page_type) return
+				const closestEdgeOfTarget = extractClosestEdge(self.data)
+				const section_dragged_over = self.data.section
+				const block_being_dragged = source.data.block
+				const section_dragged_over_index = page_type.sections.findIndex((s) => s[ID] === section_dragged_over[ID])
+				const target_index = closestEdgeOfTarget === 'top' ? section_dragged_over_index : section_dragged_over_index + 1
+				page_type.sections = [...page_type.sections.slice(0, target_index), { symbol: block_being_dragged }, ...page_type.sections.slice(target_index)]
 			}
 		})
 	}
@@ -273,15 +320,18 @@
 {#if showing_block_toolbar}
 	<BlockToolbar
 		bind:node={block_toolbar_element}
-		id={hovered_section.id}
-		i={hovered_section.index}
-		on:delete={async () => delete_page_type_section(hovered_section.id)}
-		on:edit-code={() => edit_component(hovered_section.id, true)}
-		on:edit-content={() => edit_component(hovered_section.id)}
+		id={hovered_section_id}
+		i={page_type?.sections.findIndex((s) => s[ID] === hovered_section_id)}
+		on:delete={async () => {
+			if (!page_type) return
+			page_type.sections = page_type.sections.filter((s) => s[ID] !== hovered_section_id)
+		}}
+		on:edit-code={() => edit_component(hovered_section_id, true)}
+		on:edit-content={() => edit_component(hovered_section_id)}
 		on:moveUp={async () => {
 			moving = true
 			hide_block_toolbar()
-			await move_section(hovered_section, hovered_section.index - 1)
+			// TODO
 			setTimeout(() => {
 				moving = false
 			}, 300)
@@ -289,7 +339,7 @@
 		on:moveDown={async () => {
 			moving = true
 			hide_block_toolbar()
-			await move_section(hovered_section, hovered_section.index + 1)
+			// TODO
 			setTimeout(() => {
 				moving = false
 			}, 300)
@@ -298,7 +348,7 @@
 {/if}
 
 <!-- Page Blocks -->
-<main id="#Page" data-test bind:this={page_el} class:fadein={page_mounted} lang={$locale}>
+<main id="#Page" data-test bind:this={page_el} class:fadein={page_mounted} lang={$locale} use:drag_fallback>
 	{#each page_type?.sections ?? [] as section (section[ID])}
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<!-- svelte-ignore a11y_mouse_events_have_key_events -->
@@ -308,20 +358,17 @@
 		<div
 			role="region"
 			use:drag_item={section}
-			data-section={section.id}
-			data-symbol={section.symbol}
-			id="section-{section.id}"
+			data-section={section[ID]}
+			data-symbol={section.symbol[ID]}
+			id="section-{section[ID]}"
 			class:locked
 			onmousemove={() => {
-				if (!section.symbol) return
 				if (!moving && !showing_block_toolbar) {
 					show_block_toolbar()
 				}
 			}}
 			onmouseenter={async ({ target }) => {
-				if (!section.symbol) return
-
-				hovered_section = section
+				hovered_section_id = section[ID]
 				hovered_block_el = target
 				if (!moving) {
 					show_block_toolbar()
@@ -333,25 +380,21 @@
 			data-test-id="page-type-section-{section[ID]}"
 			style="min-height: 3rem;overflow:hidden;position: relative;"
 		>
-			{#if !section.symbol}
-				<SymbolPalette on:mount={() => sections_mounted++} />
-			{:else}
-				{#if locked && !in_current_tab}
-					<LockedOverlay {locked} />
-				{/if}
-				<ComponentNode
-					{section}
-					block={section.symbol}
-					on:lock={() => lock_block(section[ID])}
-					on:unlock={() => unlock_block()}
-					on:mount={() => sections_mounted++}
-					on:resize={() => {
-						if (showing_block_toolbar) {
-							position_block_toolbar()
-						}
-					}}
-				/>
+			{#if locked && !in_current_tab}
+				<LockedOverlay {locked} />
 			{/if}
+			<ComponentNode
+				{section}
+				block={section.symbol}
+				on:lock={() => lock_block(section[ID])}
+				on:unlock={() => unlock_block()}
+				on:mount={() => sections_mounted++}
+				on:resize={() => {
+					if (showing_block_toolbar) {
+						position_block_toolbar()
+					}
+				}}
+			/>
 		</div>
 	{/each}
 </main>
