@@ -20,14 +20,16 @@ export async function block_html({ code, data }) {
 }
 
 export async function page_html({ site, page, locale = 'en', no_js = false }: { site: Resolved<typeof Site>; page: Resolved<typeof Page>; locale?: (typeof locales)[number]; no_js?: boolean }) {
+	const site_data = get_content(SITE, site.data.fields)[locale] ?? {}
 	const head = {
-		code: site_design_css(site.data.design) + site.data.code.head + page.page_type.code.head
+		code: site_design_css(site.data.design) + site.data.code.head + page.page_type.code.head,
+		data: site_data
 	}
 	const component = await Promise.all([
 		...page.sections.map(async (section) => {
 			const { html, css: postcss, js } = section.symbol.code
 
-			const data = get_content(section[ID], section.symbol.fields)[locale]
+			const data = get_content(section[ID], section.symbol.fields)[locale] ?? {}
 
 			// @ts-ignore
 			const { css, error } = await processors.css(postcss || '')
@@ -46,7 +48,7 @@ export async function page_html({ site, page, locale = 'en', no_js = false }: { 
 				html: site.data.code.foot,
 				css: ``,
 				js: ``,
-				data: get_content(SITE, site.data.fields)
+				data: site_data
 			}
 		})()
 	])

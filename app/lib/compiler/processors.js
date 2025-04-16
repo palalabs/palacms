@@ -38,7 +38,7 @@ export async function html({ component, head, buildStatic = true, format = 'esm'
 	try {
 		const has_js = compile_page ? component.some((s) => s.js) : !!component.js
 		res = await rollup_worker.postMessage({
-			component: _.cloneDeep(component),
+			component,
 			head,
 			hydrated: buildStatic && has_js,
 			buildStatic,

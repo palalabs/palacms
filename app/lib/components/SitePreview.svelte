@@ -2,6 +2,9 @@
 	import { tick, onDestroy } from 'svelte'
 	import { browser } from '$app/environment'
 	import { find as _find } from 'lodash-es'
+	import { page_html } from '$lib/builder/code_generators'
+	import { require_site } from '$lib/loaders'
+	import { readable } from 'svelte/store'
 
 	/**
 	 * @typedef {Object} Props
@@ -15,13 +18,14 @@
 	/** @type {Props} */
 	let { site_id, preview = $bindable(null), head = '', append = '', style = '' } = $props()
 
-	if (!preview && site_id) {
-		get_preview()
-	}
-
-	async function get_preview() {
-		// TODO: Implement
-	}
+	const site = $derived(site_id ? require_site(site_id) : readable(null))
+	$effect(() => {
+		if (!preview && $site) {
+			page_html({ site: $site, page: $site.data.root, no_js: true }).then(({ html }) => {
+				preview = html
+			})
+		}
+	})
 
 	let container = $state()
 	let scale = $state()
