@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import * as _ from 'lodash-es'
 	import { goto } from '$app/navigation'
 	import { browser } from '$app/environment'
@@ -17,9 +17,12 @@
 	import { ID } from '$lib/common/constants'
 	import { site_html } from '$lib/builder/stores/app/page.js'
 	import modal from '$lib/builder/stores/app/modal.js'
+	import type { Id } from '$lib/common/models/Id.js'
 
-	const site_id = $derived(page.params.site)
+	const site_id = $derived(page.params.site as Id)
+	const page_type_id = $derived(page.params.page_type as Id)
 	const site = $derived(require_site(site_id))
+	const page_type = $derived($site?.data.page_types.find((page_type) => page_type[ID] === page_type_id))
 
 	// get the query param to set the tab when navigating from page (i.e. 'Edit Fields')
 	let active_tab = $state(page.url.searchParams.get('t') === 'p' ? 'CONTENT' : 'BLOCKS')
@@ -171,13 +174,23 @@
 				</div>
 				{#if $site_html !== null}
 					<div class="block-list">
-						{#each Object.values($site?.data.entities.symbols ?? {}) as symbol (symbol?.[ID])}
+						{#each $site?.data.symbols ?? [] as symbol (symbol[ID])}
+							{@const toggled = page_type?.symbols.some((active) => active[ID] == symbol[ID])}
 							<div class="block" animate:flip={{ duration: 200 }} use:drag_target={symbol}>
 								<Sidebar_Symbol
 									{symbol}
 									head={$site_html}
 									append={site_design_css($site?.data.design)}
 									show_toggle={true}
+									{toggled}
+									on:toggle={({ detail }) => {
+										if (!page_type || detail === toggled) return // dispatches on creation for some reason
+										if (toggled) {
+											page_type.symbols = page_type.symbols.filter((active) => active[ID] !== symbol[ID])
+										} else {
+											page_type.symbols.push(symbol)
+										}
+									}}
 									onmousedown={() => (dragging = symbol?.[ID])}
 									onmouseup={() => (dragging = null)}
 									on:edit={() => edit_block(symbol)}

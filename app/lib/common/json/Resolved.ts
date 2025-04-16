@@ -51,8 +51,7 @@ const normalizeRecursive = <T extends z.AnyZodObject>({ value, model, record, re
 				if (!record.data) record.data = {}
 				if (!record.data.entities) record.data.entities = {}
 				if (!record.data.entities[referenceType]) record.data.entities[referenceType] = {}
-				const entityId = value[key][ID] ?? newId()
-				value[key][ID] = entityId
+				const entityId = value[key][ID] ?? (value[key][ID] = newId())
 				record.data.entities[referenceType][entityId] = {}
 				normalizeRecursive({ value: value[key], model, record, result: record.data.entities[referenceType][entityId], path: ['data', 'entities', referenceType, entityId] })
 				result[key] = { $ref: `#/data/entities/${referenceType}/${entityId}` }
@@ -134,8 +133,7 @@ const proxy = ({ value, model, record, path = [], onUpdate }: { value: object; m
 			const referenceType: SiteEntityType | LibraryEntityType | null = valueType[SITE_ENTITY_REFERENCE] ?? valueType[LIBRARY_ENTITY_REFERENCE] ?? null
 			if (referenceType) {
 				// Set reference after normalizing
-				const entityId = val[ID] ?? newId()
-				val[ID] = entityId
+				const entityId = val[ID] ?? (val[ID] = newId())
 				record.data.entities[referenceType][entityId] = {}
 				normalizeRecursive({ value: val, model, record, result: record.data.entities[referenceType][entityId], path: ['data', 'entities', referenceType, entityId] })
 				target[key] = { $ref: `#/data/entities/${referenceType}/${entityId}` }
