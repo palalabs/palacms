@@ -42,6 +42,7 @@
 	}
 
 	function save_rename() {
+		symbol.name = new_name
 		renaming = false
 	}
 
