@@ -381,10 +381,7 @@
 			/>
 		{/if}
 		{#if field.type === 'image'}
-			<ImageFieldOptions
-				{field}
-				on:input={({ detail }) => dispatch_update({ options: detail.options })}
-			/>
+			<ImageFieldOptions {field} on:input={({ detail }) => dispatch_update({ options: detail.options })} />
 		{/if}
 		{#if field.type === 'page-field'}
 			<PageFieldField {field} on:input={({ detail }) => dispatch_update({ source: detail })} />
@@ -539,12 +536,6 @@
 		grid-template-columns: minmax(150px, 1fr) 3fr 3fr;
 		gap: 0.5rem;
 		place-items: start normal;
-
-		&.collapsed .minimal {
-			.main {
-				grid-column: 1 / span 2;
-			}
-		}
 
 		.type {
 			border-radius: 1px;

@@ -9,7 +9,7 @@
 	{#if $loadingSite}
 		<UI.Spinner />
 	{:else}
-		<Icon icon="ion:chevron-back-sharp" />
+		<Icon icon="mage:dashboard-fill" />
 		<!-- <span>C</span> -->
 		<!-- <svg viewBox="0 0 858 472" fill="none" xmlns="http://www.w3.org/2000/svg">
 			<g clip-path="url(#clip0_101_106)">
