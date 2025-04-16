@@ -21,12 +21,12 @@
 	let active_tab = $state((browser && localStorage.getItem('page-tab')) || 'BLOCKS')
 
 	const site_id = $derived(pageState.params.site as Id)
-	const page_id = $derived(pageState.params.page as Id)
+	const slug = $derived(pageState.params.page)
 	const site = $derived(require_site(site_id))
-	const page = $derived($site?.data.entities.pages[page_id] ?? null)
+	const page = $derived(Object.values($site?.data.entities.pages ?? {}).find((page) => page?.slug == slug) ?? $site?.data.root)
 
-	let page_type_symbols = $derived([])
-	let has_symbols = $derived(page_type_symbols.length > 0)
+	let page_type_symbols = $derived(page?.page_type.symbols)
+	let has_symbols = $derived(!!page_type_symbols?.length)
 
 	$effect(() => {
 		if (!has_symbols) active_tab = 'CONTENT'
@@ -83,9 +83,9 @@
 			<Tabs.Content value="blocks">
 				<div class="symbols">
 					{#if $site_html !== null}
-						{#each page_type_symbols as symbol, i (symbol.id)}
+						{#each page_type_symbols ?? [] as symbol (symbol[ID])}
 							<div animate:flip={{ duration: 200 }} use:drag_target={symbol}>
-								<Sidebar_Symbol {symbol} controls_enabled={false} head={$site_html} append={site_design_css($site.design)} />
+								<Sidebar_Symbol {symbol} controls_enabled={false} head={$site_html} append={site_design_css($site?.data.design)} />
 							</div>
 						{/each}
 					{:else}
