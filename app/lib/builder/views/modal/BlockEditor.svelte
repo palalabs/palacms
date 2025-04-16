@@ -16,10 +16,11 @@
 	import { get_content } from '$lib/builder/stores/helpers'
 	import { Symbol } from '$lib/common/models/Symbol'
 	import { ID } from '$lib/common/constants'
-	import type { Resolved } from '$lib/common/json'
+	import { type Resolved } from '$lib/common/json'
+	import { Id, newId } from '$lib/common/models/Id'
 
 	let {
-		block = { name: '', code: { css: '', html: '', js: '' }, fields: [] },
+		block: existing_block,
 		tab = $bindable('content'),
 		header = {
 			label: 'Create Component',
@@ -32,7 +33,16 @@
 				}
 			}
 		}
-	}: { block?: Resolved<typeof Symbol>; tab?: string; header?: any } = $props()
+	}: { block?: Resolved<typeof Symbol> & { [ID]: Id }; tab?: string; header?: any } = $props()
+
+	let block = $state({} as Resolved<typeof Symbol> & { [ID]: Id })
+	$effect.pre(() => {
+		if (existing_block) {
+			block = existing_block
+		} else {
+			block = { [ID]: newId(), code: { css: '', html: '', js: '' }, fields: [], name: 'New Block' }
+		}
+	})
 
 	let loading = false
 
@@ -58,8 +68,9 @@
 	}
 
 	async function save_component() {
-		// TODO: Implement
-		throw new Error('Not implemented')
+		if (!$has_error) {
+			header.button.onclick(block)
+		}
 	}
 </script>
 

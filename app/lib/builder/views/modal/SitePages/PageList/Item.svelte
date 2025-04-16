@@ -11,6 +11,7 @@
 	import { page as pageState } from '$app/state'
 	import { ID } from '$lib/common/constants'
 	import { require_site } from '$lib/loaders'
+	import { modal } from '$lib/builder/stores/app'
 
 	let editing_page = $state(false)
 

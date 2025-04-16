@@ -9,16 +9,17 @@
 	import DropIndicator from './Layout/DropIndicator.svelte'
 	import SymbolPalette from './Layout/SymbolPalette.svelte'
 	import LockedOverlay from './Layout/LockedOverlay.svelte'
-	import { locale, locked_blocks } from '../../stores/app/misc.js'
+	import { locale } from '../../stores/app/misc.js'
 	import modal from '../../stores/app/modal.js'
 	import { dropTargetForElements } from '../../libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
 	import { attachClosestEdge, extractClosestEdge } from '../../libraries/pragmatic-drag-and-drop-hitbox/closest-edge.js'
 	import { require_site } from '$lib/loaders/index.js'
 	import { page } from '$app/state'
 	import { ID } from '$lib/common/constants'
+	import type { Id } from '$lib/common/models/Id.js'
 
-	const site_id = $derived(page.params.site)
-	const page_type_id = $derived(page.params.page_type)
+	const site_id = $derived(page.params.site as Id)
+	const page_type_id = $derived(page.params.page_type as Id)
 	const site = $derived(require_site(site_id))
 	const page_type = $derived($site?.data.entities.page_types[page_type_id] ?? null)
 
@@ -210,51 +211,6 @@
 		hide_drop_indicator()
 	}
 
-	let dragging_over_section = false
-
-	// detect drags over the page
-	function drag_fallback(element) {
-		dropTargetForElements({
-			element,
-			getData({ input, element }) {
-				return attachClosestEdge(
-					{},
-					{
-						element,
-						input,
-						allowedEdges: ['top', 'bottom']
-					}
-				)
-			},
-			async onDrag({ self, source }) {
-				if (dragging_over_section) return // prevent double-adding block
-
-				const last_section_id = $sections[$sections.length - 1]?.id // get the last section (usually that's the drop zone)
-				hovered_block_el = page_el.querySelector(`[data-section="${last_section_id}"]`)
-
-				if (!showing_drop_indicator) {
-					await show_drop_indicator()
-				}
-				position_drop_indicator()
-				if (dragging.id !== last_section_id || dragging.position !== extractClosestEdge(self.data)) {
-					dragging = {
-						id: last_section_id,
-						position: extractClosestEdge(self.data)
-					}
-				}
-			},
-			onDragLeave() {
-				reset_drag()
-			},
-			async onDrop({ source }) {
-				if (dragging_over_section) return // prevent double-adding block
-				const block_being_dragged = source.data.block
-				add_page_type_section(block_being_dragged, $sections.length)
-				reset_drag()
-			}
-		})
-	}
-
 	function drag_item(element, section) {
 		dropTargetForElements({
 			element,
@@ -289,34 +245,20 @@
 				dragging_over_section = false
 			},
 			onDrop({ self, source }) {
-				const section_dragged_over_index = $sections.find((s) => s.id === self.data.section.id).index
-				const block_being_dragged = source.data.block
-				const closestEdgeOfTarget = extractClosestEdge(self.data)
-				if (closestEdgeOfTarget === 'top') {
-					add_page_type_section(block_being_dragged, section_dragged_over_index)
-				} else if (closestEdgeOfTarget === 'bottom') {
-					add_page_type_section(block_being_dragged, section_dragged_over_index + 1)
-				}
-				reset_drag()
+				// TODO: Implement
+				throw new Error('Not implemented')
 			}
 		})
 	}
-	$effect.pre(() => {
-		hydrate_page_type(page)
-	})
 	$effect(() => {
-		// set_page_html($page_type.code, $siteCode, $siteDesign)
-	})
-	let page_is_empty = $derived($sections.length === 0)
-	$effect(() => {
-		if (sections_mounted === $sections.length && sections_mounted !== 0) {
+		if (sections_mounted === page_type?.sections.length && sections_mounted !== 0) {
 			page_mounted = true
 		}
 	})
 </script>
 
 <!-- Loading Spinner -->
-{#if !page_mounted && $sections.length > 0}
+{#if !page_mounted && page_type?.sections.length}
 	<div class="spinner">
 		<UI.Spinner variant="loop" />
 	</div>
@@ -356,7 +298,7 @@
 {/if}
 
 <!-- Page Blocks -->
-<main id="#Page" data-test bind:this={page_el} class:fadein={page_mounted} lang={$locale} use:drag_fallback>
+<main id="#Page" data-test bind:this={page_el} class:fadein={page_mounted} lang={$locale}>
 	{#each page_type?.sections ?? [] as section (section[ID])}
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<!-- svelte-ignore a11y_mouse_events_have_key_events -->

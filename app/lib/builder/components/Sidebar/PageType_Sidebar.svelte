@@ -16,6 +16,7 @@
 	import { require_site } from '$lib/loaders'
 	import { ID } from '$lib/common/constants'
 	import { site_html } from '$lib/builder/stores/app/page.js'
+	import modal from '$lib/builder/stores/app/modal.js'
 
 	const site_id = $derived(page.params.site)
 	const site = $derived(require_site(site_id))
@@ -39,10 +40,7 @@
 						label: `Save Block`,
 						icon: 'fas fa-check',
 						onclick: (new_block, changes) => {
-							add_block_to_site({
-								symbol: new_block,
-								index: 0
-							})
+							$site?.data.symbols.push(new_block)
 							modal.hide()
 						}
 					}
@@ -67,7 +65,8 @@
 					button: {
 						label: `Save Block`,
 						icon: 'fas fa-check',
-						onclick: (updated_data) => {
+						onclick: (updated_block) => {
+							Object.assign(block, updated_block)
 							modal.hide()
 						}
 					}

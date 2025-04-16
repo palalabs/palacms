@@ -30,6 +30,7 @@
 	 * @property {boolean} [loading]?
 	 * @property {boolean} [hideControls]?
 	 * @property {any} [preview]?
+	 * @property {any} [data]
 	 * @property {string | null} [head]?
 	 * @property {string} [append]?
 	 */
@@ -46,6 +47,7 @@
 		loading = $bindable(false),
 		hideControls = false,
 		preview = null,
+		data = {},
 		head = null,
 		append = ''
 	} = $props()
@@ -78,7 +80,8 @@
 				component: {
 					html: `<svelte:head>${$site.data.code.head + site_design_css($site.data.design)}</svelte:head>`,
 					css: '',
-					js: ''
+					js: '',
+					data
 				}
 			})
 
@@ -106,7 +109,8 @@
 					// head: code.head,
 					html: code.html,
 					css: code.css,
-					js: code.js
+					js: code.js,
+					data
 				},
 				buildStatic: false
 			})
@@ -204,7 +208,7 @@
 		if (iframeLoaded) {
 			channel.postMessage({
 				event: 'SET_APP',
-				payload: { componentApp }
+				payload: { componentApp, data }
 			})
 		}
 	}

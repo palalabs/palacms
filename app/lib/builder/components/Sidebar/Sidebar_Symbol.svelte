@@ -14,6 +14,11 @@
 	import type { Symbol } from '$lib/common/models/Symbol'
 	import { get_content } from '$lib/builder/stores/helpers'
 	import { ID } from '$lib/common/constants'
+	import { createEventDispatcher } from 'svelte'
+	import { processCode } from '$lib/builder/utils'
+	import { block_html } from '$lib/builder/code_generators'
+
+	const dispatch = createEventDispatcher()
 
 	let {
 		symbol = $bindable(),
@@ -44,15 +49,17 @@
 
 	let componentCode = $state()
 	let component_error = $state()
-	async function compile_component_code(symbol, language) {
+	async function compile_component_code() {
 		const code = {
 			html: symbol.code.html,
 			css: symbol.code.css,
 			js: symbol.code.js
 		}
-		const data = get_content(symbol[ID], symbol.fields)[$locale]
-		// TODO: Implement
-		throw new Error('Not implemented')
+		const data = get_content(symbol[ID], symbol.fields)[$locale] ?? {}
+		componentCode = await block_html({
+			code,
+			data
+		})
 	}
 
 	let element = $state()
@@ -75,7 +82,7 @@
 		}
 	})
 	$effect(() => {
-		browser && compile_component_code(symbol, $locale)
+		browser && compile_component_code()
 	})
 </script>
 

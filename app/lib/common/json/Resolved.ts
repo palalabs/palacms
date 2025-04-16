@@ -141,8 +141,14 @@ const proxy = ({ value, model, record, path = [], onUpdate }: { value: object; m
 				target[key] = { $ref: `#/data/entities/${referenceType}/${entityId}` }
 				onUpdate?.()
 				return true
+			} else if (Array.isArray(val)) {
+				// Set array after normalizing
+				target[key] = []
+				normalizeRecursive({ value: val, model, record, result: target[key], path: [...path, key] })
+				onUpdate?.()
+				return true
 			} else if (typeof val === 'object') {
-				// Set object after serializing
+				// Set object after normalizing
 				target[key] = {}
 				normalizeRecursive({ value: val, model, record, result: target[key], path: [...path, key] })
 				onUpdate?.()
