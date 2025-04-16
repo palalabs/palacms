@@ -35,6 +35,11 @@
 		<div class="left">
 			<PrimoButton />
 			<div class="button-group">
+				<div class="flex rounded" style="border: 1px solid #222" bind:this={customAnchor}>
+					<ToolbarButton label="Site" icon="gg:website" on:click={() => modal.show('SITE_EDITOR', {}, { showSwitch: true, disabledBgClose: true })} />
+				</div>
+			</div>
+			<div class="button-group">
 				{#if $mod_key_held}
 					<div
 						style="
@@ -73,13 +78,6 @@
 						</DropdownMenu.Root>
 					</div>
 				{/if}
-			</div>
-
-			<div class="button-group">
-				<ToolbarButton icon="gg:website" on:click={() => modal.show('SITE_EDITOR', {}, { showSwitch: true, disabledBgClose: true })} />
-				{#each primary_buttons as button}
-					<ToolbarButton icon={button.icon} on:click={button.onclick} />
-				{/each}
 			</div>
 		</div>
 		<div class="site-name">
