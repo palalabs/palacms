@@ -8,14 +8,12 @@
 	import MenuPopup from '../../ui/Dropdown.svelte'
 	import { locale } from '../../stores/app/misc'
 	import { draggable } from '../../libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
-	import { browser } from '$app/environment'
 	import IFrame from '../../components/IFrame.svelte'
 	import type { Resolved } from '$lib/common/json'
 	import type { Symbol } from '$lib/common/models/Symbol'
 	import { get_content } from '$lib/builder/stores/helpers'
 	import { ID } from '$lib/common/constants'
-	import { createEventDispatcher } from 'svelte'
-	import { processCode } from '$lib/builder/utils'
+	import { createEventDispatcher, onMount } from 'svelte'
 	import { block_html } from '$lib/builder/code_generators'
 
 	const dispatch = createEventDispatcher()
@@ -50,18 +48,20 @@
 
 	let componentCode = $state()
 	let component_error = $state()
-	async function compile_component_code() {
+	onMount(() => {
 		const code = {
 			html: symbol.code.html,
 			css: symbol.code.css,
 			js: symbol.code.js
 		}
 		const data = get_content(symbol[ID], symbol.fields)[$locale] ?? {}
-		componentCode = await block_html({
+		block_html({
 			code,
 			data
+		}).then((res) => {
+			componentCode = res
 		})
-	}
+	})
 
 	let element = $state()
 	$effect(() => {
@@ -81,9 +81,6 @@
 			sel?.removeAllRanges()
 			sel?.addRange(range)
 		}
-	})
-	$effect(() => {
-		browser && compile_component_code()
 	})
 </script>
 
@@ -168,7 +165,7 @@
 		{/if}
 	</header>
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div class="symbol-container" class:disabled={component_error} bind:this={element} data-test-id="symbol-{symbol.id}">
+	<div class="symbol-container" class:disabled={component_error} bind:this={element} data-test-id="symbol-{symbol[ID]}">
 		{#if component_error}
 			<div class="error">
 				<Icon icon="heroicons:no-symbol-16-solid" />

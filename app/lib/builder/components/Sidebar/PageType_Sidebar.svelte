@@ -19,6 +19,8 @@
 	import modal from '$lib/builder/stores/app/modal.js'
 	import type { Id } from '$lib/common/models/Id.js'
 
+	const UPDATE_COUNTER = Symbol('UPDATE_COUNTER')
+
 	const site_id = $derived(page.params.site as Id)
 	const page_type_id = $derived(page.params.page_type as Id)
 	const site = $derived(require_site(site_id))
@@ -70,6 +72,8 @@
 						icon: 'fas fa-check',
 						onclick: (updated_block) => {
 							Object.assign(block, updated_block)
+							// Force rerender for the sidebar preview
+							block[UPDATE_COUNTER] = (block[UPDATE_COUNTER] ?? 0) + 1
 							modal.hide()
 						}
 					}
@@ -174,7 +178,7 @@
 				</div>
 				{#if $site_html !== null}
 					<div class="block-list">
-						{#each $site?.data.symbols ?? [] as symbol (symbol[ID])}
+						{#each $site?.data.symbols ?? [] as symbol (symbol[ID] + symbol[UPDATE_COUNTER])}
 							{@const toggled = page_type?.symbols.some((active) => active[ID] == symbol[ID])}
 							<div class="block" animate:flip={{ duration: 200 }} use:drag_target={symbol}>
 								<Sidebar_Symbol
