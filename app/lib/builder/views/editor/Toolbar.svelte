@@ -26,10 +26,10 @@
 	let { children } = $props()
 
 	const site_id = $derived(pageState.params.site)
-	const page_id = $derived(pageState.params.page as Id)
+	const page_slug = $derived((pageState.params.page as Id) || '')
 	const page_type_id = $derived(pageState.params.page_type as Id)
 	const site = $derived(require_site(site_id))
-	const page = $derived($site?.data.entities.pages[page_id])
+	const page = $derived(Object.values($site?.data.entities.pages).find((p) => p.slug === page_slug))
 	const page_type = $derived($site?.data.entities.page_types[page_type_id])
 
 	let going_up = $state(false)
@@ -113,7 +113,7 @@
 			</div>
 		</div>
 		<div class="site-name">
-			<span class="site">{$site?.data.name} /</span>
+			<span class="site">{$site?.name} /</span>
 			{#if page}
 				<span class="page">{page.name}</span>
 				<!-- $userRole === 'DEV' -->
