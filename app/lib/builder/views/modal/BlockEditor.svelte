@@ -4,10 +4,10 @@
 </script>
 
 <script lang="ts">
-	import { PaneGroup, Pane, PaneResizer } from 'paneforge'
+	import * as Dialog from '$lib/components/ui/dialog'
 	import LargeSwitch from '$lib/builder/ui/LargeSwitch.svelte'
+	import { PaneGroup, Pane, PaneResizer } from 'paneforge'
 	import * as _ from 'lodash-es'
-	import ModalHeader from './ModalHeader.svelte'
 	import FullCodeEditor from './SectionEditor/FullCodeEditor.svelte'
 	import ComponentPreview, { has_error } from '$lib/builder/components/ComponentPreview.svelte'
 	import Fields from '$lib/builder/components/Fields/FieldsContent.svelte'
@@ -44,6 +44,8 @@
 		}
 	})
 
+	$inspect({ block })
+
 	let loading = false
 
 	let component_data = $derived(get_content(block[ID], block.fields)[$locale])
@@ -69,37 +71,26 @@
 
 	async function save_component() {
 		if (!$has_error) {
-			header.button.onclick(block)
+			console.log({ the_block: _.cloneDeep(block) })
+			header.button.onclick(_.cloneDeep(block))
 		}
 	}
 </script>
 
-<ModalHeader
-	{...header}
-	warn={() => {
-		return true
-	}}
-	icon="lucide:blocks"
+<Dialog.Header
+	class="mb-2"
 	title={block.name || 'Block'}
 	button={{
 		...header.button,
 		onclick: save_component,
-		icon: 'material-symbols:save',
 		disabled: $has_error
 	}}
 >
-	{#snippet left()}
-		<div>
-			<!-- TODO: $userRole === 'DEV' -->
-			{#if true}
-				<LargeSwitch bind:active_tab_id={tab} />
-			{/if}
-		</div>
-	{/snippet}
-</ModalHeader>
+	<LargeSwitch bind:active_tab_id={tab} />
+</Dialog.Header>
 
 <main lang={$locale}>
-	<PaneGroup direction={$orientation} style="display: flex;">
+	<PaneGroup direction={$orientation} class="flex">
 		<Pane defaultSize={50}>
 			{#if tab === 'code'}
 				<FullCodeEditor bind:html={block.code.html} bind:css={block.code.css} bind:js={block.code.js} data={component_data} on:save={save_component} on:mod-e={toggle_tab} />

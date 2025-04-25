@@ -3,7 +3,6 @@
 	import { validate_url } from '$lib/builder/utilities'
 	import PageForm from './PageTypeForm.svelte'
 	import MenuPopup from '$lib/builder/ui/Dropdown.svelte'
-	import modal from '$lib/builder/stores/app/modal'
 	import type { Resolved } from '$lib/common/json'
 	import type { PageType } from '$lib/common/models/PageType'
 	import { ID } from '$lib/common/constants'
@@ -45,7 +44,7 @@
 		</span>
 		<div class="page-item-container" class:active>
 			<div class="left">
-				<a class="name" href={full_url} onclick={() => modal.hide()}>
+				<a class="name" href={full_url}>
 					{page_type.name}
 				</a>
 			</div>
@@ -92,7 +91,6 @@
 				$site.data.page_types.push(page)
 				const [created_page_type] = $site.data.page_types.slice(-1)
 				goto(`/${$site.id}/page-type--${created_page_type[ID]}`)
-				modal.hide()
 			}}
 		/>
 	</div>

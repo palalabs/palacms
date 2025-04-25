@@ -1,9 +1,9 @@
 <script lang="ts">
 	import Icon from '@iconify/svelte'
+	import * as Dialog from '$lib/components/ui/dialog'
 	import { PaneGroup, Pane, PaneResizer } from 'paneforge'
 	import Fields from '$lib/builder/components/Fields/FieldsContent.svelte'
 	import * as _ from 'lodash-es'
-	import ModalHeader from './ModalHeader.svelte'
 	import CodeEditor from '$lib/builder/components/CodeEditor/CodeMirror.svelte'
 	import { page } from '$app/state'
 	import { require_site } from '$lib/loaders'
@@ -24,14 +24,11 @@
 </script>
 
 {#if page_type}
-	<ModalHeader
-		icon={page_type.icon}
+	<Dialog.Header
+		class="mb-2"
 		title={page_type.name}
-		warn={() => {
-			return true
-		}}
 		button={{
-			icon: 'material-symbols:save',
+			onclick: saveComponent,
 			label: 'Save',
 			disabled: disableSave
 		}}

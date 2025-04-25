@@ -1,12 +1,12 @@
 <script>
-	import UI from '../../../ui'
+	import UI from '../../ui'
 	import Button from '$lib/builder/ui/Button.svelte'
 
 	const defaultValue = {
 		url: ''
 	}
 
-	let { value = $bindable(defaultValue), children, onsubmit } = $props()
+	let { value = $bindable(defaultValue), onsave } = $props()
 
 	if (typeof value === 'string' || !value) {
 		value = defaultValue
@@ -50,7 +50,7 @@
 		<form
 			onsubmit={(e) => {
 				e.preventDefault()
-				onsubmit(videoURL)
+				onsave(videoURL)
 			}}
 		>
 			<div class="inputs">
@@ -70,7 +70,6 @@
 		</form>
 	</div>
 </div>
-{@render children?.()}
 
 <style lang="postcss">
 	.image-info {

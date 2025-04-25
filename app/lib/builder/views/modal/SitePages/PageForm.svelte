@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte'
 	import { fade } from 'svelte/transition'
-	import UI from '../../../../ui'
+	import UI from '../../../ui'
 	import Icon from '@iconify/svelte'
-	import { validate_url } from '../../../../utilities'
+	import { validate_url } from '../../../utilities'
 	import { Page } from '$lib/common/models/Page'
 	import type { Resolved } from '$lib/common/json'
 	import { page } from '$app/state'

@@ -17,7 +17,6 @@
 	import { onMobile } from '$lib/builder/stores/app'
 	import * as code_generators from '$lib/builder/code_generators'
 	import DesignFields from './DesignFields.svelte'
-	import ModalHeader from '$lib/components/ModalHeader.svelte'
 	import { require_site } from '$lib/loaders'
 	import { page } from '$app/state'
 
@@ -66,25 +65,16 @@
 	}
 </script>
 
-<ModalHeader
+<!-- <ModalHeader
 	icon="solar:pallete-2-bold"
 	title="Design"
-	warn={() => {
-		// if (!isEqual(local_component, component)) {
-		//   const proceed = window.confirm(
-		//     'Undrafted changes will be lost. Continue?'
-		//   )
-		//   return proceed
-		// } else return true
-		return true
-	}}
 	button={{
 		icon: 'material-symbols:save',
 		label: 'Save',
 		onclick: saveComponent,
 		disabled: false
 	}}
-/>
+/> -->
 <main>
 	<PaneGroup direction="horizontal" style="display: flex; height: 100vh; max-height: calc(100vh - 42px)" autoSaveId="design-panel">
 		<Pane defaultSize={50} minSize={20}>

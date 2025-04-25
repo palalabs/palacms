@@ -8,17 +8,20 @@
 	import * as AlertDialog from '$lib/components/ui/alert-dialog'
 	import { Input } from '$lib/components/ui/input'
 	import * as code_generators from '$lib/builder/code_generators'
+	import * as RadioGroup from '$lib/components/ui/radio-group'
+	import { Label } from '$lib/components/ui/label'
 	import { processCode } from '$lib/builder/utils.js'
 	import { Separator } from '$lib/components/ui/separator'
 	import { Button } from '$lib/components/ui/button'
 	import EmptyState from '$lib/components/EmptyState.svelte'
-	import { CirclePlus, Cuboid, Palette, Code, Upload, SquarePen, Trash2, ChevronDown, Loader } from 'lucide-svelte'
-	import LibrarySymbolButton from '$lib/components/LibrarySymbolButton.svelte'
+	import { CirclePlus, Cuboid, Palette, Code, Upload, SquarePen, Trash2, ChevronDown, Loader, EllipsisVertical, ArrowLeftRight } from 'lucide-svelte'
+	import SymbolButton from '$lib/components/SymbolButton.svelte'
 	import { page } from '$app/state'
 	import { goto } from '$app/navigation'
 	import { useSidebar } from '$lib/components/ui/sidebar'
 	import { require_library } from '$lib/loaders'
 	import type { Id } from '$lib/common/models/Id'
+	import type { LibraryEntityReference } from '$lib/common/models/LibraryEntityReference'
 	import { ID } from '$lib/common'
 
 	const library = require_library()
@@ -101,8 +104,80 @@
 		require_library.refresh()
 		deleting = false
 	}
+
+	let symbol_being_edited: LibraryEntityReference<'symbols'> | null = $state(null)
+	let is_symbol_editor_open = $state(false)
+
+	function begin_symbol_edit(symbol: LibraryEntityReference<'symbols'>) {
+		symbol_being_edited = symbol
+		is_symbol_editor_open = true
+	}
+
+	// Symbol rename
+	let symbol_being_renamed: LibraryEntityReference<'symbols'> | null = $state(null)
+	let is_symbol_renamer_open = $state(false)
+
+	function begin_symbol_rename(symbol: LibraryEntityReference<'symbols'>) {
+		symbol_being_renamed = symbol
+		new_name = symbol.name
+		is_symbol_renamer_open = true
+	}
+
+	async function handle_symbol_rename(e) {
+		e.preventDefault()
+		if (!symbol_being_renamed) return
+		symbol_being_renamed.name = new_name
+		is_symbol_renamer_open = false
+		symbol_being_renamed = null
+	}
+
+	// Symbol move
+	let symbol_being_moved: LibraryEntityReference<'symbols'> | null = $state(null)
+	let is_symbol_move_open = $state(false)
+	let selected_group_id = $state('')
+
+	function begin_symbol_move(symbol: LibraryEntityReference<'symbols'>) {
+		symbol_being_moved = symbol
+		const original_group_id = Object.entries($library?.data.entities.symbol_groups ?? {}).find(([, group]) => group.symbols.includes(symbol))?.[0]
+		selected_group_id = original_group_id ?? ''
+		is_symbol_move_open = true
+	}
+
+	async function move_symbol() {
+		if (!$library || !symbol_being_moved) return
+		// Move implementation
+		is_symbol_move_open = false
+		symbol_being_moved = null
+	}
+
+	// Symbol delete
+	let symbol_being_deleted: LibraryEntityReference<'symbols'> | null = $state(null)
+	let is_delete_symbol_open = $state(false)
+
+	function begin_symbol_delete(symbol: LibraryEntityReference<'symbols'>) {
+		symbol_being_deleted = symbol
+		is_delete_symbol_open = true
+	}
+
+	async function delete_library_symbol() {
+		if (!$library || !symbol_being_deleted) return
+		deleting = true
+		// Delete implementation
+		is_delete_symbol_open = false
+		symbol_being_deleted = null
+		deleting = false
+	}
+
+	async function save_symbol(data) {
+		if (!$library) return
+		// preview = data.preview
+		// $library.data.entities.symbols[symbol_being_edited?.id] = data
+		is_symbol_editor_open = false
+		symbol_being_edited = null
+	}
 </script>
 
+<!-- Symbol Group Dialogs -->
 <Dialog.Root bind:open={is_rename_open}>
 	<Dialog.Content class="sm:max-w-[425px] pt-12 gap-0">
 		<h2 class="text-lg font-semibold leading-none tracking-tight">Rename group</h2>
@@ -242,23 +317,33 @@
 	{#if active_symbol_group?.symbols.length}
 		<div class="masonry">
 			<ul>
-				{#each active_symbol_group.symbols.slice((active_symbol_group.symbols.length / 3) * 2, (active_symbol_group.symbols.length / 3) * 3) as symbol (symbol[ID])}
+				{#each active_symbol_group.symbols as symbol (symbol[ID])}
 					<li>
-						<LibrarySymbolButton {symbol} head={generated_head_code + design_variables_css} />
-					</li>
-				{/each}
-			</ul>
-			<ul>
-				{#each active_symbol_group.symbols.slice(active_symbol_group.symbols.length / 3, (active_symbol_group.symbols.length / 3) * 2) as symbol (symbol[ID])}
-					<li>
-						<LibrarySymbolButton {symbol} head={generated_head_code + design_variables_css} />
-					</li>
-				{/each}
-			</ul>
-			<ul>
-				{#each active_symbol_group.symbols.slice(0, active_symbol_group.symbols.length / 3) as symbol (symbol[ID])}
-					<li>
-						<LibrarySymbolButton {symbol} head={generated_head_code + design_variables_css} />
+						<SymbolButton {symbol} head={generated_head_code + design_variables_css}>
+							<DropdownMenu.Root>
+								<DropdownMenu.Trigger>
+									<EllipsisVertical size={14} />
+								</DropdownMenu.Trigger>
+								<DropdownMenu.Content>
+									<DropdownMenu.Item onclick={() => begin_symbol_edit(symbol)}>
+										<Code class="h-4 w-4" />
+										<span>Edit</span>
+									</DropdownMenu.Item>
+									<DropdownMenu.Item onclick={() => begin_symbol_move(symbol)}>
+										<ArrowLeftRight class="h-4 w-4" />
+										<span>Move</span>
+									</DropdownMenu.Item>
+									<DropdownMenu.Item onclick={() => begin_symbol_rename(symbol)}>
+										<SquarePen class="h-4 w-4" />
+										<span>Rename</span>
+									</DropdownMenu.Item>
+									<DropdownMenu.Item onclick={() => begin_symbol_delete(symbol)} class="text-red-500 hover:text-red-600 focus:text-red-600">
+										<Trash2 class="h-4 w-4" />
+										<span>Delete</span>
+									</DropdownMenu.Item>
+								</DropdownMenu.Content>
+							</DropdownMenu.Root>
+						</SymbolButton>
 					</li>
 				{/each}
 			</ul>
@@ -267,6 +352,73 @@
 		<EmptyState icon={Cuboid} title="No Blocks to display" description="Blocks are components you can add to any site. When you create one it'll show up here." />
 	{/if}
 </div>
+
+<!-- Symbol Dialogs -->
+<Dialog.Root bind:open={is_symbol_move_open}>
+	<Dialog.Content class="sm:max-w-[425px] pt-12 gap-0">
+		<div class="grid gap-4">
+			<div class="space-y-2">
+				<h4 class="font-medium leading-none">Move to group</h4>
+				<p class="text-muted-foreground text-sm">Select a group for this block</p>
+			</div>
+			<RadioGroup.Root bind:value={selected_group_id}>
+				{#each $library?.data.symbol_groups ?? [] as group}
+					<div class="flex items-center space-x-2">
+						<RadioGroup.Item value={group.name} id={group.name} />
+						<Label for={group.name}>{group.name}</Label>
+					</div>
+				{/each}
+			</RadioGroup.Root>
+			<div class="flex justify-end">
+				<Button onclick={move_symbol}>Move</Button>
+			</div>
+		</div>
+	</Dialog.Content>
+</Dialog.Root>
+
+<Dialog.Root bind:open={is_symbol_editor_open}>
+	<Dialog.Content escapeKeydownBehavior="ignore" class="max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4 gap-0">
+		<CreateBlock symbol={symbol_being_edited} head={generated_head_code + design_variables_css} onsubmit={save_symbol} />
+	</Dialog.Content>
+</Dialog.Root>
+
+<Dialog.Root bind:open={is_symbol_renamer_open}>
+	<Dialog.Content class="sm:max-w-[425px] pt-12 gap-0">
+		<h2 class="text-lg font-semibold leading-none tracking-tight">Rename Block</h2>
+		<p class="text-muted-foreground text-sm">Enter a new name for your Block</p>
+		<form onsubmit={handle_symbol_rename}>
+			<Input bind:value={new_name} placeholder="Enter new Block name" class="my-4" />
+			<Dialog.Footer>
+				<Button type="button" variant="outline" onclick={() => (is_symbol_renamer_open = false)}>Cancel</Button>
+				<Button type="submit">Rename</Button>
+			</Dialog.Footer>
+		</form>
+	</Dialog.Content>
+</Dialog.Root>
+
+<AlertDialog.Root bind:open={is_delete_symbol_open}>
+	<AlertDialog.Content>
+		<AlertDialog.Header>
+			<AlertDialog.Title>Are you sure?</AlertDialog.Title>
+			<AlertDialog.Description>
+				This action cannot be undone. This will permanently delete <strong>{symbol_being_deleted?.name}</strong>
+				and remove all associated data.
+			</AlertDialog.Description>
+		</AlertDialog.Header>
+		<AlertDialog.Footer>
+			<AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
+			<AlertDialog.Action onclick={delete_library_symbol} class="bg-red-600 hover:bg-red-700">
+				{#if deleting}
+					<div class="animate-spin absolute">
+						<Loader />
+					</div>
+				{:else}
+					Delete {symbol_being_deleted?.name}
+				{/if}
+			</AlertDialog.Action>
+		</AlertDialog.Footer>
+	</AlertDialog.Content>
+</AlertDialog.Root>
 
 <style lang="postcss">
 	.masonry {

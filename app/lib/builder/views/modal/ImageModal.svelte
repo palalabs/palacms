@@ -2,10 +2,10 @@
 	import * as _ from 'lodash-es'
 	import Icon from '@iconify/svelte'
 	import Button from '$lib/builder/ui/Button.svelte'
-	import UI from '../../../ui'
+	import UI from '../../ui'
 	import imageCompression from 'browser-image-compression'
 
-	let { value = {}, children, onsubmit, fieldOptions = {} } = $props()
+	let { value = {}, onsave, fieldOptions = {} } = $props()
 
 	let imagePreview = $state(value?.url || '')
 	let local_value = $state({
@@ -89,7 +89,7 @@
 		<form
 			onsubmit={(event) => {
 				event.preventDefault()
-				onsubmit(local_value)
+				onsave(local_value)
 			}}
 		>
 			<div class="inputs">
@@ -121,7 +121,6 @@
 		</form>
 	</div>
 </div>
-{@render children?.()}
 
 <style lang="postcss">
 	.image-info {

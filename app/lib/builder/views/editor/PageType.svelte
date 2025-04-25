@@ -4,13 +4,14 @@
 	import { fade } from 'svelte/transition'
 	import { flip } from 'svelte/animate'
 	import UI from '../../ui/index.js'
+	import * as Dialog from '$lib/components/ui/dialog'
+	import SectionEditor from '$lib/builder/views/modal/SectionEditor/SectionEditor.svelte'
 	import ComponentNode from './Layout/ComponentNode.svelte'
 	import BlockToolbar from './Layout/BlockToolbar.svelte'
 	import DropIndicator from './Layout/DropIndicator.svelte'
 	import SymbolPalette from './Layout/SymbolPalette.svelte'
 	import LockedOverlay from './Layout/LockedOverlay.svelte'
 	import { locale } from '../../stores/app/misc.js'
-	import modal from '../../stores/app/modal.js'
 	import { dropTargetForElements } from '../../libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
 	import { attachClosestEdge, extractClosestEdge } from '../../libraries/pragmatic-drag-and-drop-hitbox/closest-edge.js'
 	import { require_site } from '$lib/loaders/index.js'
@@ -40,12 +41,14 @@
 	}
 
 	let hovered_section_id: Resolved<typeof Section> | null = $state(null)
+	let hovered_section = $derived(page_type?.sections.find((s) => s[ID] === hovered_section_id))
 
 	let block_toolbar_element = $state()
 	let page_el = $state()
 	let hovered_block_el = $state()
 
 	let showing_block_toolbar = $state(false)
+	let hovering_toolbar = $state(false)
 	async function show_block_toolbar() {
 		showing_block_toolbar = true
 		await tick()
@@ -57,7 +60,7 @@
 
 	function position_block_toolbar() {
 		if (!hovered_block_el) return
-		hovered_block_el.appendChild(block_toolbar_element)
+
 		const { top, left, bottom, right } = hovered_block_el.getBoundingClientRect()
 		const block_positions = {
 			top: (top <= 43 ? 43 : top) + window.scrollY,
@@ -65,46 +68,28 @@
 			left,
 			right: window.innerWidth - right - window.scrollX
 		}
-		block_toolbar_element.style.top = `${block_positions.top}px`
-		block_toolbar_element.style.bottom = `${block_positions.bottom}px`
-		block_toolbar_element.style.left = `${block_positions.left}px`
-		block_toolbar_element.style.right = `${block_positions.right}px`
+
+		// Just update the styles without appending
+		if (block_toolbar_element) {
+			block_toolbar_element.style.top = `${block_positions.top}px`
+			block_toolbar_element.style.bottom = `${block_positions.bottom}px`
+			block_toolbar_element.style.left = `${block_positions.left}px`
+			block_toolbar_element.style.right = `${block_positions.right}px`
+		}
 	}
 
 	function hide_block_toolbar() {
-		showing_block_toolbar = false
+		if (!hovering_toolbar) {
+			showing_block_toolbar = false
+		}
 	}
 
-	function edit_component(section_id, showIDE = false) {
-		const section = page_type?.sections.find((s) => s[ID] === section_id)
-		if (!section) return
-		lock_block(section_id)
-		modal.show(
-			'SECTION_EDITOR',
-			{
-				component: section,
-				tab: showIDE ? 'code' : 'content',
-				header: {
-					title: `Edit Block`,
-					icon: showIDE ? 'fas fa-code' : 'fas fa-edit',
-					onclose: () => {
-						unlock_block()
-					},
-					button: {
-						icon: 'fas fa-check',
-						label: 'Save',
-						onclick: (updated_data) => {
-							Object.assign(section, updated_data)
-							modal.hide()
-						}
-					}
-				}
-			},
-			{
-				showSwitch: true,
-				disabledBgClose: true
-			}
-		)
+	let editing_section_tab = $state('code')
+	function edit_component(tab) {
+		if (!hovered_section) return
+		lock_block(hovered_section_id)
+		editing_section_tab = tab
+		editing_section = true
 	}
 
 	let moving = $state(false) // workaround to prevent block toolbar from showing when moving blocks
@@ -302,7 +287,28 @@
 			page_mounted = true
 		}
 	})
+
+	let editing_section = $state(false)
 </script>
+
+<Dialog.Root bind:open={editing_section}>
+	<Dialog.Content class="z-[999] max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4">
+		<SectionEditor
+			component={hovered_section}
+			tab={editing_section_tab}
+			header={{
+				button: {
+					label: 'Save',
+					onclick: (updated_data) => {
+						Object.assign(hovered_section, updated_data)
+						hovering_toolbar = false
+						editing_section = false
+					}
+				}
+			}}
+		/>
+	</Dialog.Content>
+</Dialog.Root>
 
 <!-- Loading Spinner -->
 {#if !page_mounted && page_type?.sections.length}
@@ -318,33 +324,44 @@
 
 <!-- Block Buttons -->
 {#if showing_block_toolbar}
-	<BlockToolbar
-		bind:node={block_toolbar_element}
-		id={hovered_section_id}
-		i={page_type?.sections.findIndex((s) => s[ID] === hovered_section_id)}
-		on:delete={async () => {
-			if (!page_type) return
-			page_type.sections = page_type.sections.filter((s) => s[ID] !== hovered_section_id)
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div
+		class="absolute z-50"
+		onmouseenter={() => {
+			hovering_toolbar = true
 		}}
-		on:edit-code={() => edit_component(hovered_section_id, true)}
-		on:edit-content={() => edit_component(hovered_section_id)}
-		on:moveUp={async () => {
-			moving = true
-			hide_block_toolbar()
-			// TODO
-			setTimeout(() => {
-				moving = false
-			}, 300)
+		onmouseleave={() => {
+			showing_block_toolbar = false
 		}}
-		on:moveDown={async () => {
-			moving = true
-			hide_block_toolbar()
-			// TODO
-			setTimeout(() => {
-				moving = false
-			}, 300)
-		}}
-	/>
+	>
+		<BlockToolbar
+			bind:node={block_toolbar_element}
+			id={hovered_section_id}
+			i={page_type?.sections.findIndex((s) => s[ID] === hovered_section_id)}
+			on:delete={async () => {
+				if (!page_type) return
+				page_type.sections = page_type.sections.filter((s) => s[ID] !== hovered_section_id)
+			}}
+			on:edit-code={() => edit_component('code')}
+			on:edit-content={() => edit_component('content')}
+			on:moveUp={async () => {
+				moving = true
+				hide_block_toolbar()
+				// TODO
+				// setTimeout(() => {
+				// 	moving = false
+				// }, 300)
+			}}
+			on:moveDown={async () => {
+				moving = true
+				hide_block_toolbar()
+				// TODO
+				// setTimeout(() => {
+				// 	moving = false
+				// }, 300)
+			}}
+		/>
+	</div>
 {/if}
 
 <!-- Page Blocks -->
@@ -374,7 +391,11 @@
 					show_block_toolbar()
 				}
 			}}
-			onmouseleave={hide_block_toolbar}
+			onmouseleave={() => {
+				setTimeout(() => {
+					hide_block_toolbar()
+				}, 50)
+			}}
 			in:fade={{ duration: 100 }}
 			animate:flip={{ duration: 100 }}
 			data-test-id="page-type-section-{section[ID]}"
