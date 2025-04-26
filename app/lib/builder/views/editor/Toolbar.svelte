@@ -29,7 +29,7 @@
 	const page_slug = $derived((pageState.params.page as Id) || '')
 	const page_type_id = $derived(pageState.params.page_type as Id)
 	const site = $derived(require_site(site_id))
-	const page = $derived(Object.values($site?.data.entities.pages).find((p) => p.slug === page_slug))
+	const page = $derived(Object.values($site?.data.entities.pages || {}).find((p) => p.slug === page_slug))
 	const page_type = $derived($site?.data.entities.page_types[page_type_id])
 
 	let going_up = $state(false)
@@ -114,7 +114,12 @@
 		</div>
 		<div class="site-name">
 			<span class="site">{$site?.name} /</span>
-			{#if page}
+			{#if page_type}
+				<div class="page-type" style:background={page_type.color}>
+					<Icon icon={page_type.icon} />
+					<span>{page_type.name}</span>
+				</div>
+			{:else if page}
 				<span class="page">{page.name}</span>
 				<!-- $userRole === 'DEV' -->
 				{#if true}
@@ -126,11 +131,6 @@
 						<Icon icon={page.page_type.icon} />
 					</span>
 				{/if}
-			{:else if page_type}
-				<span class="page-type" style:background={page_type.color}>
-					<Icon icon={page_type.icon} />
-					<span>{page_type.name}</span>
-				</span>
 			{:else}
 				<span class="page">{page?.name}</span>
 			{/if}
