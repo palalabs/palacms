@@ -2,7 +2,7 @@ import { FieldBase } from '../FieldBase'
 import { z } from 'zod'
 
 export const SelectField = FieldBase.extend({
-	type: z.enum(['select']),
+	type: z.literal('select'),
 	options: z.array(
 		z.object({
 			value: z.string().nonempty(),

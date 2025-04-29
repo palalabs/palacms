@@ -3,7 +3,7 @@ import { FieldBase } from '../FieldBase'
 import { z } from 'zod'
 
 export const ImageField = FieldBase.extend({
-	type: z.enum(['image']),
+	type: z.literal('image'),
 	entries: z.array(Entry(z.object({ url: z.string(), alt: z.string() }))),
 	maxSizeMB: z.number().positive().optional(),
 	maxWidthOrHeight: z.number().int().positive().optional()

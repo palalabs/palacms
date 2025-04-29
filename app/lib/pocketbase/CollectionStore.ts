@@ -2,8 +2,6 @@ import { z } from 'zod'
 import { type ValidatedCollection } from './ValidatedCollection'
 import { readonly, writable } from 'svelte/store'
 import { resolve, type Resolved } from '../common/json'
-import type { ID } from '$lib/common'
-import type { Id } from '$lib/common/models/Id'
 
 const updateIntervalMs = 1000
 

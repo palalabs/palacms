@@ -3,8 +3,6 @@ import { createCollectionStore } from '../pocketbase/CollectionStore'
 import type { z } from 'zod'
 import type { ValidatedCollection } from '../pocketbase/ValidatedCollection'
 import { paramsMatch } from './utils'
-import type { ID } from '$lib/common'
-import type { Id } from '$lib/common/models/Id'
 import type { Resolved } from '$lib/common/json'
 
 export type CollectionStoreLoader<T extends z.AnyZodObject, P extends (string | number | undefined | null)[]> = {

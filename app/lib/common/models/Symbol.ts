@@ -1,14 +1,18 @@
 import { z } from 'zod'
-import { SiteEntityReference } from './SiteEntityReference'
+import { EntityReference } from './EntityReference'
+import { Entity } from './Entity'
 
-export const Symbol = z.object({
-	name: z.string().nonempty(),
-	code: z.object({
-		js: z.string(),
-		css: z.string(),
-		html: z.string()
-	}),
-	fields: z.array(SiteEntityReference('fields'))
-})
+export const Symbol = Entity(
+	'symbols',
+	z.object({
+		name: z.string().nonempty(),
+		code: z.object({
+			js: z.string(),
+			css: z.string(),
+			html: z.string()
+		}),
+		fields: z.array(EntityReference('fields'))
+	})
+)
 
 export type Symbol = z.infer<typeof Symbol>

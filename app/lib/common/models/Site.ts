@@ -5,7 +5,11 @@ import { Id } from './Id'
 import { Field } from './Field'
 import { PageType } from './PageType'
 import { Page } from './Page'
-import { SiteEntityReference, type SiteEntityType } from './SiteEntityReference'
+import { EntityReference } from './EntityReference'
+
+export const siteEntityTypes = ['symbols', 'sections', 'fields', 'page_types', 'pages'] as const
+
+export type SiteEntityType = (typeof siteEntityTypes)[number]
 
 export const Site = z.object({
 	id: Id,
@@ -31,10 +35,10 @@ export const Site = z.object({
 			page_types: z.record(Id, PageType),
 			pages: z.record(Id, Page)
 		} satisfies Record<SiteEntityType, unknown>),
-		symbols: z.array(SiteEntityReference('symbols')),
-		fields: z.array(SiteEntityReference('fields')),
-		page_types: z.array(SiteEntityReference('page_types')),
-		root: SiteEntityReference('pages')
+		symbols: z.array(EntityReference('symbols')),
+		fields: z.array(EntityReference('fields')),
+		page_types: z.array(EntityReference('page_types')),
+		root: EntityReference('pages')
 	}),
 	index: z.number().int().nonnegative()
 })

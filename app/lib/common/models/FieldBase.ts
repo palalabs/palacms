@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { SiteEntityReference } from './SiteEntityReference'
+import { EntityReference } from './EntityReference'
 
 export const FieldBase = z.object({
 	type: z.string(),
@@ -8,7 +8,7 @@ export const FieldBase = z.object({
 	entries: z.undefined(),
 	condition: z
 		.object({
-			field: SiteEntityReference('fields'),
+			field: EntityReference('fields'),
 			comparison: z.enum(['=', '!=']),
 			value: z.unknown()
 		})

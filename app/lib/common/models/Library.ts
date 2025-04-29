@@ -2,11 +2,15 @@ import { z } from 'zod'
 import { Id } from './Id'
 import { Symbol } from './Symbol'
 import { LibraryEntityReference, type LibraryEntityType } from './LibraryEntityReference'
+import { Entity } from './Entity'
 
-export const SymbolGroup: z.ZodType<SymbolGroup> = z.object({
-	name: z.string().nonempty(),
-	symbols: z.array(LibraryEntityReference('symbols'))
-})
+export const SymbolGroup = Entity(
+	'symbol_groups',
+	z.object({
+		name: z.string().nonempty(),
+		symbols: z.array(LibraryEntityReference('symbols'))
+	})
+)
 
 export const Library = z.object({
 	id: z.string().nonempty(),
@@ -28,9 +32,6 @@ export const Library = z.object({
 	})
 })
 
-export type SymbolGroup = {
-	name: string
-	symbols: LibraryEntityReference<'symbols'>[]
-}
+export type SymbolGroup = z.infer<typeof SymbolGroup>
 
 export type Library = z.infer<typeof Library>

@@ -3,7 +3,7 @@ import { Entry } from '../Entry'
 import { FieldBase } from '../FieldBase'
 
 export const TextField = FieldBase.extend({
-	type: z.enum(['text']),
+	type: z.literal('text'),
 	entries: z.array(Entry(z.string()))
 })
 

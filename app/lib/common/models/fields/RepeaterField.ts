@@ -1,10 +1,10 @@
 import { z } from 'zod'
-import { SiteEntityReference } from '../SiteEntityReference'
+import { EntityReference } from '../EntityReference'
 import { FieldBase } from '../FieldBase'
 
 export const RepeaterField = FieldBase.extend({
-	type: z.enum(['repeater']),
-	fields: z.array(SiteEntityReference('fields'))
+	type: z.literal('repeater'),
+	fields: z.array(EntityReference('fields'))
 })
 
 export type RepeaterField = z.infer<typeof RepeaterField>

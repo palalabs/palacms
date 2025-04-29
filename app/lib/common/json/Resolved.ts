@@ -1,36 +1,38 @@
 import { z } from 'zod'
 import { decodeUriFragmentIdentifier, JsonPointer } from 'json-ptr'
-import { SITE_ENTITY_REFERENCE, type SiteEntityType } from '../models/SiteEntityReference'
-import type { Site } from '../models/Site'
-import { LIBRARY_ENTITY_REFERENCE, type LibraryEntityType } from '../models/LibraryEntityReference'
+import type { Site, SiteEntityType } from '../models/Site'
+import { type LibraryEntityType } from '../models/LibraryEntityReference'
 import type { Library } from '../models/Library'
 import { ID } from '../constants'
-import { Id, newId } from '../models/Id'
+import { newId } from '../models/Id'
+import { ENTITY_REFERENCE_TYPE, type EntityReference } from '../models/EntityReference'
+import { ENTITY_TYPE } from '../models/Entity'
 
-type RequiredProperties<T extends Record<string, unknown>> = { [K in keyof T]: T extends undefined ? never : K }[keyof T]
-type OptionalProperties<T extends Record<string, unknown>> = { [K in keyof T]: T extends undefined ? K : never }[keyof T]
+type RequiredProperties<T extends Record<string, unknown>> = { [K in keyof T]-?: undefined extends T[K] ? never : K }[keyof T]
+type OptionalProperties<T extends Record<string, unknown>> = { [K in keyof T]-?: undefined extends T[K] ? K : never }[keyof T]
 
-export type Resolved<T extends z.ZodTypeAny> = T extends {
-	[SITE_ENTITY_REFERENCE]: SiteEntityType
-}
-	? Resolved<(typeof Site)['shape']['data']['shape']['entities']['shape'][T[typeof SITE_ENTITY_REFERENCE]]['element']>
-	: T extends {
-				[LIBRARY_ENTITY_REFERENCE]: LibraryEntityType
-		  }
-		? Resolved<(typeof Library)['shape']['data']['shape']['entities']['shape'][T[typeof LIBRARY_ENTITY_REFERENCE]]['element']>
-		: T extends z.AnyZodObject
-			? {
-					[K in RequiredProperties<T['_output']>]: Resolved<T['shape'][K]>
-				} & {
-					[K in OptionalProperties<T['_output']>]?: Resolved<T['shape'][K]>
-				}
-			: T extends z.ZodArray<infer Element>
-				? Resolved<Element>[]
-				: T extends z.ZodRecord<infer Key, infer Element>
-					? Record<z.TypeOf<Key>, Resolved<Element>>
-					: T extends z.ZodUnion<infer Types>
-						? { [K in keyof Types]: Resolved<Types[K]> }[number]
-						: T['_output']
+export type Resolved<T extends z.ZodTypeAny> =
+	T extends z.ZodType<EntityReference<infer EntityType extends SiteEntityType>>
+		? Resolved<(typeof Site)['shape']['data']['shape']['entities']['shape'][EntityType]['element']>
+		: T extends z.ZodType<EntityReference<infer EntityType extends LibraryEntityType>>
+			? Resolved<(typeof Library)['shape']['data']['shape']['entities']['shape'][EntityType]['element']>
+			: T extends z.AnyZodObject
+				? {
+						[K in RequiredProperties<T['_output']>]: Resolved<T['shape'][K]>
+					} & {
+						[K in OptionalProperties<T['_output']>]?: Resolved<T['shape'][K]>
+					}
+				: T extends z.ZodArray<infer Element>
+					? Resolved<Element>[]
+					: T extends z.ZodRecord<infer Key, infer Element>
+						? Record<z.TypeOf<Key>, Resolved<Element>>
+						: T extends z.ZodUnion<infer Options>
+							? { [K in keyof Options]: Resolved<Options[K]> }[number]
+							: T extends z.ZodDiscriminatedUnion<string, infer Options>
+								? { [K in keyof Options]: Resolved<Options[K]> }[number]
+								: T extends z.ZodEffects<infer InnerType>
+									? Resolved<InnerType>
+									: T['_output']
 
 export const resolve = <T extends z.AnyZodObject>(model: T, value: z.TypeOf<T>, onUpdate?: () => void): Resolved<T> => proxy({ value, model, record: value, onUpdate })
 
@@ -43,34 +45,39 @@ export const normalize = <T extends z.AnyZodObject>(model: T, value: Omit<Resolv
 const normalizeRecursive = <T extends z.AnyZodObject>({ value, model, record, result, path = [] }: { value: object; model: T; result: any; record: any; path?: (string | number)[] }): void => {
 	for (const key in value) {
 		if (value[key] && typeof value[key] === 'object') {
-			const valueType = walkToType(model, [...path, key])
-			const referenceType: SiteEntityType | LibraryEntityType | null = valueType[SITE_ENTITY_REFERENCE] ?? valueType[LIBRARY_ENTITY_REFERENCE] ?? null
+			const valueTypes = walkToType(model, [...path, key])
+			const modelEntityTypes = getEntityTypesFromModel(valueTypes)
+			let entityType = getEntityTypeFromValue(value[key])
+			if (modelEntityTypes || entityType) {
+				if (!entityType && modelEntityTypes && modelEntityTypes.length === 1) {
+					entityType = modelEntityTypes[0]
+				} else if (!entityType || !modelEntityTypes || !modelEntityTypes.includes(entityType)) {
+					throw new Error('Cannot determine the type of entity reference')
+				}
 
-			if (referenceType) {
-				// Set reference
+				// Update entity through reference
 				if (!record.data) record.data = {}
 				if (!record.data.entities) record.data.entities = {}
-				if (!record.data.entities[referenceType]) record.data.entities[referenceType] = {}
+				if (!record.data.entities[entityType]) record.data.entities[entityType] = {}
 				const entityId = value[key][ID] ?? (value[key][ID] = newId())
-				const entity = {}
-				normalizeRecursive({ value: value[key], model, record, result: entity, path: ['data', 'entities', referenceType, entityId] })
-				record.data.entities[referenceType][entityId] = entity
-				result[key] = { $ref: `#/data/entities/${referenceType}/${entityId}` }
+				const entity = record.data.entities[entityType][entityId] ?? {}
+				record.data.entities[entityType][entityId] = entity
+				normalizeRecursive({ value: value[key], model, record, result: entity, path: ['data', 'entities', entityType, entityId] })
+				result[key] = { $ref: `#/data/entities/${entityType}/${entityId}`, [ENTITY_REFERENCE_TYPE]: entityType }
 				continue
 			} else if (Array.isArray(value[key])) {
-				// Set array, overwriting if already in result
-				result[key] = []
+				// Update array
+				result[key] = result[key] ?? {}
 				normalizeRecursive({ value: value[key], model, record, result: result[key], path: [...path, key] })
+				continue
 			} else {
-				// Set object, merging if exists already in result
+				// Update object
 				result[key] = result[key] ?? {}
 				normalizeRecursive({ value: value[key], model, record, result: result[key], path: [...path, key] })
 				continue
 			}
-		}
-
-		if (!(key in result)) {
-			// Set directly without overwriting
+		} else {
+			// Set directly
 			result[key] = value[key]
 			continue
 		}
@@ -85,40 +92,38 @@ const proxy = ({ value, model, record, path = [], onUpdate }: { value: object; m
 				return entityId
 			}
 
-			let val = target[key]
+			let value = target[key]
 			if (typeof key === 'symbol') {
 				// Could be internal value that is not part of the JSON document
-				return val
+				return value
 			}
 
-			if (val === undefined) {
+			if (value === undefined) {
 				return undefined
 			}
 
 			// Resolve reference
 			let innerPath = [...path, key]
-			const valueType = walkToType(model, innerPath)
-			const referenceType: SiteEntityType | LibraryEntityType | null = valueType[SITE_ENTITY_REFERENCE] ?? valueType[LIBRARY_ENTITY_REFERENCE] ?? null
-			if (referenceType) {
-				const pointer = val.$ref
-				val = JsonPointer.get(record, pointer)
+			if (typeof value === 'object' && '$ref' in value && typeof value.$ref === 'string') {
+				const pointer = value.$ref
+				value = JsonPointer.get(record, pointer)
 				innerPath = decodeUriFragmentIdentifier(pointer)
 			}
 
 			// Return proxy if val is object (or array)
-			if (typeof val === 'object') {
+			if (typeof value === 'object') {
 				return proxy({
-					value: val,
+					value: value,
 					model,
 					record,
 					path: innerPath,
 					onUpdate
 				})
 			} else {
-				return val
+				return value
 			}
 		},
-		set(target, key, val) {
+		set(target, key, value) {
 			const [propertyKey, _entityType, _entityId] = path.slice(-3)
 			if (propertyKey === 'entities' && key === ID) {
 				throw new Error('Cannot set ID, it is virtual')
@@ -126,36 +131,43 @@ const proxy = ({ value, model, record, path = [], onUpdate }: { value: object; m
 
 			if (typeof key === 'symbol') {
 				// Could be internal value that is not part of the JSON document
-				target[key] = val
+				target[key] = value
 				return true
 			}
 
-			const valueType = walkToType(model, [...path, key])
-			const referenceType: SiteEntityType | LibraryEntityType | null = valueType[SITE_ENTITY_REFERENCE] ?? valueType[LIBRARY_ENTITY_REFERENCE] ?? null
-			if (referenceType) {
-				// Set reference after normalizing
-				const entityId = val[ID] ?? (val[ID] = newId())
+			const valueTypes = walkToType(model, [...path, key])
+			const modelEntityTypes = getEntityTypesFromModel(valueTypes)
+			let entityType = getEntityTypeFromValue(value)
+			if (modelEntityTypes || entityType) {
+				if (!entityType && modelEntityTypes && modelEntityTypes.length === 1) {
+					entityType = modelEntityTypes[0]
+				} else if (!entityType || !modelEntityTypes || !modelEntityTypes.includes(entityType)) {
+					throw new Error('Cannot determine the type of entity reference')
+				}
+
+				// Overwrite entity
+				const entityId = value[ID] ?? (value[ID] = newId())
 				const entity = {}
-				normalizeRecursive({ value: val, model, record, result: entity, path: ['data', 'entities', referenceType, entityId] })
-				record.data.entities[referenceType][entityId] = entity
-				target[key] = { $ref: `#/data/entities/${referenceType}/${entityId}` }
+				normalizeRecursive({ value, model, record, result: entity, path: ['data', 'entities', entityType, entityId] })
+				record.data.entities[entityType][entityId] = entity
+				target[key] = { $ref: `#/data/entities/${entityType}/${entityId}`, [ENTITY_REFERENCE_TYPE]: entityType }
 				onUpdate?.()
 				return true
-			} else if (Array.isArray(val)) {
-				// Set array after normalizing
+			} else if (Array.isArray(value)) {
+				// Overwrite array
 				target[key] = []
-				normalizeRecursive({ value: val, model, record, result: target[key], path: [...path, key] })
+				normalizeRecursive({ value, model, record, result: target[key], path: [...path, key] })
 				onUpdate?.()
 				return true
-			} else if (typeof val === 'object') {
-				// Set object after normalizing
+			} else if (typeof value === 'object') {
+				// Overwrite object
 				target[key] = {}
-				normalizeRecursive({ value: val, model, record, result: target[key], path: [...path, key] })
+				normalizeRecursive({ value, model, record, result: target[key], path: [...path, key] })
 				onUpdate?.()
 				return true
 			} else {
 				// Set directly
-				target[key] = val
+				target[key] = value
 				onUpdate?.()
 				return true
 			}
@@ -174,13 +186,13 @@ const proxy = ({ value, model, record, path = [], onUpdate }: { value: object; m
 			}
 
 			const valueType = walkToType(model, [...path, key])
-			const referenceType: SiteEntityType | LibraryEntityType | null = valueType[SITE_ENTITY_REFERENCE] ?? valueType[LIBRARY_ENTITY_REFERENCE] ?? null
+			const modelEntityTypes = getEntityTypesFromModel(valueType)
 			const [propertyKey, entityType] = path.slice(-2)
-			if (referenceType) {
+			if (modelEntityTypes) {
 				const pointer = target[key].$ref
 				const pointedPath = decodeUriFragmentIdentifier(pointer)
-				const [entityId] = pointedPath.slice(-1)
-				deleteEntity({ model, record, entityType: referenceType, entityId })
+				const [entityType, entityId] = pointedPath.slice(-2)
+				deleteEntity({ model, record, entityType: entityType as SiteEntityType | LibraryEntityType, entityId })
 				onUpdate?.()
 				return true
 			} else if (propertyKey === 'entities') {
@@ -196,45 +208,52 @@ const proxy = ({ value, model, record, path = [], onUpdate }: { value: object; m
 		}
 	})
 
-const walkToType = (type: z.ZodTypeAny | undefined, path: (string | number)[], root?: z.ZodTypeAny): z.ZodTypeAny => {
+const walkToType = (type: z.ZodTypeAny | undefined, path: (string | number)[], root?: z.ZodTypeAny): z.ZodTypeAny[] => {
 	root = root ?? type
 	if (!type) {
-		return z.unknown()
+		return []
 	}
+
+	const entityTypes = getEntityTypesFromModel([type])
+	if (entityTypes && path.length === 0) {
+		// We don't want to map entity that is type of union. So let's just return it.
+		return [type]
+	} else if (type instanceof z.ZodUnion || type instanceof z.ZodDiscriminatedUnion) {
+		return type.options.flatMap((type: z.ZodTypeAny) => {
+			try {
+				return walkToType(type, path, root)
+			} catch {
+				return []
+			}
+		})
+	}
+
+	const entityType = type[ENTITY_REFERENCE_TYPE]
+	if (entityType) {
+		return walkToType(root, ['data', 'entities', entityType, 'ENTITY_ID', ...path], root)
+	} else if (type instanceof z.ZodBranded) {
+		return walkToType(type.unwrap(), path, root)
+	} else if (type instanceof z.ZodEffects) {
+		return walkToType(type.innerType(), path, root)
+	}
+
 	if (path.length === 0) {
-		return type
+		return [type]
 	}
 
 	const [key, ...restOfPath] = path
-	const referenceType: SiteEntityType | LibraryEntityType | null = type[SITE_ENTITY_REFERENCE] ?? type[LIBRARY_ENTITY_REFERENCE] ?? null
-	if (referenceType) {
-		// Walk through reference
-		type = walkToType(root, ['data', 'entities', referenceType, key], root)
-		return walkToType(type, restOfPath, root)
-	} else if (type instanceof z.ZodObject) {
+	if (type instanceof z.ZodObject) {
 		return walkToType(type.shape[key], restOfPath, root)
 	} else if (type instanceof z.ZodArray) {
 		if (!isIntegerString(key.toString())) {
-			return z.unknown()
+			return []
 		}
 		return walkToType(type.element, restOfPath, root)
 	} else if (type instanceof z.ZodRecord) {
 		if (!type.keySchema.safeParse(key).success) {
-			return z.unknown()
+			return []
 		}
 		return walkToType(type.element, restOfPath, root)
-	} else if (type instanceof z.ZodUnion) {
-		return z.union(
-			type.options
-				.map((model: z.ZodTypeAny) => {
-					try {
-						return walkToType(model, [key, ...restOfPath], root)
-					} catch {
-						return null
-					}
-				})
-				.filter((model) => model !== null)
-		)
 	} else {
 		throw new Error('Cannot walk to type through unimplemented type')
 	}
@@ -270,8 +289,8 @@ const deleteEntity = ({ model, record, entityType, entityId }: { model: z.AnyZod
 		}
 
 		const valueType = walkToType(model, [...path, 0])
-		const referenceType: SiteEntityType | LibraryEntityType | null = valueType[SITE_ENTITY_REFERENCE] ?? valueType[LIBRARY_ENTITY_REFERENCE] ?? null
-		if (referenceType !== entityType) {
+		const modelEntityTypes = getEntityTypesFromModel(valueType)
+		if (!modelEntityTypes?.includes(entityType)) {
 			return
 		}
 
@@ -296,3 +315,20 @@ const deleteEntity = ({ model, record, entityType, entityId }: { model: z.AnyZod
 }
 
 const isIntegerString = (value: string) => value === parseInt(value).toString()
+
+const getEntityTypesFromModel = (zodTypes: z.ZodTypeAny[]): string[] | null => {
+	const types = zodTypes.map((type) => type[ENTITY_TYPE]).filter((type: string | undefined) => !!type)
+	if (types.length === 0) {
+		return null
+	} else {
+		return types
+	}
+}
+
+const getEntityTypeFromValue = (value: unknown): string | null => {
+	if (value && typeof value === 'object') {
+		return value[ENTITY_TYPE] ?? null
+	} else {
+		return null
+	}
+}

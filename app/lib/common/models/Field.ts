@@ -16,25 +16,29 @@ import { SliderField } from './fields/SliderField'
 import { SwitchField } from './fields/SwitchField'
 import { SelectField } from './fields/SelectField'
 import { InfoField } from './fields/InfoField'
+import { Entity } from './Entity'
 
-export const Field = z.union([
-	RepeaterField,
-	GroupField,
-	TextField,
-	MarkdownField,
-	LinkField,
-	ImageField,
-	IconField,
-	NumberField,
-	UrlField,
-	PageFieldField,
-	SiteFieldField,
-	PageField,
-	PageListField,
-	SliderField,
-	SwitchField,
-	SelectField,
-	InfoField
-])
+export const Field = Entity(
+	'fields',
+	z.discriminatedUnion('type', [
+		RepeaterField,
+		GroupField,
+		TextField,
+		MarkdownField,
+		LinkField,
+		ImageField,
+		IconField,
+		NumberField,
+		UrlField,
+		PageFieldField,
+		SiteFieldField,
+		PageField,
+		PageListField,
+		SliderField,
+		SwitchField,
+		SelectField,
+		InfoField
+	])
+)
 
 export type Field = z.infer<typeof Field>
