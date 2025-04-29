@@ -1,6 +1,5 @@
 <script>
 	import Icon from '@iconify/svelte'
-	import ModalHeader from '$lib/components/ModalHeader.svelte'
 
 	let { stage = $bindable() } = $props()
 
@@ -14,7 +13,7 @@
 	let loading = $state(false)
 </script>
 
-<ModalHeader title="Publish" icon="entypo:publish" />
+<!-- <ModalHeader title="Publish" icon="entypo:publish" /> -->
 <div class="Deploy primo-reset">
 	{#if stage === 'INITIAL'}
 		<div class="container">

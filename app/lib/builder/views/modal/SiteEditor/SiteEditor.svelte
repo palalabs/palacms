@@ -1,11 +1,10 @@
 <script>
+	import * as Dialog from '$lib/components/ui/dialog'
 	import Icon from '@iconify/svelte'
 	import { PaneGroup, Pane, PaneResizer } from 'paneforge'
 	import Fields from '$lib/builder/components/Fields/FieldsContent.svelte'
 	import * as _ from 'lodash-es'
-	import ModalHeader from '../ModalHeader.svelte'
 	import CodeEditor from '$lib/builder/components/CodeEditor/CodeMirror.svelte'
-	import modal from '$lib/builder/stores/app/modal'
 	import { setContext } from 'svelte'
 	import { page } from '$app/state'
 	import { require_site } from '$lib/loaders'
@@ -20,18 +19,12 @@
 	async function saveComponent() {
 		// TODO: Implement
 		throw new Error('Not implemented')
-		modal.hide()
 	}
 </script>
 
-<ModalHeader
-	icon="gg:website"
+<Dialog.Header
 	title="Site"
-	warn={() => {
-		return true
-	}}
 	button={{
-		icon: 'material-symbols:save',
 		label: 'Save',
 		onclick: saveComponent,
 		disabled: disableSave
@@ -86,7 +79,7 @@
 		display: flex; /* to help w/ positioning child items in code view */
 		background: var(--primo-color-black);
 		color: var(--color-gray-2);
-		padding: 0 0.5rem;
+		padding: 0.5rem;
 		flex: 1;
 		overflow: hidden;
 

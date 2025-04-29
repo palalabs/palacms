@@ -5,9 +5,6 @@
 	import { browser } from '$app/environment'
 	import IconButton from './ui/IconButton.svelte'
 	import Toolbar from './views/editor/Toolbar.svelte'
-	import Modal from './views/modal/ModalContainer.svelte'
-	import modal from './stores/app/modal'
-	import * as modals from './views/modal'
 	import * as Mousetrap from 'mousetrap'
 	import hotkey_events from './stores/app/hotkey_events'
 	import { onMobile, mod_key_held } from './stores/app/misc'
@@ -24,31 +21,13 @@
 
 	let {
 		site,
-		primary_buttons = [],
-		dropdown = [],
-		secondary_buttons = [],
 		toolbar,
 		children
 	}: {
 		site: Readable<Resolved<typeof Site> | null>
-		primary_buttons?: any
-		dropdown?: any
-		secondary_buttons?: any
 		toolbar?: Snippet
 		children?: Snippet
 	} = $props()
-
-	function getActiveModal(modalType) {
-		return modalType
-			? {
-					PAGE_TYPES: modals.PageTypes,
-					SITE_PAGES: modals.SitePages,
-					SECTION_EDITOR: modals.SectionEditor,
-					BLOCK_EDITOR: modals.BlockEditor,
-					SITE_EDITOR: modals.SiteEditor
-				}[modalType] || $modal.component
-			: null
-	}
 
 	let showing_sidebar = $state(true)
 
@@ -139,7 +118,6 @@
 	}
 
 	let sidebar_pane = $state<any>()
-	let activeModal = $derived(getActiveModal($modal.type))
 
 	// Generate <head> tag code
 	let previous
@@ -173,7 +151,7 @@
 </script>
 
 <div class="h-screen flex flex-col">
-	<Toolbar {primary_buttons} {dropdown} {secondary_buttons} on:publish>
+	<Toolbar>
 		{@render toolbar?.()}
 	</Toolbar>
 	<PaneGroup direction="horizontal" autoSaveId="page-view" style="height:initial;flex:1;">
@@ -219,11 +197,6 @@
 		</Pane>
 	</PaneGroup>
 </div>
-
-<Modal visible={!!activeModal}>
-	{@const SvelteComponent = activeModal}
-	<SvelteComponent {...$modal.componentProps} />
-</Modal>
 
 <svelte:window onresize={reset} />
 

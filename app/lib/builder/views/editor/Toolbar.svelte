@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { Button } from '$lib/components/ui/button'
+	import * as Dialog from '$lib/components/ui/dialog'
+	import { Input } from '$lib/components/ui/input'
 	import { fade } from 'svelte/transition'
 	import { find as _find } from 'lodash-es'
 	import Icon from '@iconify/svelte'
@@ -8,58 +11,87 @@
 	import Letter from '$lib/builder/ui/Letter.svelte'
 	import { PrimoButton } from '$lib/builder/components/buttons'
 	import { mod_key_held } from '$lib/builder/stores/app/misc'
-	import modal from '$lib/builder/stores/app/modal'
+	import { onNavigate } from '$app/navigation'
 	import { active_users } from '$lib/builder/stores/app/misc'
 	import { page as pageState } from '$app/state'
 	import { require_site } from '$lib/loaders'
 	import { Id } from '$lib/common/models/Id'
 	import { ID } from '$lib/common/constants'
 
-	let { primary_buttons, secondary_buttons, children } = $props()
+	import SiteEditor from '$lib/builder/views/modal/SiteEditor/SiteEditor.svelte'
+	import SitePages from '$lib/builder/views/modal/SitePages/SitePages.svelte'
+	import PageTypeModal from '$lib/builder/views/modal/PageTypeModal/PageTypeModal.svelte'
+	import Collaboration from '$lib/builder/views/modal/Collaboration.svelte'
+
+	let { children } = $props()
 
 	const site_id = $derived(pageState.params.site)
-	const page_id = $derived(pageState.params.page as Id)
+	const page_slug = $derived((pageState.params.page as Id) || '')
 	const page_type_id = $derived(pageState.params.page_type as Id)
 	const site = $derived(require_site(site_id))
-	const page = $derived($site?.data.entities.pages[page_id])
+	const page = $derived(Object.values($site?.data.entities.pages || {}).find((p) => p.slug === page_slug))
 	const page_type = $derived($site?.data.entities.page_types[page_type_id])
 
 	let going_up = $state(false)
 	let going_down = $state(false)
 
 	let customAnchor = $state<HTMLElement>(null!)
+
+	let editing_site = $state(false)
+	let editing_pages = $state(false)
+	let editing_page_types = $state(false)
+	let editing_collaborators = $state(false)
+
+	// Close all dialogs on navigation
+	onNavigate(() => {
+		editing_pages = false
+		editing_page_types = false
+	})
 </script>
+
+<Dialog.Root bind:open={editing_site}>
+	<Dialog.Content class="z-[999] max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4">
+		<SiteEditor />
+	</Dialog.Content>
+</Dialog.Root>
+
+<Dialog.Root bind:open={editing_pages}>
+	<Dialog.Content class="z-[999] max-w-[1200px] h-full max-h-[100vh] flex flex-col p-4">
+		<SitePages />
+	</Dialog.Content>
+</Dialog.Root>
+
+<Dialog.Root bind:open={editing_page_types}>
+	<Dialog.Content class="z-[999] max-w-[1200px] h-full max-h-[100vh] flex flex-col p-4">
+		<PageTypeModal />
+	</Dialog.Content>
+</Dialog.Root>
+
+<Dialog.Root bind:open={editing_collaborators}>
+	<Dialog.Content class="z-[999] max-w-[600px] flex flex-col p-4">
+		<Collaboration />
+	</Dialog.Content>
+</Dialog.Root>
 
 <nav aria-label="toolbar" id="primo-toolbar" class="primo-reset">
 	<div class="menu-container">
 		<div class="left">
 			<PrimoButton />
 			<div class="button-group">
-				<div class="flex rounded" style="border: 1px solid #222" bind:this={customAnchor}>
-					<ToolbarButton label="Site" icon="gg:website" on:click={() => modal.show('SITE_EDITOR', {}, { showSwitch: true, disabledBgClose: true })} />
+				<div class="flex rounded" style="border: 1px solid #222">
+					<!-- <ToolbarButton label="Site" icon="gg:website" on:click={() => modal.show('SITE_EDITOR', {}, { showSwitch: true, disabledBgClose: true })} /> -->
+					<ToolbarButton label="Site" icon="gg:website" on:click={() => (editing_site = true)} />
 				</div>
 			</div>
 			<div class="button-group">
 				{#if $mod_key_held}
-					<div
-						style="
-						font-size: 0.75rem;
-						padding-inline: 9px;
-						display: flex;
-						gap: 4px;
-						justify-content: space-around;
-					border: 1px solid var(--color-gray-8);
-					color: white;
-					height: 100%;
-					align-items: center;
-					border-radius: var(--primo-border-radius);"
-					>
+					<div class="page-hotkeys">
 						<div style:color={going_up ? 'var(--weave-primary-color)' : 'inherit'} style:opacity={1}>&#8984; ↑</div>
 						<div style:color={going_down ? 'var(--weave-primary-color)' : 'inherit'} style:opacity={1}>&#8984; ↓</div>
 					</div>
 				{:else}
 					<div class="flex rounded" style="border: 1px solid #222" bind:this={customAnchor}>
-						<ToolbarButton label="Pages" icon="iconoir:multiple-pages" on:click={() => modal.show('SITE_PAGES', {}, { hideLocaleSelector: true, maxWidth: '1200px', showSwitch: false })} />
+						<ToolbarButton label="Pages" icon="iconoir:multiple-pages" on:click={() => (editing_pages = true)} />
 						<DropdownMenu.Root>
 							<DropdownMenu.Trigger>
 								{#snippet child({ props })}
@@ -70,7 +102,7 @@
 								{/snippet}
 							</DropdownMenu.Trigger>
 							<DropdownMenu.Content side="bottom" class="z-[999]" align="start" sideOffset={4} {customAnchor}>
-								<DropdownMenu.Item onclick={() => modal.show('PAGE_TYPES', {}, { hideLocaleSelector: true, maxWidth: '1200px', showSwitch: false })} class="text-xs cursor-pointer">
+								<DropdownMenu.Item onclick={() => (editing_page_types = true)} class="text-xs cursor-pointer">
 									<LayoutTemplate style="width: .75rem" />
 									<span>Page Types</span>
 								</DropdownMenu.Item>
@@ -81,8 +113,13 @@
 			</div>
 		</div>
 		<div class="site-name">
-			<span class="site">{$site?.data.name} /</span>
-			{#if page}
+			<span class="site">{$site?.name} /</span>
+			{#if page_type}
+				<div class="page-type" style:background={page_type.color}>
+					<Icon icon={page_type.icon} />
+					<span>{page_type.name}</span>
+				</div>
+			{:else if page}
 				<span class="page">{page.name}</span>
 				<!-- $userRole === 'DEV' -->
 				{#if true}
@@ -94,18 +131,13 @@
 						<Icon icon={page.page_type.icon} />
 					</span>
 				{/if}
-			{:else if page_type}
-				<span class="page-type" style:background={page_type.color}>
-					<Icon icon={page_type.icon} />
-					<span>{page_type.name}</span>
-				</span>
 			{:else}
 				<span class="page">{page?.name}</span>
 			{/if}
 		</div>
 		<div class="right">
 			{#if $active_users.length > 0}
-				<div class="active-editors" style="display: flex; gap: 0.25rem">
+				<div class="active-editors flex gap-1">
 					{#each $active_users as user}
 						<div class="editor" transition:fade={{ duration: 200 }}>
 							<Letter letter={user.email.slice(0, 1)} />
@@ -121,11 +153,7 @@
 			{/if} -->
 			<!-- $userRole === 'DEV' -->
 			{#if true}
-				<div class="button-group">
-					{#each secondary_buttons as button}
-						<ToolbarButton icon={button.icon} on:click={button.onclick} />
-					{/each}
-				</div>
+				<ToolbarButton icon="clarity:users-solid" on:click={() => (editing_collaborators = true)} />
 			{/if}
 			{@render children?.()}
 			<!-- <LocaleSelector /> -->
@@ -241,5 +269,18 @@
 		display: flex;
 		flex-direction: row;
 		justify-content: flex-end;
+	}
+
+	.page-hotkeys {
+		font-size: 0.75rem;
+		padding-inline: 9px;
+		display: flex;
+		gap: 4px;
+		justify-content: space-around;
+		border: 1px solid var(--color-gray-8);
+		color: white;
+		height: 100%;
+		align-items: center;
+		border-radius: var(--primo-border-radius);
 	}
 </style>

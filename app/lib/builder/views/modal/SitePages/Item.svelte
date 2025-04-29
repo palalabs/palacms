@@ -11,7 +11,6 @@
 	import { page as pageState } from '$app/state'
 	import { ID } from '$lib/common/constants'
 	import { require_site } from '$lib/loaders'
-	import { modal } from '$lib/builder/stores/app'
 
 	let editing_page = $state(false)
 
@@ -23,7 +22,7 @@
 	const full_url = $derived(`/${site_id}/${page.slug}`)
 
 	let showing_children = $state(false)
-	let has_children = $derived(page.children.length > 0)
+	let has_children = $derived(page.children.length > 0 && page.slug !== '')
 
 	get(`page-list-toggle--${page[ID]}`).then((toggled) => {
 		if (toggled !== undefined) showing_children = toggled
@@ -123,7 +122,7 @@
 					<span class="icon" style:background={page.page_type.color}>
 						<Icon icon={page.page_type.icon} />
 					</span>
-					<a class:active href={full_url} onclick={() => modal.hide()} class="name">{page.name}</a>
+					<a class:active href={full_url} onclick={() => {}} class="name">{page.name}</a>
 					<span class="url">/{page.slug}</span>
 				</div>
 			{/if}

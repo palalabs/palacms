@@ -3,7 +3,6 @@
 	import { browser } from '$app/environment'
 	import { compilers_registered } from '$lib/stores'
 	import { registerProcessors } from '$lib/builder/component'
-	import Modal from '$lib/components/Modal.svelte'
 	import { Toaster } from '$lib/components/ui/sonner'
 
 	let { children } = $props()
@@ -16,7 +15,6 @@
 	}
 </script>
 
-<Modal />
 <Toaster />
 {@render children?.()}
 

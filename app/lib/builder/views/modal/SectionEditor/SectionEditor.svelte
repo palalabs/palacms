@@ -4,10 +4,10 @@
 </script>
 
 <script lang="ts">
+	import * as Dialog from '$lib/components/ui/dialog'
 	import { PaneGroup, Pane, PaneResizer } from 'paneforge'
 	import LargeSwitch from '../../../ui/LargeSwitch.svelte'
 	import * as _ from 'lodash-es'
-	import ModalHeader from '../ModalHeader.svelte'
 	import FullCodeEditor from './FullCodeEditor.svelte'
 	import ComponentPreview, { refresh_preview, has_error } from '$lib/builder/components/ComponentPreview.svelte'
 	import Fields from '../../../components/Fields/FieldsContent.svelte'
@@ -61,41 +61,17 @@
 	}
 </script>
 
-<ModalHeader
-	{...header}
-	warn={() => {
-		return true
-	}}
-	icon="lucide:blocks"
+<Dialog.Header
+	class="mb-2"
 	title={component.symbol.name || 'Block'}
 	button={{
-		...header.button,
+		label: header.button.label || 'Save',
 		onclick: save_component,
-		icon: 'material-symbols:save',
 		disabled: $has_error
 	}}
 >
-	{#snippet left()}
-		<div>
-			<!-- TODO: $userRole === 'DEV' -->
-			{#if true}
-				<LargeSwitch
-					tabs={[
-						{
-							id: 'code',
-							icon: 'gravity-ui:code'
-						},
-						{
-							id: 'content',
-							icon: 'uil:edit'
-						}
-					]}
-					bind:active_tab_id={tab}
-				/>
-			{/if}
-		</div>
-	{/snippet}
-</ModalHeader>
+	<LargeSwitch bind:active_tab_id={tab} />
+</Dialog.Header>
 
 <main lang={$locale}>
 	<PaneGroup direction={$orientation} class="flex gap-1">

@@ -10,6 +10,10 @@
 	import { onMount, untrack } from 'svelte'
 	import * as _ from 'lodash-es'
 	import { fade } from 'svelte/transition'
+	import * as Dialog from '$lib/components/ui/dialog'
+	import ImageModal from '$lib/builder/views/modal/ImageModal.svelte'
+	import LinkModal from '$lib/builder/views/modal/LinkModal.svelte'
+	import VideoModal from '$lib/builder/views/modal/VideoModal.svelte'
 	import Icon from '@iconify/svelte'
 	import Typography from '@tiptap/extension-typography'
 	import StarterKit from '@tiptap/starter-kit'
@@ -26,7 +30,6 @@
 	import { locale } from '$lib/builder/stores/app/misc'
 	import { site_html } from '$lib/builder/stores/app/page'
 	import MarkdownButton from './MarkdownButton.svelte'
-	import modal from '$lib/builder/stores/app/modal'
 	import { component_iframe_srcdoc } from '$lib/builder/components/misc'
 	import type { Resolved } from '$lib/common/json'
 	import type { Symbol } from '$lib/common/models/Symbol'
@@ -81,7 +84,6 @@
 	let scrolling = false
 
 	const markdown_classes = {}
-	let ignore_next_blur = $state(false)
 
 	let is_local_change = $state(false)
 
@@ -290,23 +292,23 @@
 					}
 				}
 				image_editor.onclick = () => {
-					console.log(options)
-					modal.show('DIALOG', {
-						component: 'IMAGE',
-						onSubmit: ({ url, alt }) => {
-							element.src = url
-							save_edited_value({ id, value: { url, alt } })
-							image_editor_is_visible = false
-							modal.hide()
-						},
-						props: {
-							value: {
-								url: element.src,
-								alt: element.alt
-							},
-							fieldOptions: options
-						}
-					})
+					// TODO
+					// modal.show('DIALOG', {
+					// 	component: 'IMAGE',
+					// 	onSubmit: ({ url, alt }) => {
+					// 		element.src = url
+					// 		save_edited_value({ id, value: { url, alt } })
+					// 		image_editor_is_visible = false
+					// 		modal.hide()
+					// 	},
+					// 	props: {
+					// 		value: {
+					// 			url: element.src,
+					// 			alt: element.alt
+					// 		},
+					// 		fieldOptions: options
+					// 	}
+					// })
 				}
 			}
 		}
@@ -622,7 +624,49 @@
 			}
 		}
 	})
+
+	let editing_image = $state(false)
+	let editing_link = $state(false)
+	let editing_video = $state(false)
 </script>
+
+<Dialog.Root bind:open={editing_image}>
+	<Dialog.Content class="z-[999] max-w-[60px]">
+		<ImageModal
+			onsave={({ url, alt }) => {
+				active_editor.chain().focus().setImage({ src: url, alt }).run()
+				editing_image = false
+			}}
+		/>
+	</Dialog.Content>
+</Dialog.Root>
+
+<Dialog.Root bind:open={editing_link}>
+	<Dialog.Content class="z-[999] max-w-[60px]">
+		<LinkModal
+			onsave={(value) => {
+				active_editor.chain().focus().setLink({ href: value }).run()
+				editing_link = false
+			}}
+		/>
+	</Dialog.Content>
+</Dialog.Root>
+
+<Dialog.Root bind:open={editing_video}>
+	<Dialog.Content class="z-[999] max-w-[60px]">
+		<VideoModal
+			onsave={(url) => {
+				if (url) {
+					active_editor.commands.setYoutubeVideo({
+						src: url,
+						width: '100%'
+					})
+				}
+				editing_video = false
+			}}
+		/>
+	</Dialog.Content>
+</Dialog.Root>
 
 {#if image_editor_is_visible}
 	<button style:pointer-events={scrolling ? 'none' : 'all'} in:fade={{ duration: 100 }} class="primo-reset image-editor" bind:this={image_editor}>
@@ -668,7 +712,6 @@
 			icon="fa-solid:heading"
 			onclick={(e) => {
 				e.target.blur()
-				ignore_next_blur = true
 				active_editor.chain().focus().toggleHeading({ level: 1 }).run()
 			}}
 		/>
@@ -676,57 +719,13 @@
 		<MarkdownButton icon="fa-solid:quote-left" onclick={() => active_editor.chain().focus().toggleBlockquote().run()} />
 		<MarkdownButton icon="fa-solid:list" onclick={() => active_editor.chain().focus().toggleBulletList().run()} />
 		<MarkdownButton icon="fa-solid:list-ol" onclick={() => active_editor.chain().focus().toggleOrderedList().run()} />
-		<MarkdownButton
-			icon="fa-solid:image"
-			onclick={() =>
-				modal.show('DIALOG', {
-					component: 'IMAGE',
-					header: {
-						icon: 'ic:twotone-image',
-						title: 'Image'
-					},
-					onSubmit: ({ url, alt }) => {
-						active_editor.chain().focus().setImage({ src: url, alt }).run()
-						modal.hide()
-					}
-				})}
-		/>
-		<MarkdownButton
-			icon="lucide:youtube"
-			onclick={() =>
-				modal.show('DIALOG', {
-					header: {
-						icon: 'mdi:youtube',
-						title: 'Youtube Video Embed'
-					},
-					component: 'VIDEO',
-					onSubmit: (url) => {
-						if (url) {
-							active_editor.commands.setYoutubeVideo({
-								src: url,
-								width: '100%'
-							})
-						}
-						modal.hide()
-					}
-				})}
-		/>
+		<MarkdownButton icon="fa-solid:image" onclick={() => (editing_image = true)} />
+		<MarkdownButton icon="lucide:youtube" onclick={() => (editing_video = true)} />
 	{/if}
 </div>
 <div class="menu bubble-menu primo-reset" bind:this={bubble_menu} style="display:none">
 	{#if active_editor}
-		<MarkdownButton
-			icon="fa-solid:link"
-			onclick={() => {
-				modal.show('DIALOG', {
-					component: 'LINK',
-					onSubmit: (val) => {
-						active_editor.chain().focus().setLink({ href: val }).run()
-						modal.hide()
-					}
-				})
-			}}
-		/>
+		<MarkdownButton icon="fa-solid:link" onclick={() => (editing_link = true)} />
 		<MarkdownButton icon="fa-solid:bold" onclick={() => active_editor.chain().focus().toggleBold().run()} active={active_editor.isActive('bold')} />
 		<MarkdownButton icon="fa-solid:italic" onclick={() => active_editor.chain().focus().toggleItalic().run()} active={active_editor.isActive('italic')} />
 		<MarkdownButton icon="fa-solid:highlighter" onclick={() => active_editor.chain().focus().toggleHighlight().run()} active={active_editor.isActive('highlight')} />

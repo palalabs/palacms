@@ -87,7 +87,7 @@
 <style lang="postcss">
 	.BlockToolbar {
 		box-shadow: inset 0 0 0 calc(4px) var(--color-gray-8);
-		z-index: 999999;
+		z-index: 999;
 		position: fixed;
 		pointer-events: none;
 		display: flex;

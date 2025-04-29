@@ -1,5 +1,6 @@
 <script lang="ts">
-	import ModalHeader from '../../views/modal/ModalHeader.svelte'
+	import * as Dialog from '$lib/components/ui/dialog'
+	import LargeSwitch from '$lib/builder/ui/LargeSwitch.svelte'
 	import * as Sidebar from '$lib/components/ui/sidebar'
 	import Symbol from '../../components/Site_Symbol.svelte'
 	import { site_html } from '$lib/builder/stores/app/page'
@@ -38,13 +39,12 @@
 	}
 </script>
 
-<ModalHeader
-	icon="lucide:blocks"
+<Dialog.Header
+	class="mb-2"
 	title="Add Library Blocks to Site"
 	button={{
 		label: `Add ${selected.length} Blocks`,
 		onclick: () => onsave(selected),
-		icon: 'lucide:blocks',
 		disabled: selected.length === 0
 	}}
 />

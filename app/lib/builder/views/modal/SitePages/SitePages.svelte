@@ -1,34 +1,23 @@
 <script>
-	import ModalHeader from '../ModalHeader.svelte'
-	import PageList from './PageList/PageList.svelte'
-	import Icon from '@iconify/svelte'
+	import * as Dialog from '$lib/components/ui/dialog'
+	import Item from './Item.svelte'
+	import { require_site } from '$lib/loaders'
+	import { page } from '$app/state'
+
+	const site_id = $derived(page.params.site)
+	const site = $derived(require_site(site_id))
+	const root_page = $derived($site?.data.root)
+	$inspect({ $site })
 </script>
 
-<ModalHeader>
-	{#snippet title()}
-		<div class="title">
-			<Icon icon="iconoir:multiple-pages" />
-			<span>Pages</span>
-		</div>
-	{/snippet}
-</ModalHeader>
-
-<main>
-	<PageList />
-</main>
-
-<style lang="postcss">
-	.title {
-		font-size: 0.875rem;
-		padding: 0.75rem 1rem;
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-	}
-	main {
-		padding: 1rem;
-		padding-top: 0.5rem;
-		background: var(--primo-color-black);
-		overflow-y: scroll;
-	}
-</style>
+<Dialog.Header title="Pages" />
+<ul class="grid p-2 bg-[var(--primo-color-black)]">
+	<li>
+		<Item page={root_page} active={false} />
+	</li>
+	{#each root_page?.children as child_page}
+		<li>
+			<Item page={child_page} active={false} />
+		</li>
+	{/each}
+</ul>

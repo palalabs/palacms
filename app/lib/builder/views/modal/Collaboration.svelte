@@ -1,8 +1,8 @@
 <script>
+	import * as Dialog from '$lib/components/ui/dialog'
 	import * as timeago from 'timeago.js'
 	import Icon from '@iconify/svelte'
 	import { page } from '$app/stores'
-	import ModalHeader from '$lib/components/ModalHeader.svelte'
 
 	const site = $page.data.site
 
@@ -32,13 +32,15 @@
 	let adding_collaborator = false
 </script>
 
-<ModalHeader
+<!-- <ModalHeader
 	title="Editors"
 	icon="clarity:users-solid"
 	warn={() => {
 		return true
 	}}
-/>
+/> -->
+
+<Dialog.Header class="mb-2" title="Collaborators" />
 
 <div class="Invitation">
 	<main>

@@ -1,10 +1,14 @@
 <script lang="ts">
+	import * as Dialog from '$lib/components/ui/dialog'
 	import * as _ from 'lodash-es'
 	import { goto } from '$app/navigation'
 	import { browser } from '$app/environment'
 	import UI from '../../ui/index.js'
 	import Icon from '@iconify/svelte'
-	import { site_design_css } from '../../code_generators'
+	import { block_html, site_design_css } from '../../code_generators'
+	import BlockEditor from '$lib/builder/views/modal/BlockEditor.svelte'
+	import BlockPicker from '$lib/builder/views/modal/BlockPicker.svelte'
+	import PageEditor from '$lib/builder/views/modal/PageEditor.svelte'
 	import Sidebar_Symbol from './Sidebar_Symbol.svelte'
 	import Content from '$lib/builder/components/Content.svelte'
 	import { flip } from 'svelte/animate'
@@ -16,7 +20,6 @@
 	import { require_site } from '$lib/loaders'
 	import { ID } from '$lib/common/constants'
 	import { site_html } from '$lib/builder/stores/app/page.js'
-	import modal from '$lib/builder/stores/app/modal.js'
 	import type { Id } from '$lib/common/models/Id.js'
 
 	const UPDATE_COUNTER = Symbol('UPDATE_COUNTER')
@@ -35,72 +38,55 @@
 	}
 
 	async function create_block() {
-		modal.show(
-			'BLOCK_EDITOR',
-			{
-				header: {
-					title: `Create Block'}`,
-					icon: 'fas fa-check',
-					button: {
-						label: `Save Block`,
-						icon: 'fas fa-check',
-						onclick: (new_block, changes) => {
-							$site?.data.symbols.push(new_block)
-							modal.hide()
-						}
-					}
-				},
-				tab: 'code'
-			},
-			{
-				showSwitch: true,
-				disabledBgClose: true
-			}
-		)
+		creating_block = true
+		// modal.show(
+		// 	'BLOCK_EDITOR',
+		// 	{
+		// 		header: {
+		// 			title: `Create Block'}`,
+		// 			icon: 'fas fa-check',
+		// 			button: {
+		// 				label: `Save Block`,
+		// 				icon: 'fas fa-check',
+		// 				onclick: (new_block, changes) => {
+		// 					$site?.data.symbols.push(new_block)
+		// 					modal.hide()
+		// 				}
+		// 			}
+		// 		},
+		// 		tab: 'code'
+		// 	},
+		// 	{
+		// 		showSwitch: true,
+		// 		disabledBgClose: true
+		// 	}
+		// )
 	}
 
-	function edit_block(block) {
-		modal.show(
-			'BLOCK_EDITOR',
-			{
-				block,
-				header: {
-					title: `Edit ${block.title || 'Block'}`,
-					icon: 'fas fa-check',
-					button: {
-						label: `Save Block`,
-						icon: 'fas fa-check',
-						onclick: (updated_block) => {
-							Object.assign(block, updated_block)
-							// Force rerender for the sidebar preview
-							block[UPDATE_COUNTER] = (block[UPDATE_COUNTER] ?? 0) + 1
-							modal.hide()
-						}
-					}
-				},
-				tab: 'code'
-			},
-			{
-				showSwitch: true,
-				disabledBgClose: true
-			}
-		)
+	let active_block_id = $state(null)
+	let active_block = $state(null)
+
+	function edit_block(block, block_id) {
+		active_block = block
+		active_block_id = block_id
+		editing_block = true
 	}
 
 	async function show_block_picker() {
-		modal.show(
-			'BLOCK_PICKER',
-			{
-				site: $site,
-				append: site_design_css($site?.data.design),
-				onsave: (symbols) => {
-					modal.hide()
-				}
-			},
-			{
-				hideLocaleSelector: true
-			}
-		)
+		adding_block = true
+		// modal.show(
+		// 	'BLOCK_PICKER',
+		// 	{
+		// 		site: $site,
+		// 		append: site_design_css($site?.data.design),
+		// 		onsave: (symbols) => {
+		// 			modal.hide()
+		// 		}
+		// 	},
+		// 	{
+		// 		hideLocaleSelector: true
+		// 	}
+		// )
 	}
 
 	function drag_target(element, block) {
@@ -132,7 +118,71 @@
 			}
 		})
 	}
+
+	let editing_block = $state(false)
+	let creating_block = $state(false)
+	let adding_block = $state(false)
+	let editing_page = $state(false)
 </script>
+
+<Dialog.Root bind:open={editing_block}>
+	<Dialog.Content class="z-[999] max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4">
+		<BlockEditor
+			block={active_block}
+			header={{
+				title: `Edit ${active_block?.title || 'Block'}`,
+				button: {
+					label: 'Save',
+					onclick: (updated_data) => {
+						// grabbing this again here since there seems to be an issue w/ Object.assign when active_block is in a rune
+						const active_block = $site?.data.symbols.find((s) => s[ID] === active_block_id)
+						Object.assign(active_block, updated_data)
+						// Force rerender for the sidebar preview
+						active_block[UPDATE_COUNTER] = (active_block[UPDATE_COUNTER] ?? 0) + 1
+						editing_block = false
+						active_block_id = null
+					}
+				}
+			}}
+		/>
+	</Dialog.Content>
+</Dialog.Root>
+
+<Dialog.Root bind:open={creating_block}>
+	<Dialog.Content class="z-[999] max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4">
+		<BlockEditor
+			header={{
+				button: {
+					label: 'Create Block',
+					onclick: (new_block) => {
+						$site?.data.symbols.push(new_block)
+						creating_block = false
+					}
+				}
+			}}
+		/>
+	</Dialog.Content>
+</Dialog.Root>
+
+<Dialog.Root bind:open={adding_block}>
+	<Dialog.Content class="z-[999] max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4">
+		<BlockPicker
+			site={$site}
+			append={site_design_css($site?.data.design)}
+			onsave={(blocks) => {
+				console.log({ blocks })
+				// TODO: add blocks to site
+				adding_block = false
+			}}
+		/>
+	</Dialog.Content>
+</Dialog.Root>
+
+<Dialog.Root bind:open={editing_page}>
+	<Dialog.Content class="z-[999] max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4">
+		<PageEditor />
+	</Dialog.Content>
+</Dialog.Root>
 
 <div class="sidebar primo-reset">
 	<Tabs.Root value="blocks" class="p-2">
@@ -185,7 +235,7 @@
 											page_type.symbols.push(symbol)
 										}
 									}}
-									on:edit={() => edit_block(symbol)}
+									on:edit={() => edit_block(symbol, symbol[ID])}
 								/>
 							</div>
 						{/each}
@@ -218,7 +268,8 @@
 			<div class="page-type-fields">
 				<!-- $userRole === 'DEV' -->
 				{#if true}
-					<button class="primo--link" style="margin-bottom: 1rem" onclick={() => modal.show('PAGE_EDITOR')}>
+					<!-- <button class="primo--link" style="margin-bottom: 1rem" onclick={() => modal.show('PAGE_EDITOR')}> -->
+					<button class="primo--link" style="margin-bottom: 1rem" onclick={() => (editing_page = true)}>
 						<Icon icon="mdi:code" />
 						<span>Edit Page Type</span>
 					</button>
