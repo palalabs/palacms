@@ -2,8 +2,8 @@
 migrate(
 	(app) => {
 		const collection = new Collection({
-			createRule: '@request.auth.id = group.owner.id',
-			deleteRule: '@request.auth.id = group.owner.id',
+			createRule: '@request.auth.id = page_type_section.page_type.site.group.owner.id && symbol_field.symbol.id = page_type_section.symbol.id',
+			deleteRule: '@request.auth.id = page_type_section.page_type.site.group.owner.id && symbol_field.symbol.id = page_type_section.symbol.id',
 			fields: [
 				{
 					autogeneratePattern: '[a-z0-9]{15}',
@@ -22,39 +22,38 @@ migrate(
 				{
 					autogeneratePattern: '',
 					hidden: false,
-					id: 'text1579384326',
+					id: 'text1098958488',
 					max: 0,
 					min: 0,
-					name: 'name',
+					name: 'locale',
 					pattern: '',
-					presentable: true,
+					presentable: false,
 					primaryKey: false,
 					required: true,
 					system: false,
 					type: 'text'
 				},
 				{
-					autogeneratePattern: '',
+					cascadeDelete: true,
+					collectionId: 'pbc_496957621',
 					hidden: false,
-					id: 'text1843675174',
-					max: 0,
-					min: 0,
-					name: 'description',
-					pattern: '',
+					id: 'relation3142498644',
+					maxSelect: 1,
+					minSelect: 0,
+					name: 'page_type_section',
 					presentable: false,
-					primaryKey: false,
-					required: false,
+					required: true,
 					system: false,
-					type: 'text'
+					type: 'relation'
 				},
 				{
 					cascadeDelete: true,
-					collectionId: 'pbc_1192439887',
+					collectionId: 'pbc_149684058',
 					hidden: false,
-					id: 'relation1841317061',
+					id: 'relation3727704862',
 					maxSelect: 1,
 					minSelect: 0,
-					name: 'group',
+					name: 'symbol_field',
 					presentable: false,
 					required: true,
 					system: false,
@@ -62,25 +61,13 @@ migrate(
 				},
 				{
 					hidden: false,
-					id: 'json2918445923',
+					id: 'json494360628',
 					maxSize: 0,
-					name: 'data',
-					presentable: false,
-					required: true,
-					system: false,
-					type: 'json'
-				},
-				{
-					hidden: false,
-					id: 'number2155046657',
-					max: null,
-					min: 0,
-					name: 'index',
-					onlyInt: true,
+					name: 'value',
 					presentable: false,
 					required: false,
 					system: false,
-					type: 'number'
+					type: 'json'
 				},
 				{
 					hidden: false,
@@ -103,20 +90,20 @@ migrate(
 					type: 'autodate'
 				}
 			],
-			id: 'pbc_2001081480',
-			indexes: [],
-			listRule: '@request.auth.id = group.owner.id',
-			name: 'sites',
+			id: 'pbc_3303549340',
+			indexes: ['CREATE UNIQUE INDEX `idx_iN1Hji8J4T` ON `page_type_section_entries` (\n  `page_type_section`,\n  `locale`,\n  `symbol_field`\n)'],
+			listRule: '@request.auth.id = page_type_section.page_type.site.group.owner.id && symbol_field.symbol.id = page_type_section.symbol.id',
+			name: 'page_type_section_entries',
 			system: false,
 			type: 'base',
-			updateRule: '@request.auth.id = group.owner.id',
-			viewRule: '@request.auth.id = group.owner.id'
+			updateRule: '@request.auth.id = page_type_section.page_type.site.group.owner.id && symbol_field.symbol.id = page_type_section.symbol.id',
+			viewRule: '@request.auth.id = page_type_section.page_type.site.group.owner.id && symbol_field.symbol.id = page_type_section.symbol.id'
 		})
 
 		return app.save(collection)
 	},
 	(app) => {
-		const collection = app.findCollectionByNameOrId('pbc_2001081480')
+		const collection = app.findCollectionByNameOrId('pbc_3303549340')
 
 		return app.delete(collection)
 	}

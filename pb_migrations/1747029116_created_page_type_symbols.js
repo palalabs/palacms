@@ -2,8 +2,8 @@
 migrate(
 	(app) => {
 		const collection = new Collection({
-			createRule: '@request.auth.id = owner.id',
-			deleteRule: '@request.auth.id = owner.id',
+			createRule: '@request.auth.id = page_type.site.group.owner.id && symbol.site.id = page_type.site.id',
+			deleteRule: '@request.auth.id = page_type.site.group.owner.id && symbol.site.id = page_type.site.id',
 			fields: [
 				{
 					autogeneratePattern: '[a-z0-9]{15}',
@@ -21,26 +21,29 @@ migrate(
 				},
 				{
 					cascadeDelete: true,
-					collectionId: '_pb_users_auth_',
+					collectionId: 'pbc_3238086262',
 					hidden: false,
-					id: 'relation3479234172',
+					id: 'relation186272755',
 					maxSelect: 1,
 					minSelect: 0,
-					name: 'owner',
+					name: 'page_type',
 					presentable: false,
 					required: true,
 					system: false,
 					type: 'relation'
 				},
 				{
+					cascadeDelete: true,
+					collectionId: 'pbc_1322267247',
 					hidden: false,
-					id: 'json2918445923',
-					maxSize: 0,
-					name: 'data',
+					id: 'relation3972544249',
+					maxSelect: 1,
+					minSelect: 0,
+					name: 'symbol',
 					presentable: false,
 					required: true,
 					system: false,
-					type: 'json'
+					type: 'relation'
 				},
 				{
 					hidden: false,
@@ -63,20 +66,20 @@ migrate(
 					type: 'autodate'
 				}
 			],
-			id: 'pbc_1593226033',
-			indexes: ['CREATE UNIQUE INDEX `idx_umFQYbpMkQ` ON `libraries` (`owner`)'],
-			listRule: '@request.auth.id = owner.id',
-			name: 'libraries',
+			id: 'pbc_3564279343',
+			indexes: ['CREATE UNIQUE INDEX `idx_6lGEJ55d9O` ON `page_type_symbols` (\n  `page_type`,\n  `symbol`\n)'],
+			listRule: '@request.auth.id = page_type.site.group.owner.id && symbol.site.id = page_type.site.id',
+			name: 'page_type_symbols',
 			system: false,
 			type: 'base',
-			updateRule: '@request.auth.id = owner.id',
-			viewRule: '@request.auth.id = owner.id'
+			updateRule: '@request.auth.id = page_type.site.group.owner.id && symbol.site.id = page_type.site.id',
+			viewRule: '@request.auth.id = page_type.site.group.owner.id && symbol.site.id = page_type.site.id'
 		})
 
 		return app.save(collection)
 	},
 	(app) => {
-		const collection = app.findCollectionByNameOrId('pbc_1593226033')
+		const collection = app.findCollectionByNameOrId('pbc_3564279343')
 
 		return app.delete(collection)
 	}

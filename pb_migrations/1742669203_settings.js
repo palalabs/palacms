@@ -1,7 +1,7 @@
 /// <reference path="../pb_data/types.d.ts" />
 migrate((app) => {
 	const settings = app.settings()
-	settings.meta.appName = 'WeaveCMS'
+	settings.meta.appName = 'PalaCMS'
 	app.save(settings)
 
 	{

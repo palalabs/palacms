@@ -2,8 +2,8 @@
 migrate(
 	(app) => {
 		const collection = new Collection({
-			createRule: '@request.auth.id = library.owner.id',
-			deleteRule: '@request.auth.id = library.owner.id',
+			createRule: '@request.auth.id = site.group.owner.id',
+			deleteRule: '@request.auth.id = site.group.owner.id',
 			fields: [
 				{
 					autogeneratePattern: '[a-z0-9]{15}',
@@ -22,10 +22,24 @@ migrate(
 				{
 					autogeneratePattern: '',
 					hidden: false,
-					id: 'text1579384326',
+					id: 'text2324736937',
 					max: 0,
 					min: 0,
-					name: 'name',
+					name: 'key',
+					pattern: '',
+					presentable: false,
+					primaryKey: false,
+					required: true,
+					system: false,
+					type: 'text'
+				},
+				{
+					autogeneratePattern: '',
+					hidden: false,
+					id: 'text245846248',
+					max: 0,
+					min: 0,
+					name: 'label',
 					pattern: '',
 					presentable: true,
 					primaryKey: false,
@@ -36,25 +50,25 @@ migrate(
 				{
 					autogeneratePattern: '',
 					hidden: false,
-					id: 'text1843675174',
+					id: 'text2363381545',
 					max: 0,
 					min: 0,
-					name: 'description',
+					name: 'type',
 					pattern: '',
 					presentable: false,
 					primaryKey: false,
-					required: false,
+					required: true,
 					system: false,
 					type: 'text'
 				},
 				{
 					cascadeDelete: true,
-					collectionId: 'pbc_1593226033',
+					collectionId: 'pbc_2001081480',
 					hidden: false,
-					id: 'relation2709559484',
+					id: 'relation1766001124',
 					maxSelect: 1,
 					minSelect: 0,
-					name: 'library',
+					name: 'site',
 					presentable: false,
 					required: true,
 					system: false,
@@ -62,25 +76,13 @@ migrate(
 				},
 				{
 					hidden: false,
-					id: 'json2918445923',
+					id: 'json3565825916',
 					maxSize: 0,
-					name: 'data',
-					presentable: false,
-					required: true,
-					system: false,
-					type: 'json'
-				},
-				{
-					hidden: false,
-					id: 'number2155046657',
-					max: null,
-					min: 0,
-					name: 'index',
-					onlyInt: true,
+					name: 'config',
 					presentable: false,
 					required: false,
 					system: false,
-					type: 'number'
+					type: 'json'
 				},
 				{
 					hidden: false,
@@ -103,20 +105,20 @@ migrate(
 					type: 'autodate'
 				}
 			],
-			id: 'pbc_560631705',
-			indexes: [],
-			listRule: '@request.auth.id = library.owner.id',
-			name: 'starters',
+			id: 'pbc_4273630883',
+			indexes: ['CREATE UNIQUE INDEX `idx_kzYPeLM7lh` ON `site_fields` (\n  `key`,\n  `site`\n)'],
+			listRule: '@request.auth.id = site.group.owner.id',
+			name: 'site_fields',
 			system: false,
 			type: 'base',
-			updateRule: '@request.auth.id = library.owner.id',
-			viewRule: '@request.auth.id = library.owner.id'
+			updateRule: '@request.auth.id = site.group.owner.id',
+			viewRule: '@request.auth.id = site.group.owner.id'
 		})
 
 		return app.save(collection)
 	},
 	(app) => {
-		const collection = app.findCollectionByNameOrId('pbc_560631705')
+		const collection = app.findCollectionByNameOrId('pbc_4273630883')
 
 		return app.delete(collection)
 	}
