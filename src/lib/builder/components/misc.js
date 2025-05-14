@@ -1,7 +1,7 @@
 export const dynamic_iframe_srcdoc = (head = '') => {
   return `
   <!DOCTYPE html>
-  <html lang="en">
+  <html lang="en" class="in-cms">
     <head>
       ${head}
       <meta charset="utf-8">
@@ -103,7 +103,7 @@ export const static_iframe_srcdoc = ({ head = '', html, css, foot = '' }) => {
 export const component_iframe_srcdoc = ({ head = '', css = '', foot = '' }) => {
 	return `
     <!DOCTYPE html>
-    <html lang="en">
+    <html lang="en" class="in-cms">
       <head>
         <script type="module">
           let c;
