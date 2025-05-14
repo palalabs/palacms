@@ -1,12 +1,11 @@
-import { Entry } from '../Entry'
 import { FieldBase } from '../FieldBase'
 import { z } from 'zod'
-import { EntityReference } from '../EntityReference'
 
 export const PageListField = FieldBase.extend({
-	type: z.enum(['page-list']),
-	entries: z.array(Entry(z.array(EntityReference('pages')))),
-	page_type: EntityReference('page_types')
+	type: z.literal('page-list'),
+	config: z.object({
+		page_type: z.string().nonempty()
+	})
 })
 
 export type PageListField = z.infer<typeof PageListField>

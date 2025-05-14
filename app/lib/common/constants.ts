@@ -1,9 +1,3 @@
-import type { Id } from './models/Id'
-
-export const ID = Symbol('ID')
-
-export const SITE = 'site' as Id
-
 export const locales = [
 	'af',
 	'ar',

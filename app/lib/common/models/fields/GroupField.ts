@@ -1,10 +1,9 @@
 import { z } from 'zod'
-import { EntityReference } from '../EntityReference'
 import { FieldBase } from '../FieldBase'
 
 export const GroupField = FieldBase.extend({
-	type: z.literal('group'),
-	fields: z.array(EntityReference('fields'))
+	type: z.literal('group')
+	// TODO: Sub-fields
 })
 
 export type GroupField = z.infer<typeof GroupField>

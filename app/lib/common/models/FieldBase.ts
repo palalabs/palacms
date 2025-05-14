@@ -1,18 +1,11 @@
 import { z } from 'zod'
-import { EntityReference } from './EntityReference'
 
 export const FieldBase = z.object({
-	type: z.string(),
+	id: z.string().nonempty(),
 	key: z.string().nonempty(),
 	label: z.string().nonempty(),
-	entries: z.undefined(),
-	condition: z
-		.object({
-			field: EntityReference('fields'),
-			comparison: z.enum(['=', '!=']),
-			value: z.unknown()
-		})
-		.optional()
+	type: z.string().nonempty(),
+	config: z.null()
 })
 
 export type FieldBase = z.infer<typeof FieldBase>

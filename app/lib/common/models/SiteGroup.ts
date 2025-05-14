@@ -1,10 +1,9 @@
 import { z } from 'zod'
-import { Id } from './Id'
 
 export const SiteGroup = z.object({
-	id: Id,
+	id: z.string().nonempty(),
 	name: z.string().nonempty(),
-	owner: Id,
+	owner: z.string().nonempty(),
 	index: z.number().int().nonnegative()
 })
 

@@ -1,21 +1,13 @@
 import { z } from 'zod'
-import { EntityReference } from './EntityReference'
-import { Entity } from './Entity'
 
-export const PageType = Entity(
-	'page_types',
-	z.object({
-		name: z.string().nonempty(),
-		code: z.object({
-			head: z.string(),
-			foot: z.string()
-		}),
-		color: z.string(),
-		icon: z.string(),
-		fields: z.array(EntityReference('fields')),
-		sections: z.array(EntityReference('sections')),
-		symbols: z.array(EntityReference('symbols'))
-	})
-)
+export const PageType = z.object({
+	id: z.string().nonempty(),
+	name: z.string().nonempty(),
+	head: z.string(),
+	foot: z.string(),
+	color: z.string(),
+	icon: z.string(),
+	site: z.string().nonempty()
+})
 
 export type PageType = z.infer<typeof PageType>
