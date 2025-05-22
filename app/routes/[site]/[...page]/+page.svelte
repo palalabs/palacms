@@ -1,13 +1,12 @@
 <script lang="ts">
 	import { compilers_registered } from '$lib/stores'
 	import PrimoPage from '$lib/builder/views/editor/Page.svelte'
-	import { require_site } from '$lib/loaders'
 	import { page as pageState } from '$app/state'
-	import type { Id } from '$lib/common/models/Id'
+	import { Sites } from '$lib/pocketbase/collections'
 
-	const site_id = $derived(pageState.params.site as Id)
+	const site_id = $derived(pageState.params.site)
 	const slug = $derived(pageState.params.page)
-	const site = $derived(require_site(site_id))
+	const site = $derived(Sites.one(site_id))
 	const page = $derived(Object.values($site?.data.entities.pages ?? {}).find((page) => page?.slug == slug))
 </script>
 

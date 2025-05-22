@@ -20,7 +20,7 @@
 	import { content_editable } from '../utilities'
 	import { processCode } from '../utils.js'
 	import { page } from '$app/state'
-	import { require_site } from '$lib/loaders'
+	import { Sites } from '$lib/pocketbase/collections'
 
 	/**
 	 * @typedef {Object} Props
@@ -53,7 +53,7 @@
 	} = $props()
 
 	const site_id = $derived(page.params.site)
-	const site = $derived(require_site(site_id))
+	const site = $derived(Sites.one(site_id))
 
 	$preview_updated = false
 

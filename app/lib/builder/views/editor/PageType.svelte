@@ -9,21 +9,17 @@
 	import ComponentNode from './Layout/ComponentNode.svelte'
 	import BlockToolbar from './Layout/BlockToolbar.svelte'
 	import DropIndicator from './Layout/DropIndicator.svelte'
-	import SymbolPalette from './Layout/SymbolPalette.svelte'
 	import LockedOverlay from './Layout/LockedOverlay.svelte'
 	import { locale } from '../../stores/app/misc.js'
 	import { dropTargetForElements } from '../../libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
 	import { attachClosestEdge, extractClosestEdge } from '../../libraries/pragmatic-drag-and-drop-hitbox/closest-edge.js'
-	import { require_site } from '$lib/loaders/index.js'
+	import { Sites } from '$lib/pocketbase/collections'
 	import { page } from '$app/state'
 	import { ID } from '$lib/common/constants'
-	import type { Id } from '$lib/common/models/Id.js'
-	import type { Resolved } from '$lib/common/index.js'
-	import type { Section } from '$lib/common/models/Section.js'
 
-	const site_id = $derived(page.params.site as Id)
-	const page_type_id = $derived(page.params.page_type as Id)
-	const site = $derived(require_site(site_id))
+	const site_id = $derived(page.params.site)
+	const page_type_id = $derived(page.params.page_type)
+	const site = $derived(Sites.one(site_id))
 	const page_type = $derived($site?.data.entities.page_types[page_type_id] ?? null)
 
 	// Fade in page when all components mounted
@@ -40,7 +36,7 @@
 		// TODO
 	}
 
-	let hovered_section_id: Resolved<typeof Section> | null = $state(null)
+	let hovered_section_id: Section | null = $state(null)
 	let hovered_section = $derived(page_type?.sections.find((s) => s[ID] === hovered_section_id))
 
 	let block_toolbar_element = $state()

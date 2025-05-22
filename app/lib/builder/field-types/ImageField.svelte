@@ -5,9 +5,6 @@
 	import Spinner from '../ui/Spinner.svelte'
 	import imageCompression from 'browser-image-compression'
 	import type { ImageField } from '$lib/common/models/fields/ImageField'
-	import type { Resolved } from '$lib/common/json'
-	import type { Id } from '$lib/common/models/Id'
-	import { require_site } from '$lib/loaders'
 	import { page } from '$app/state'
 	import { get_direct_entries } from '../stores/helpers'
 
@@ -16,9 +13,7 @@
 		url: ''
 	}
 
-	const { entity_id, field }: { entity_id: Id; field: Resolved<typeof ImageField> } = $props()
-	const site_id = $derived(page.params.site)
-	const site = $derived(require_site(site_id))
+	const { entity_id, field }: { entity_id: string; field: ImageField } = $props()
 	const entry = $derived(get_direct_entries(entity_id, field)[0])
 
 	async function upload_image(image) {

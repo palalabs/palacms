@@ -13,17 +13,15 @@
 	import { dropTargetForElements } from '$lib/builder/libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
 	import { attachClosestEdge, extractClosestEdge } from '$lib/builder/libraries/pragmatic-drag-and-drop-hitbox/closest-edge.js'
 	import { beforeNavigate } from '$app/navigation'
-	import type { Resolved } from '$lib/common/json'
 	import type { Page } from '$lib/common/models/Page'
 	import { ID } from '$lib/common'
 	import { page as pageState } from '$app/state'
-	import { require_site } from '$lib/loaders'
-	import type { Id } from '$lib/common/models/Id'
+	import { Sites } from '$lib/pocketbase/collections'
 
-	let { page }: { page: Resolved<typeof Page> } = $props()
+	let { page }: { page: Page } = $props()
 
-	const site_id = $derived(pageState.params.site as Id)
-	const site = $derived(require_site(site_id))
+	const site_id = $derived(pageState.params.site)
+	const site = $derived(Sites.one(site_id))
 
 	// Fade in page when all components mounted
 	let page_mounted = $state(false)

@@ -14,8 +14,7 @@
 	import { onNavigate } from '$app/navigation'
 	import { active_users } from '$lib/builder/stores/app/misc'
 	import { page as pageState } from '$app/state'
-	import { require_site } from '$lib/loaders'
-	import { Id } from '$lib/common/models/Id'
+	import { Sites } from '$lib/pocketbase/collections'
 	import { ID } from '$lib/common/constants'
 
 	import SiteEditor from '$lib/builder/views/modal/SiteEditor/SiteEditor.svelte'
@@ -26,9 +25,9 @@
 	let { children } = $props()
 
 	const site_id = $derived(pageState.params.site)
-	const page_slug = $derived((pageState.params.page as Id) || '')
-	const page_type_id = $derived(pageState.params.page_type as Id)
-	const site = $derived(require_site(site_id))
+	const page_slug = $derived(pageState.params.page || '')
+	const page_type_id = $derived(pageState.params.page_type)
+	const site = $derived(Sites.one(site_id))
 	const page = $derived(Object.values($site?.data.entities.pages || {}).find((p) => p.slug === page_slug))
 	const page_type = $derived($site?.data.entities.page_types[page_type_id])
 

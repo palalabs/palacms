@@ -3,13 +3,10 @@
 	import Icon from '@iconify/svelte'
 	import UI from '../ui'
 	import { locale } from '../stores/app'
-	import type { Id } from '$lib/common/models/Id'
-	import type { Resolved } from '$lib/common/json'
 	import type { LinkField } from '$lib/common/models/fields/LinkField'
 	import { page } from '$app/state'
-	import { require_site } from '$lib/loaders'
 	import { get_direct_entries } from '../stores/helpers'
-	import { ID } from '$lib/common/constants'
+	import { Sites } from '$lib/pocketbase/collections'
 
 	const default_value = {
 		label: '',
@@ -17,9 +14,9 @@
 		active: false
 	}
 
-	const { entity_id, field }: { entity_id: Id; field: Resolved<typeof LinkField> } = $props()
+	const { entity_id, field }: { entity_id: string; field: LinkField } = $props()
 	const site_id = $derived(page.params.site)
-	const site = $derived(require_site(site_id))
+	const site = $derived(Sites.one(site_id))
 	const entry = $derived(get_direct_entries(entity_id, field)[0])
 	const selectable_pages = $derived(Object.values($site?.data.entities.pages ?? {}).filter((p) => p?.page_type[ID] === field.page_type[ID]))
 

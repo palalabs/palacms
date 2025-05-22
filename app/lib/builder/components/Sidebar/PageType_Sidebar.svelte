@@ -17,16 +17,15 @@
 	import * as Tabs from '$lib/components/ui/tabs'
 	import { Cuboid, SquarePen } from 'lucide-svelte'
 	import { page } from '$app/state'
-	import { require_site } from '$lib/loaders'
+	import { Sites } from '$lib/pocketbase/collections'
 	import { ID } from '$lib/common/constants'
 	import { site_html } from '$lib/builder/stores/app/page.js'
-	import type { Id } from '$lib/common/models/Id.js'
 
 	const UPDATE_COUNTER = Symbol('UPDATE_COUNTER')
 
-	const site_id = $derived(page.params.site as Id)
-	const page_type_id = $derived(page.params.page_type as Id)
-	const site = $derived(require_site(site_id))
+	const site_id = $derived(page.params.site)
+	const page_type_id = $derived(page.params.page_type)
+	const site = $derived(Sites.one(site_id))
 	const page_type = $derived($site?.data.page_types.find((page_type) => page_type[ID] === page_type_id))
 
 	// get the query param to set the tab when navigating from page (i.e. 'Edit Fields')

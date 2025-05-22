@@ -4,7 +4,7 @@
 	import { onMount } from 'svelte'
 	import { goto } from '$app/navigation'
 	import { page } from '$app/state'
-	import { require_site } from '$lib/loaders'
+	import { Sites } from '$lib/pocketbase/collections'
 
 	onMount(async () => {
 		if (!pb.authStore.isValid) {
@@ -15,7 +15,7 @@
 	let { children } = $props()
 
 	const site_id = $derived(page.params.site)
-	const site = $derived(require_site(site_id))
+	const site = $derived(Sites.one(site_id))
 </script>
 
 <Primo {site}>

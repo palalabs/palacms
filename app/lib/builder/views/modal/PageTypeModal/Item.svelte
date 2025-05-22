@@ -3,17 +3,16 @@
 	import { validate_url } from '$lib/builder/utilities'
 	import PageForm from './PageTypeForm.svelte'
 	import MenuPopup from '$lib/builder/ui/Dropdown.svelte'
-	import type { Resolved } from '$lib/common/json'
 	import type { PageType } from '$lib/common/models/PageType'
 	import { ID } from '$lib/common/constants'
-	import { require_site } from '$lib/loaders'
+	import { Sites } from '$lib/pocketbase/collections'
 	import { page } from '$app/state'
 	import { goto } from '$app/navigation'
 
-	let { active, page_type }: { active: boolean; page_type: Resolved<typeof PageType> } = $props()
+	let { active, page_type }: { active: boolean; page_type: PageType } = $props()
 
 	const site_id = $derived(page.params.site)
-	const site = $derived(require_site(site_id))
+	const site = $derived(Sites.one(site_id))
 
 	let editing_page = $state(false)
 

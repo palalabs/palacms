@@ -6,13 +6,12 @@
 	import * as _ from 'lodash-es'
 	import CodeEditor from '$lib/builder/components/CodeEditor/CodeMirror.svelte'
 	import { page } from '$app/state'
-	import { require_site } from '$lib/loaders'
-	import type { Id } from '$lib/common/models/Id'
+	import { Sites } from '$lib/pocketbase/collections'
 	import { ID } from '$lib/common/constants'
 
 	const site_id = page.params.site
-	const page_type_id = page.params.page_type as Id
-	const site = require_site(site_id)
+	const page_type_id = page.params.page_type
+	const site = $derived(Sites.one(site_id))
 	const page_type = $derived($site?.data.entities.page_types[page_type_id])
 
 	let disableSave = false

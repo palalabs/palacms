@@ -113,10 +113,6 @@
 			padding: 0.75rem;
 			background-color: #1c1c1c;
 			font-size: 1rem;
-
-			&.hidden {
-				display: none;
-			}
 		}
 
 		.button {
@@ -140,10 +136,6 @@
 				background-color: var(--weave-primary-color-dark);
 			}
 
-			.icon {
-				animation: icon-spin 1s linear infinite;
-			}
-
 			@keyframes icon-spin {
 				0% {
 					transform: rotate(0deg);
@@ -162,10 +154,5 @@
 		color: #797979;
 		text-align: left;
 		margin-top: 1rem;
-
-		button {
-			color: #b6b6b6;
-			text-decoration: underline;
-		}
 	}
 </style>

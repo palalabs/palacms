@@ -1,14 +1,12 @@
 <script lang="ts">
 	import { page } from '$app/state'
-	import type { PageField } from '$lib/common/models/fields/PageField.js'
-	import type { Id } from '$lib/common/models/Id.js'
-	import { require_site } from '$lib/loaders'
-	import type { Resolved } from '$lib/common/json/index.js'
+	import { Sites } from '$lib/pocketbase/collections'
+	import type { PageField } from '$lib/common/models/fields/PageFieldField.ts'
 	import UI from '../../ui/index.js'
 
 	const site_id = page.params.site
-	const site = require_site(site_id)
-	const { field }: { entity_id: Id; field: Resolved<typeof PageField> } = $props()
+	const site = $derived(Sites.one(site_id))
+	const { field }: { entity_id: string; field: PageField } = $props()
 </script>
 
 <div class="PagesField">

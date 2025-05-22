@@ -5,17 +5,16 @@
 	import { processCode } from '../utils'
 	import { locale } from '../stores/app/misc'
 	import IFrame from '../components/IFrame.svelte'
-	import type { Resolved } from '$lib/common/json'
 	import type { Symbol } from '$lib/common/models/Symbol'
 	import { get_content } from '../stores/helpers'
 	import { ID } from '$lib/common/constants'
 	import { page } from '$app/state'
-	import { require_site } from '$lib/loaders'
+	import { Sites } from '$lib/pocketbase/collections'
 
-	let { symbol = $bindable(), checked = false, onclick }: { symbol: Resolved<typeof Symbol>; checked?: boolean; onclick?: () => void } = $props()
+	let { symbol = $bindable(), checked = false, onclick }: { symbol: Symbol; checked?: boolean; onclick?: () => void } = $props()
 
 	const site_id = page.params.site
-	const site = require_site(site_id)
+	const site = $derived(Sites.one(site_id))
 
 	let name_el
 
@@ -32,7 +31,7 @@
 
 	let componentCode = $state()
 	let component_error = $state()
-	async function compile_component_code(symbol: Resolved<typeof Symbol>) {
+	async function compile_component_code(symbol: Symbol) {
 		const data = get_content(symbol[ID], symbol.fields)[$locale]
 		let res = await processCode({
 			component: {

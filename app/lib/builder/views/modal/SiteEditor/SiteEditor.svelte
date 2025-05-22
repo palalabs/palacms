@@ -7,10 +7,10 @@
 	import CodeEditor from '$lib/builder/components/CodeEditor/CodeMirror.svelte'
 	import { setContext } from 'svelte'
 	import { page } from '$app/state'
-	import { require_site } from '$lib/loaders'
+	import { Sites } from '$lib/pocketbase/collections'
 
 	const site_id = page.params.site
-	const site = require_site(site_id)
+	const site = $derived(Sites.one(site_id))
 
 	setContext('hide_dynamic_field_types', true)
 

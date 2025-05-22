@@ -5,15 +5,14 @@
 	import Icon from '@iconify/svelte'
 	import { validate_url } from '../../../utilities'
 	import { Page } from '$lib/common/models/Page'
-	import type { Resolved } from '$lib/common/json'
 	import { page } from '$app/state'
-	import { require_site } from '$lib/loaders'
+	import { Sites } from '$lib/pocketbase/collections'
 	import { ID } from '$lib/common'
 
-	let { parent }: { parent?: Resolved<typeof Page> } = $props()
+	let { parent }: { parent?: Page } = $props()
 
 	const site_id = $derived(page.params.site)
-	const site = $derived(require_site(site_id))
+	const site = $derived(Sites.one(site_id))
 
 	const dispatch = createEventDispatcher()
 

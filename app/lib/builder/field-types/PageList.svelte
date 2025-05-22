@@ -1,14 +1,14 @@
 <script>
 	import { page } from '$app/state'
 	import { ID } from '$lib/common/constants'
-	import { require_site } from '$lib/loaders'
 	import { createEventDispatcher } from 'svelte'
+	import { Sites } from '$lib/pocketbase/collections'
 	const dispatch = createEventDispatcher()
 
 	let { field, value } = $props()
 
 	const site_id = $derived(page.params.site)
-	const site = $derived(require_site(site_id))
+	const site = $derived(Sites.one(site_id))
 	const selected_page_type = $site?.data.page_types.find((pt) => pt[ID] === field.options.page_type)
 </script>
 

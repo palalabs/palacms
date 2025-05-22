@@ -1,20 +1,18 @@
 <script lang="ts">
 	import * as Dialog from '$lib/components/ui/dialog'
-	import LargeSwitch from '$lib/builder/ui/LargeSwitch.svelte'
 	import * as Sidebar from '$lib/components/ui/sidebar'
 	import Symbol from '../../components/Site_Symbol.svelte'
 	import { site_html } from '$lib/builder/stores/app/page'
 	import type { Resolved } from '$lib/common/json'
 	import type { Symbol as SymbolModel } from '$lib/common/models/Symbol'
-	import { Id } from '$lib/common/models/Id'
 	import { ID } from '$lib/common/constants'
-	import { require_library, require_site } from '$lib/loaders'
+	import { require_library } from '$lib/loaders'
 	import type { SymbolGroup } from '$lib/common/models/Library'
 
 	let { site, onsave } = $props()
 
 	const library = require_library()
-	let selected_symbol_group = $state<Resolved<typeof SymbolGroup> | null>(null)
+	let selected_symbol_group = $state<SymbolGroup | null>(null)
 	let columns = $derived(
 		selected_symbol_group
 			? [
@@ -26,7 +24,7 @@
 	)
 
 	let selected: Resolved<typeof SymbolModel>[] = $state([])
-	let checked: Id[] = $state([])
+	let checked: string[] = $state([])
 
 	function include_symbol(symbol: Resolved<typeof SymbolModel>) {
 		if (selected.some((s) => s[ID] === symbol[ID]) || checked.includes(symbol[ID])) {

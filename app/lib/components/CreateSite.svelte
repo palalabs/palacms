@@ -10,13 +10,14 @@
 	import { convert_site_v3 } from '$lib/builder/new_converter'
 	import DesignFields from './Modals/DesignFields.svelte'
 	import * as code_generators from '$lib/builder/code_generators'
-	import { require_site, require_site_groups, require_site_list } from '$lib/loaders'
+	import { require_site_groups, require_site_list } from '$lib/loaders'
 	import { Site } from '$lib/common/models/Site'
 	import type { Resolved } from '$lib/common/json'
 	import { Sites } from '$lib/pocketbase/collections'
 	import { readable, type Readable } from 'svelte/store'
 	import { page } from '$app/state'
 	import type { PageType } from '$lib/common/models/PageType'
+	import { Sites } from '$lib/pocketbase/collections'
 
 	let { onclose } = $props()
 
@@ -58,7 +59,7 @@
 	}
 
 	let selected_starter_id = $state(``)
-	let selected_starter: Readable<Resolved<typeof Site> | null> = $derived(selected_starter_id === 'blank' ? readable(null) : require_site(selected_starter_id))
+	let selected_starter: Site | null = $derived(selected_starter_id === 'blank' ? null : Sites.one(selected_starter_id))
 	function select_starter(site_id) {
 		selected_starter_id = site_id
 		preview = ''

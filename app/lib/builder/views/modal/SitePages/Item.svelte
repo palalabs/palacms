@@ -6,19 +6,18 @@
 	import { content_editable, validate_url } from '$lib/builder/utilities'
 	import PageForm from './PageForm.svelte'
 	import MenuPopup from '$lib/builder/ui/Dropdown.svelte'
-	import type { Resolved } from '$lib/common/json'
 	import type { Page } from '$lib/common/models/Page'
 	import { page as pageState } from '$app/state'
 	import { ID } from '$lib/common/constants'
-	import { require_site } from '$lib/loaders'
+	import { Sites } from '$lib/pocketbase/collections'
 
 	let editing_page = $state(false)
 
 	/** @type {Props} */
-	let { parent, page, active }: { parent?: Resolved<typeof Page>; page: Resolved<typeof Page>; active: boolean } = $props()
+	let { parent, page, active }: { parent?: Page; page: Page; active: boolean } = $props()
 
 	const site_id = $derived(pageState.params.site)
-	const site = $derived(require_site(site_id))
+	const site = $derived(Sites.one(site_id))
 	const full_url = $derived(`/${site_id}/${page.slug}`)
 
 	let showing_children = $state(false)

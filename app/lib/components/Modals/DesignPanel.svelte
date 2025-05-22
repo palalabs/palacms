@@ -17,11 +17,11 @@
 	import { onMobile } from '$lib/builder/stores/app'
 	import * as code_generators from '$lib/builder/code_generators'
 	import DesignFields from './DesignFields.svelte'
-	import { require_site } from '$lib/loaders'
+	import { Sites } from '$lib/pocketbase/collections'
 	import { page } from '$app/state'
 
 	const site_id = $derived(page.params.site)
-	const site = $derived(require_site(site_id))
+	const site = $derived(Sites.one(site_id))
 	const local_design_values = $state(cloneDeep($site?.data.design!))
 	let design_variables_css = $state(code_generators.site_design_css(local_design_values))
 

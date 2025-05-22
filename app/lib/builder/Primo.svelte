@@ -14,8 +14,6 @@
 	import { site_design_css } from '$lib/builder/code_generators.js'
 	import { site_html } from '$lib/builder/stores/app/page'
 	import { processCode } from '$lib/builder/utils.js'
-	import type { Readable } from 'svelte/store'
-	import type { Resolved } from '$lib/common/json'
 	import type { Site } from '$lib/common/models/Site'
 	import { page } from '$app/state'
 
@@ -24,7 +22,7 @@
 		toolbar,
 		children
 	}: {
-		site: Readable<Resolved<typeof Site> | null>
+		site: Site | null
 		toolbar?: Snippet
 		children?: Snippet
 	} = $props()

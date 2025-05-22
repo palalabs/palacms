@@ -5,13 +5,13 @@
 	import Button from '$lib/builder/ui/Button.svelte'
 	import PageForm from './PageTypeForm.svelte'
 	import { page } from '$app/state'
-	import { require_site } from '$lib/loaders'
+	import { Sites } from '$lib/pocketbase/collections'
 	import type { PageType } from '$lib/common/models/PageType'
 	import type { Resolved } from '$lib/common/json'
 	import { ID } from '$lib/common/constants'
 
 	const site_id = $derived(page.params.site)
-	const site = $derived(require_site(site_id))
+	const site = $derived(Sites.one(site_id))
 
 	async function create_page_type(new_page_type: Resolved<typeof PageType>) {
 		if (!$site) return
