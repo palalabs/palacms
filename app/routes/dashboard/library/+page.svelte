@@ -20,11 +20,10 @@
 	import { goto } from '$app/navigation'
 	import { useSidebar } from '$lib/components/ui/sidebar'
 	import { require_library } from '$lib/loaders'
-	import type { Id } from '$lib/common/models/Id'
 	import type { LibraryEntityReference } from '$lib/common/models/LibraryEntityReference'
 
 	const library = require_library()
-	const active_symbol_group_id = $derived(page.url.searchParams.get('group') as Id)
+	const active_symbol_group_id = $derived(page.url.searchParams.get('group') as string)
 	const active_symbol_group = $derived(active_symbol_group_id && $library?.data.entities.symbol_groups[active_symbol_group_id])
 
 	const sidebar = useSidebar()

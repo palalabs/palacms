@@ -28,7 +28,7 @@
 	}
 
 	const library = require_library()
-	let selected_group_id = $state($library?.data.symbol_groups[0]?..id ?? '')
+	let selected_group_id = $state($library?.data.symbol_groups[0]?.id ?? '')
 
 	let is_popover_open = $state(false)
 	let added_to_library = $state(false)

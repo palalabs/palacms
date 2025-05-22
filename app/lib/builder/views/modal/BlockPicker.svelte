@@ -51,7 +51,7 @@
 			<Sidebar.Menu>
 				{#each $library?.data.symbol_groups ?? [] as group}
 					<Sidebar.MenuItem>
-						<Sidebar.MenuButton isActive={selected_symbol_group?..id === group.id}>
+						<Sidebar.MenuButton isActive={selected_symbol_group?.id === group.id}>
 							{#snippet child({ props })}
 								<button {...props} onclick={() => (selected_symbol_group = group)}>{group.name}</button>
 							{/snippet}

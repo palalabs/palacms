@@ -4,9 +4,9 @@
 	import EmptyState from '$lib/components/EmptyState.svelte'
 	import { LayoutTemplate } from 'lucide-svelte'
 	import MarketplaceStarterButton from '$lib/components/MarketplaceStarterButton.svelte'
-	import { require_marketplace_starters } from '$lib/loaders'
 
-	const starters = require_marketplace_starters()
+	// TODO (just fetch from endpoing?)
+	const starters = []
 </script>
 
 <header class="flex h-14 shrink-0 items-center gap-2">
