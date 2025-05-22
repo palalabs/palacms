@@ -15,7 +15,6 @@
 	import { Cuboid, SquarePen } from 'lucide-svelte'
 	import { page as pageState } from '$app/state'
 	import { Sites } from '$lib/pocketbase/collections'
-	import { ID } from '$lib/common'
 
 	let active_tab = $state((browser && localStorage.getItem('page-tab')) || 'BLOCKS')
 
@@ -82,7 +81,7 @@
 			<Tabs.Content value="blocks">
 				<div class="symbols">
 					{#if $site_html !== null}
-						{#each page_type_symbols ?? [] as symbol (symbol[ID])}
+						{#each page_type_symbols ?? [] as symbol (symbol.id)}
 							<div animate:flip={{ duration: 200 }} use:drag_target={symbol}>
 								<Sidebar_Symbol {symbol} controls_enabled={false} head={$site_html} append={site_design_css($site?.data.design)} />
 							</div>
@@ -95,26 +94,26 @@
 				</div>
 				<!-- $userRole === 'DEV' -->
 				{#if true}
-					<button onclick={() => goto(`/${$site?.id}/page-type--${page?.page_type[ID]}?t=b`)} class="footer-link">Manage Blocks</button>
+					<button onclick={() => goto(`/${$site?.id}/page-type--${page?.page_type.id}?t=b`)} class="footer-link">Manage Blocks</button>
 				{/if}
 			</Tabs.Content>
 			<Tabs.Content value="content">
 				<div class="page-type-fields">
-					<Content entity_id={page?.[ID]} fields={page?.page_type.fields} />
+					<Content entity_id={page?..id} fields={page?.page_type.fields} />
 				</div>
 				<!-- $userRole === 'DEV' -->
 				{#if true}
-					<button onclick={() => goto(`/${$site?.id}/page-type--${page?.page_type[ID]}?t=p`)} class="footer-link">Manage Fields</button>
+					<button onclick={() => goto(`/${$site?.id}/page-type--${page?.page_type.id}?t=p`)} class="footer-link">Manage Fields</button>
 				{/if}
 			</Tabs.Content>
 		</Tabs.Root>
 	{:else}
 		<div class="p-4 page-type-fields">
-			<Content entity_id={page?.[ID]} fields={page?.page_type.fields} />
+			<Content entity_id={page?..id} fields={page?.page_type.fields} />
 		</div>
 		<!-- $userRole === 'DEV' -->
 		{#if true}
-			<button onclick={() => goto(`/${$site?.id}/page-type--${page?.page_type[ID]}?t=p`)} class="footer-link mb-2 mr-2">Manage Fields</button>
+			<button onclick={() => goto(`/${$site?.id}/page-type--${page?.page_type.id}?t=p`)} class="footer-link mb-2 mr-2">Manage Fields</button>
 		{/if}
 	{/if}
 </div>

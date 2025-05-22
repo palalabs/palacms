@@ -7,18 +7,16 @@
 	import { page } from '$app/state'
 	import { Sites } from '$lib/pocketbase/collections'
 	import type { PageType } from '$lib/common/models/PageType'
-	import type { Resolved } from '$lib/common/json'
-	import { ID } from '$lib/common/constants'
 
 	const site_id = $derived(page.params.site)
 	const site = $derived(Sites.one(site_id))
 
-	async function create_page_type(new_page_type: Resolved<typeof PageType>) {
+	async function create_page_type(new_page_type: PageType) {
 		if (!$site) return
 
 		$site.data.page_types.push(new_page_type)
 		const [created_page_type] = $site.data.page_types.slice(-1)
-		goto(`/${$site.id}/page-type--${created_page_type[ID]}`)
+		goto(`/${$site.id}/page-type--${created_page_type.id}`)
 	}
 
 	let creating_page_type = $state(false)

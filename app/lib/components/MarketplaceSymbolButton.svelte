@@ -9,7 +9,6 @@
 	import * as RadioGroup from '$lib/components/ui/radio-group'
 	import { Symbol } from '$lib/common/models/Symbol'
 	import { require_library } from '$lib/loaders'
-	import { ID } from '$lib/common'
 
 	/**
 	 * @typedef {Object} Props
@@ -29,7 +28,7 @@
 	}
 
 	const library = require_library()
-	let selected_group_id = $state($library?.data.symbol_groups[0]?.[ID] ?? '')
+	let selected_group_id = $state($library?.data.symbol_groups[0]?..id ?? '')
 
 	let is_popover_open = $state(false)
 	let added_to_library = $state(false)
@@ -65,8 +64,8 @@
 					<RadioGroup.Root bind:value={selected_group_id}>
 						{#each $library?.data.symbol_groups ?? [] as group}
 							<div class="flex items-center space-x-2">
-								<RadioGroup.Item value={group[ID]} id={group[ID]} />
-								<Label for={group[ID]}>{group.name}</Label>
+								<RadioGroup.Item value={group.id} id={group.id} />
+								<Label for={group.id}>{group.name}</Label>
 							</div>
 						{/each}
 					</RadioGroup.Root>

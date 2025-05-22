@@ -18,7 +18,7 @@
 	const site_id = $derived(page.params.site)
 	const site = $derived(Sites.one(site_id))
 	const entry = $derived(get_direct_entries(entity_id, field)[0])
-	const selectable_pages = $derived(Object.values($site?.data.entities.pages ?? {}).filter((p) => p?.page_type[ID] === field.page_type[ID]))
+	const selectable_pages = $derived(Object.values($site?.data.entities.pages ?? {}).filter((p) => p?.page_type.id === field.page_type.id))
 
 	let selected = $state(urlMatchesPage(entry?.value.url))
 

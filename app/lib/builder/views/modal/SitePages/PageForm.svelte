@@ -7,7 +7,6 @@
 	import { Page } from '$lib/common/models/Page'
 	import { page } from '$app/state'
 	import { Sites } from '$lib/pocketbase/collections'
-	import { ID } from '$lib/common'
 
 	let { parent }: { parent?: Page } = $props()
 
@@ -42,7 +41,7 @@
 		fields: [],
 		children: [],
 		sections: []
-	} satisfies Resolved<typeof Page>)
+	} satisfies Page)
 </script>
 
 <form
@@ -59,8 +58,8 @@
 		<UI.Select
 			fullwidth={true}
 			label="Page Type"
-			value={new_page.page_type[ID]}
-			options={$site.data.page_types.map((p) => ({ value: p[ID], icon: p.icon, label: p.name }))}
+			value={new_page.page_type.id}
+			options={$site.data.page_types.map((p) => ({ value: p.id, icon: p.icon, label: p.name }))}
 			on:input={({ detail: page_type_id }) => (new_page.page_type = $site.data.entities.page_types[page_type_id])}
 		/>
 	{/if}

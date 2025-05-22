@@ -4,7 +4,6 @@
 	import PageForm from './PageTypeForm.svelte'
 	import MenuPopup from '$lib/builder/ui/Dropdown.svelte'
 	import type { PageType } from '$lib/common/models/PageType'
-	import { ID } from '$lib/common/constants'
 	import { Sites } from '$lib/pocketbase/collections'
 	import { page } from '$app/state'
 	import { goto } from '$app/navigation'
@@ -22,7 +21,7 @@
 		new_page_url = validate_url(new_page_url)
 	})
 
-	const full_url = $derived(`/${site_id}/page-type--${page_type[ID]}`)
+	const full_url = $derived(`/${site_id}/page-type--${page_type.id}`)
 </script>
 
 {#if editing_page}
@@ -67,7 +66,7 @@
 											const confirm = window.confirm(`This will delete ALL pages of this page type. Continue?`)
 											if (confirm) {
 												if (!$site) return
-												delete $site.data.entities.page_types[page_type[ID]]
+												delete $site.data.entities.page_types[page_type.id]
 											}
 										}
 									}
@@ -89,7 +88,7 @@
 				creating_page = false
 				$site.data.page_types.push(page)
 				const [created_page_type] = $site.data.page_types.slice(-1)
-				goto(`/${$site.id}/page-type--${created_page_type[ID]}`)
+				goto(`/${$site.id}/page-type--${created_page_type.id}`)
 			}}
 		/>
 	</div>

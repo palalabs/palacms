@@ -18,7 +18,6 @@
 	import { Cuboid, SquarePen } from 'lucide-svelte'
 	import { page } from '$app/state'
 	import { Sites } from '$lib/pocketbase/collections'
-	import { ID } from '$lib/common/constants'
 	import { site_html } from '$lib/builder/stores/app/page.js'
 
 	const UPDATE_COUNTER = Symbol('UPDATE_COUNTER')
@@ -26,7 +25,7 @@
 	const site_id = $derived(page.params.site)
 	const page_type_id = $derived(page.params.page_type)
 	const site = $derived(Sites.one(site_id))
-	const page_type = $derived($site?.data.page_types.find((page_type) => page_type[ID] === page_type_id))
+	const page_type = $derived($site?.data.page_types.find((page_type) => page_type.id === page_type_id))
 
 	// get the query param to set the tab when navigating from page (i.e. 'Edit Fields')
 	let active_tab = $state(page.url.searchParams.get('t') === 'p' ? 'CONTENT' : 'BLOCKS')
@@ -107,12 +106,12 @@
 				const closestEdgeOfTarget = extractClosestEdge(self.data)
 				const block_dragged_over = self.data.block
 				const block_being_dragged = source.data.block
-				const block_dragged_over_index = data.symbols.findIndex((symbol) => symbol[ID] === block_dragged_over[ID])
+				const block_dragged_over_index = data.symbols.findIndex((symbol) => symbol.id === block_dragged_over.id)
 				const target_index = closestEdgeOfTarget === 'top' ? block_dragged_over_index : block_dragged_over_index + 1
 				data.symbols = [
-					...data.symbols.slice(0, target_index).filter((symbol) => symbol[ID] !== block_being_dragged[ID]),
+					...data.symbols.slice(0, target_index).filter((symbol) => symbol.id !== block_being_dragged.id),
 					block_being_dragged,
-					...data.symbols.slice(target_index).filter((symbol) => symbol[ID] !== block_being_dragged[ID])
+					...data.symbols.slice(target_index).filter((symbol) => symbol.id !== block_being_dragged.id)
 				]
 			}
 		})
@@ -134,7 +133,7 @@
 					label: 'Save',
 					onclick: (updated_data) => {
 						// grabbing this again here since there seems to be an issue w/ Object.assign when active_block is in a rune
-						const active_block = $site?.data.symbols.find((s) => s[ID] === active_block_id)
+						const active_block = $site?.data.symbols.find((s) => s.id === active_block_id)
 						Object.assign(active_block, updated_data)
 						// Force rerender for the sidebar preview
 						active_block[UPDATE_COUNTER] = (active_block[UPDATE_COUNTER] ?? 0) + 1
@@ -217,8 +216,8 @@
 				</div>
 				{#if $site_html !== null}
 					<div class="block-list">
-						{#each $site?.data.symbols ?? [] as symbol (symbol[ID] + symbol[UPDATE_COUNTER])}
-							{@const toggled = page_type?.symbols.some((active) => active[ID] == symbol[ID])}
+						{#each $site?.data.symbols ?? [] as symbol (symbol.id + symbol[UPDATE_COUNTER])}
+							{@const toggled = page_type?.symbols.some((active) => active.id == symbol.id)}
 							<div class="block" animate:flip={{ duration: 200 }} use:drag_target={symbol}>
 								<Sidebar_Symbol
 									{symbol}
@@ -229,12 +228,12 @@
 									on:toggle={({ detail }) => {
 										if (!page_type || detail === toggled) return // dispatches on creation for some reason
 										if (toggled) {
-											page_type.symbols = page_type.symbols.filter((active) => active[ID] !== symbol[ID])
+											page_type.symbols = page_type.symbols.filter((active) => active.id !== symbol.id)
 										} else {
 											page_type.symbols.push(symbol)
 										}
 									}}
-									on:edit={() => edit_block(symbol, symbol[ID])}
+									on:edit={() => edit_block(symbol, symbol.id)}
 								/>
 							</div>
 						{/each}

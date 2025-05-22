@@ -8,7 +8,6 @@
 	import MenuPopup from '$lib/builder/ui/Dropdown.svelte'
 	import type { Page } from '$lib/common/models/Page'
 	import { page as pageState } from '$app/state'
-	import { ID } from '$lib/common/constants'
 	import { Sites } from '$lib/pocketbase/collections'
 
 	let editing_page = $state(false)
@@ -23,11 +22,11 @@
 	let showing_children = $state(false)
 	let has_children = $derived(page.children.length > 0 && page.slug !== '')
 
-	get(`page-list-toggle--${page[ID]}`).then((toggled) => {
+	get(`page-list-toggle--${page.id}`).then((toggled) => {
 		if (toggled !== undefined) showing_children = toggled
 	})
 	$effect(() => {
-		set(`page-list-toggle--${page[ID]}`, showing_children)
+		set(`page-list-toggle--${page.id}`, showing_children)
 	})
 
 	let creating_page = $state(false)
@@ -166,7 +165,7 @@
 									icon: 'ic:outline-delete',
 									on_click: () => {
 										if (!$site) return
-										delete $site.data.entities.pages[page[ID]]
+										delete $site.data.entities.pages[page.id]
 									}
 								}
 							]

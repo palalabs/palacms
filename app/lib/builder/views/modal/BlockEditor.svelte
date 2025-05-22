@@ -15,9 +15,6 @@
 	import hotkey_events from '$lib/builder/stores/app/hotkey_events.js'
 	import { get_content } from '$lib/builder/stores/helpers'
 	import { Symbol } from '$lib/common/models/Symbol'
-	import { ID } from '$lib/common/constants'
-	import { type Resolved } from '$lib/common/json'
-	import { Id, newId } from '$lib/common/models/Id'
 
 	let {
 		block: existing_block,
@@ -33,9 +30,9 @@
 				}
 			}
 		}
-	}: { block?: Resolved<typeof Symbol>; tab?: string; header?: any } = $props()
+	}: { block?: Symbol; tab?: string; header?: any } = $props()
 
-	let block = $state({} as Resolved<typeof Symbol>)
+	let block = $state({} as Symbol)
 	$effect.pre(() => {
 		if (existing_block) {
 			block = existing_block
@@ -48,7 +45,7 @@
 
 	let loading = false
 
-	let component_data = $derived(get_content(block[ID], block.fields)[$locale])
+	let component_data = $derived(get_content(block.id, block.fields)[$locale])
 
 	hotkey_events.on('e', toggle_tab)
 
@@ -95,7 +92,7 @@
 			{#if tab === 'code'}
 				<FullCodeEditor bind:html={block.code.html} bind:css={block.code.css} bind:js={block.code.js} data={component_data} on:save={save_component} on:mod-e={toggle_tab} />
 			{:else if tab === 'content'}
-				<Fields id={block[ID]} entity_id={block[ID]} fields={block.fields} />
+				<Fields id={block.id} entity_id={block.id} fields={block.fields} />
 			{/if}
 		</Pane>
 		<PaneResizer class="PaneResizer" />

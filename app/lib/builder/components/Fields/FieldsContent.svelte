@@ -7,20 +7,18 @@
 	import Card from '../../ui/Card.svelte'
 	import { get } from 'idb-keyval'
 	import { mod_key_held } from '../../stores/app/misc.js'
-	import type { Resolved } from '$lib/common/json'
 	import type { Field } from '$lib/common/models/Field'
-	import { Id } from '$lib/common/models/Id'
-	import { ID } from '$lib/common/constants'
-	import { get_content, get_direct_entries, get_resolved_entries } from '$lib/builder/stores/helpers'
 
-	let { id, entity_id, fields }: { id: string; entity_id: Id; fields: Resolved<typeof Field>[] } = $props()
+	import { get_direct_entries, get_resolved_entries } from '$lib/builder/stores/helpers'
+
+	let { id, entity_id, fields }: { id: string; entity_id: string; fields: Field[] } = $props()
 
 	function create_field() {
 		// TODO: Implement
 		throw new Error('Not implemented')
 	}
 
-	function get_component(field: Resolved<typeof Field>) {
+	function get_component(field: Field) {
 		const fieldType = $fieldTypes.find((ft) => ft.id === field.type)
 		if (fieldType) {
 			return fieldType.component
@@ -30,7 +28,7 @@
 		}
 	}
 
-	function check_condition(field: Resolved<typeof Field>) {
+	function check_condition(field: Field) {
 		if (!field.condition) return true // has no condition
 
 		const { field: field_to_check, value, comparison } = field.condition
@@ -43,7 +41,7 @@
 			return true
 		} else if (comparison === '=' && value === content_entry.value) {
 			return true
-		} else if (comparison === '!=' && value !== compacontent_entry.valuerable_value) {
+		} else if (comparison === '!=' && value !== content_entry.valuerable_value) {
 			return true
 		} else if (typeof value === 'string' && is_regex(value)) {
 			const regex = new RegExp(value.slice(1, -1))
@@ -80,10 +78,10 @@
 </script>
 
 <div class="Fields">
-	{#each fields as field (field[ID])}
+	{#each fields as field (field.id)}
 		{@const Field_Component = get_component(field)}
 		<!-- TODO: $userRole === 'DEV' -->
-		{@const active_tab = selected_tabs[field[ID]]}
+		{@const active_tab = selected_tabs[field.id]}
 		{@const is_visible = check_condition(field)}
 		<div class="entries-item">
 			<!-- TODO: hotkeys for tab switching  -->
@@ -98,7 +96,7 @@
 							if ($mod_key_held) {
 								set_all_tabs('field')
 							} else {
-								select_tab(field[ID], 'field')
+								select_tab(field.id, 'field')
 							}
 						}}
 					>
@@ -114,7 +112,7 @@
 							if ($mod_key_held) {
 								set_all_tabs('entry')
 							} else {
-								select_tab(field[ID], 'entry')
+								select_tab(field.id, 'entry')
 							}
 						}}
 					>
@@ -153,7 +151,7 @@
 									<Field_Component {entity_id} {field} />
 								</Card>
 							{:else}
-								<span>Field {field[ID]} is corrupted, should be deleted.</span>
+								<span>Field {field.id} is corrupted, should be deleted.</span>
 							{/if}
 						{:else}
 							{@const content_entry = get_direct_entries(entity_id, field)?.[0]}
@@ -164,7 +162,7 @@
 									<Field_Component {entity_id} {field} />
 								</Card>
 							{:else}
-								<span>Field {field[ID]} is corrupted, should be deleted.</span>
+								<span>Field {field.id} is corrupted, should be deleted.</span>
 							{/if}
 						{/if}
 						<!-- TODO: $userRole === 'DEV' -->

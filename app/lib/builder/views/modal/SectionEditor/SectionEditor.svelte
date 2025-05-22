@@ -13,10 +13,8 @@
 	import Fields from '../../../components/Fields/FieldsContent.svelte'
 	import { locale } from '../../../stores/app/misc.js'
 	import hotkey_events from '../../../stores/app/hotkey_events.js'
-	import type { Resolved } from '$lib/common/json'
 	import type { Section } from '$lib/common/models/Section'
 	import { get_content } from '$lib/builder/stores/helpers'
-	import { ID } from '$lib/common/constants'
 
 	let {
 		component,
@@ -32,13 +30,13 @@
 				}
 			}
 		}
-	}: { component: Resolved<typeof Section>; tab: string; header?: any } = $props()
+	}: { component: Section; tab: string; header?: any } = $props()
 
 	let loading = false
 
 	let component_data = $state({})
 	function update_component_data() {
-		component_data = get_content(component[ID], component.symbol.fields)[$locale]
+		component_data = get_content(component.id, component.symbol.fields)[$locale]
 	}
 	$effect.pre(() => {
 		update_component_data()
@@ -87,7 +85,7 @@
 					on:mod-r={() => $refresh_preview()}
 				/>
 			{:else if tab === 'content'}
-				<Fields id="section-{component[ID]}" entity_id={component[ID]} fields={component.symbol.fields} />
+				<Fields id="section-{component.id}" entity_id={component.id} fields={component.symbol.fields} />
 			{/if}
 		</Pane>
 		<PaneResizer class="PaneResizer" />

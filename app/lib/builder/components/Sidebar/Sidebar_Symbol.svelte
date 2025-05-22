@@ -9,10 +9,8 @@
 	import { locale } from '../../stores/app/misc'
 	import { draggable } from '../../libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
 	import IFrame from '../../components/IFrame.svelte'
-	import type { Resolved } from '$lib/common/json'
 	import type { Symbol } from '$lib/common/models/Symbol'
 	import { get_content } from '$lib/builder/stores/helpers'
-	import { ID } from '$lib/common/constants'
 	import { createEventDispatcher, onMount } from 'svelte'
 	import { block_html } from '$lib/builder/code_generators'
 
@@ -25,7 +23,7 @@
 		toggled = false,
 		head = '',
 		append = ''
-	}: { symbol: Resolved<typeof Symbol>; controls_enabled?: boolean; show_toggle?: boolean; toggled?: boolean; head?: string; append?: string } = $props()
+	}: { symbol: Symbol; controls_enabled?: boolean; show_toggle?: boolean; toggled?: boolean; head?: string; append?: string } = $props()
 
 	let name_el = $state()
 
@@ -54,7 +52,7 @@
 			css: symbol.code.css,
 			js: symbol.code.js
 		}
-		const data = get_content(symbol[ID], symbol.fields)[$locale] ?? {}
+		const data = get_content(symbol.id, symbol.fields)[$locale] ?? {}
 		block_html({
 			code,
 			data
@@ -165,7 +163,7 @@
 		{/if}
 	</header>
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div class="symbol-container" class:disabled={component_error} bind:this={element} data-test-id="symbol-{symbol[ID]}">
+	<div class="symbol-container" class:disabled={component_error} bind:this={element} data-test-id="symbol-{symbol.id}">
 		{#if component_error}
 			<div class="error">
 				<Icon icon="heroicons:no-symbol-16-solid" />

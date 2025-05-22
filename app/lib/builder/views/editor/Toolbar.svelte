@@ -15,7 +15,6 @@
 	import { active_users } from '$lib/builder/stores/app/misc'
 	import { page as pageState } from '$app/state'
 	import { Sites } from '$lib/pocketbase/collections'
-	import { ID } from '$lib/common/constants'
 
 	import SiteEditor from '$lib/builder/views/modal/SiteEditor/SiteEditor.svelte'
 	import SitePages from '$lib/builder/views/modal/SitePages/SitePages.svelte'
@@ -122,7 +121,7 @@
 				<span class="page">{page.name}</span>
 				<!-- $userRole === 'DEV' -->
 				{#if true}
-					<a class="page-type-badge" style="background-color: {page.page_type.color};" href="/{$site?.id}/page-type--{page.page_type[ID]}">
+					<a class="page-type-badge" style="background-color: {page.page_type.color};" href="/{$site?.id}/page-type--{page.page_type.id}">
 						<Icon icon={page.page_type.icon} />
 					</a>
 				{:else}

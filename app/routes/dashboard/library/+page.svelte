@@ -22,7 +22,6 @@
 	import { require_library } from '$lib/loaders'
 	import type { Id } from '$lib/common/models/Id'
 	import type { LibraryEntityReference } from '$lib/common/models/LibraryEntityReference'
-	import { ID } from '$lib/common'
 
 	const library = require_library()
 	const active_symbol_group_id = $derived(page.url.searchParams.get('group') as Id)
@@ -317,7 +316,7 @@
 	{#if active_symbol_group?.symbols.length}
 		<div class="masonry">
 			<ul>
-				{#each active_symbol_group.symbols as symbol (symbol[ID])}
+				{#each active_symbol_group.symbols as symbol (symbol.id)}
 					<li>
 						<SymbolButton {symbol} head={generated_head_code + design_variables_css}>
 							<DropdownMenu.Root>

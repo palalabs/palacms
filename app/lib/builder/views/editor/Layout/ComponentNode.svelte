@@ -31,21 +31,19 @@
 	import { site_html } from '$lib/builder/stores/app/page'
 	import MarkdownButton from './MarkdownButton.svelte'
 	import { component_iframe_srcdoc } from '$lib/builder/components/misc'
-	import type { Resolved } from '$lib/common/json'
 	import type { Symbol } from '$lib/common/models/Symbol'
 	import type { Section } from '$lib/common/models/Section'
 	import { get_content } from '$lib/builder/stores/helpers'
-	import { ID } from '$lib/common'
 
 	const lowlight = createLowlight(all)
 
 	const dispatch = createEventDispatcher()
 
-	let { block, section }: { block: Resolved<typeof Symbol>; section: Resolved<typeof Section> } = $props()
+	let { block, section }: { block: Symbol; section: Section } = $props()
 
 	let node = $state()
 
-	let component_data = $derived(get_content(section[ID], section.symbol.fields)[$locale] ?? {})
+	let component_data = $derived(get_content(section.id, section.symbol.fields)[$locale] ?? {})
 
 	let floating_menu = $state()
 	let bubble_menu = $state()

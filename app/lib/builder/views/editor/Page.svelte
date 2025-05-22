@@ -14,7 +14,6 @@
 	import { attachClosestEdge, extractClosestEdge } from '$lib/builder/libraries/pragmatic-drag-and-drop-hitbox/closest-edge.js'
 	import { beforeNavigate } from '$app/navigation'
 	import type { Page } from '$lib/common/models/Page'
-	import { ID } from '$lib/common'
 	import { page as pageState } from '$app/state'
 	import { Sites } from '$lib/pocketbase/collections'
 
@@ -307,8 +306,8 @@
 	let palette_sections = $derived(page.sections.filter((s) => s.palette))
 	let static_sections = $derived(page.sections.filter((s) => s.master?.symbol))
 
-	let hovered_section_id: Resolved<typeof Section> | null = $state(null)
-	let hovered_section = $derived(page?.sections.find((s) => s[ID] === hovered_section_id))
+	let hovered_section_id: string | null = $state(null)
+	let hovered_section = $derived(page?.sections.find((s) => s.id === hovered_section_id))
 	let editing_section = $state(false)
 </script>
 
@@ -400,19 +399,19 @@
 		{@const has_page_type_symbols = false}
 		{@const should_show_palette = has_page_type_symbols || palette_sections.length > 0}
 		{#if is_palette && should_show_palette}
-			<div data-section={section[ID]} data-type="palette" class:empty={palette_sections.length === 0}>
+			<div data-section={section.id} data-type="palette" class:empty={palette_sections.length === 0}>
 				{#if palette_sections.length > 0}
-					{#each palette_sections as section (section[ID])}
+					{#each palette_sections as section (section.id)}
 						{@const block = section.symbol}
-						{@const locked = $locked_blocks.find((b) => b.block_id === section[ID])}
+						{@const locked = $locked_blocks.find((b) => b.block_id === section.id)}
 						{@const in_current_tab = locked?.instance === instance_key}
 						<div
 							role="presentation"
-							data-section={section[ID]}
+							data-section={section.id}
 							data-symbol={block.id}
 							onmousemove={show_block_toolbar}
 							onmouseenter={async ({ target }) => {
-								hovered_section_id = section[ID]
+								hovered_section_id = section.id
 								// hovered_section = {
 								// 	...section,
 								// 	is_last: section.index === palette_sections.length - 1
@@ -460,7 +459,7 @@
 			</div>
 		{:else if !is_palette}
 			{@const block = section.symbol}
-			{@const locked = $locked_blocks.find((b) => b.block_id === section[ID])}
+			{@const locked = $locked_blocks.find((b) => b.block_id === section.id)}
 			{@const in_current_tab = locked?.instance === instance_key}
 			<div
 				role="presentation"
@@ -468,7 +467,7 @@
 				data-type="static"
 				onmousemove={show_block_toolbar}
 				onmouseenter={async ({ target }) => {
-					hovered_section_id = section[ID]
+					hovered_section_id = section.id
 					// hovered_section = {
 					// 	...section,
 					// 	is_last: section.index === top_level_sections.length - 1
@@ -498,7 +497,7 @@
 			<div class="empty-state" style="height: 100%">
 				<span>Add Blocks to the Page Type to make them available on this page.</span>
 				<br />
-				<a class="button" href="{site?.id}/page-type--{page.page_type[ID]}">Edit Page Type</a>
+				<a class="button" href="{site?.id}/page-type--{page.page_type.id}">Edit Page Type</a>
 			</div>
 		{/if}
 	{/each}

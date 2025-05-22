@@ -7,7 +7,6 @@
 	import IFrame from '../components/IFrame.svelte'
 	import type { Symbol } from '$lib/common/models/Symbol'
 	import { get_content } from '../stores/helpers'
-	import { ID } from '$lib/common/constants'
 	import { page } from '$app/state'
 	import { Sites } from '$lib/pocketbase/collections'
 
@@ -32,7 +31,7 @@
 	let componentCode = $state()
 	let component_error = $state()
 	async function compile_component_code(symbol: Symbol) {
-		const data = get_content(symbol[ID], symbol.fields)[$locale]
+		const data = get_content(symbol.id, symbol.fields)[$locale]
 		let res = await processCode({
 			component: {
 				...symbol.code,

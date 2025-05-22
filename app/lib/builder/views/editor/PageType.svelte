@@ -15,7 +15,6 @@
 	import { attachClosestEdge, extractClosestEdge } from '../../libraries/pragmatic-drag-and-drop-hitbox/closest-edge.js'
 	import { Sites } from '$lib/pocketbase/collections'
 	import { page } from '$app/state'
-	import { ID } from '$lib/common/constants'
 
 	const site_id = $derived(page.params.site)
 	const page_type_id = $derived(page.params.page_type)
@@ -37,7 +36,7 @@
 	}
 
 	let hovered_section_id: Section | null = $state(null)
-	let hovered_section = $derived(page_type?.sections.find((s) => s[ID] === hovered_section_id))
+	let hovered_section = $derived(page_type?.sections.find((s) => s.id === hovered_section_id))
 
 	let block_toolbar_element = $state()
 	let page_el = $state()
@@ -253,9 +252,9 @@
 					await show_drop_indicator()
 				}
 				position_drop_indicator()
-				if (dragging.id !== self.data.section[ID] || dragging.position !== extractClosestEdge(self.data)) {
+				if (dragging.id !== self.data.section.id || dragging.position !== extractClosestEdge(self.data)) {
 					dragging = {
-						id: self.data.section[ID],
+						id: self.data.section.id,
 						position: extractClosestEdge(self.data)
 					}
 				}
@@ -272,7 +271,7 @@
 				const closestEdgeOfTarget = extractClosestEdge(self.data)
 				const section_dragged_over = self.data.section
 				const block_being_dragged = source.data.block
-				const section_dragged_over_index = page_type.sections.findIndex((s) => s[ID] === section_dragged_over[ID])
+				const section_dragged_over_index = page_type.sections.findIndex((s) => s.id === section_dragged_over.id)
 				const target_index = closestEdgeOfTarget === 'top' ? section_dragged_over_index : section_dragged_over_index + 1
 				page_type.sections = [...page_type.sections.slice(0, target_index), { symbol: block_being_dragged }, ...page_type.sections.slice(target_index)]
 			}
@@ -333,10 +332,10 @@
 		<BlockToolbar
 			bind:node={block_toolbar_element}
 			id={hovered_section_id}
-			i={page_type?.sections.findIndex((s) => s[ID] === hovered_section_id)}
+			i={page_type?.sections.findIndex((s) => s.id === hovered_section_id)}
 			on:delete={async () => {
 				if (!page_type) return
-				page_type.sections = page_type.sections.filter((s) => s[ID] !== hovered_section_id)
+				page_type.sections = page_type.sections.filter((s) => s.id !== hovered_section_id)
 			}}
 			on:edit-code={() => edit_component('code')}
 			on:edit-content={() => edit_component('content')}
@@ -362,7 +361,7 @@
 
 <!-- Page Blocks -->
 <main id="#Page" data-test bind:this={page_el} class:fadein={page_mounted} lang={$locale} use:drag_fallback>
-	{#each page_type?.sections ?? [] as section (section[ID])}
+	{#each page_type?.sections ?? [] as section (section.id)}
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<!-- svelte-ignore a11y_mouse_events_have_key_events -->
 		{@const locked = undefined}
@@ -371,9 +370,9 @@
 		<div
 			role="region"
 			use:drag_item={section}
-			data-section={section[ID]}
-			data-symbol={section.symbol[ID]}
-			id="section-{section[ID]}"
+			data-section={section.id}
+			data-symbol={section.symbol.id}
+			id="section-{section.id}"
 			class:locked
 			onmousemove={() => {
 				if (!moving && !showing_block_toolbar) {
@@ -381,7 +380,7 @@
 				}
 			}}
 			onmouseenter={async ({ target }) => {
-				hovered_section_id = section[ID]
+				hovered_section_id = section.id
 				hovered_block_el = target
 				if (!moving) {
 					show_block_toolbar()
@@ -394,7 +393,7 @@
 			}}
 			in:fade={{ duration: 100 }}
 			animate:flip={{ duration: 100 }}
-			data-test-id="page-type-section-{section[ID]}"
+			data-test-id="page-type-section-{section.id}"
 			style="min-height: 3rem;overflow:hidden;position: relative;"
 		>
 			{#if locked && !in_current_tab}
@@ -403,7 +402,7 @@
 			<ComponentNode
 				{section}
 				block={section.symbol}
-				on:lock={() => lock_block(section[ID])}
+				on:lock={() => lock_block(section.id)}
 				on:unlock={() => unlock_block()}
 				on:mount={() => sections_mounted++}
 				on:resize={() => {

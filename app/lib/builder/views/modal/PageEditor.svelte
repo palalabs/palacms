@@ -7,7 +7,6 @@
 	import CodeEditor from '$lib/builder/components/CodeEditor/CodeMirror.svelte'
 	import { page } from '$app/state'
 	import { Sites } from '$lib/pocketbase/collections'
-	import { ID } from '$lib/common/constants'
 
 	const site_id = page.params.site
 	const page_type_id = page.params.page_type
@@ -36,7 +35,7 @@
 	<main class="SiteEditor">
 		<PaneGroup direction="horizontal" style="display: flex;">
 			<Pane defaultSize={50}>
-				<Fields id="page-type-{page_type[ID]}" entity_id={page_type[ID]} fields={page_type.fields} />
+				<Fields id="page-type-{page_type.id}" entity_id={page_type.id} fields={page_type.fields} />
 			</Pane>
 			<PaneResizer class="PaneResizer-primary">
 				<div class="icon primary">

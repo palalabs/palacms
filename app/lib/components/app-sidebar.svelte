@@ -14,7 +14,6 @@
 	import type { Component } from 'svelte'
 	import { require_library } from '$lib/loaders'
 	import { SiteGroups } from '$lib/pocketbase/collections'
-	import { ID } from '$lib/common'
 
 	const sidebar = useSidebar()
 	const library = require_library()
@@ -266,7 +265,7 @@
 			<Sidebar.Content class="p-2">
 				<Sidebar.Menu>
 					{#each sidebar_menu.symbol_groups as group}
-						{@const url = `/dashboard/library/blocks?group=${group[ID]}`}
+						{@const url = `/dashboard/library/blocks?group=${group.id}`}
 						<Sidebar.MenuItem>
 							<Sidebar.MenuButton isActive={$page.url.pathname + $page.url.search === url}>
 								{#snippet child({ props })}
