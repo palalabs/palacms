@@ -12,7 +12,7 @@
 	import { useSidebar } from '$lib/components/ui/sidebar/index.js'
 	import { pb, user } from '$lib/pocketbase/PocketBase'
 	import type { Component } from 'svelte'
-	import { require_library, require_site_groups } from '$lib/loaders'
+	import { require_library } from '$lib/loaders'
 	import { SiteGroups } from '$lib/pocketbase/collections'
 	import { ID } from '$lib/common'
 
@@ -47,7 +47,7 @@
 		const userId = user()?.id
 		if (!userId) return
 		await SiteGroups.create({ name: new_site_group_name, owner: userId, index: 0 })
-		require_site_groups.refresh()
+		// require_site_groups.refresh()
 		is_creating_site_group = false
 	}
 

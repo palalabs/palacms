@@ -4,13 +4,11 @@
 	import { fieldTypes } from '../stores/app'
 	import { is_regex } from '../utils'
 	import type { Field } from '$lib/common/models/Field'
-	import type { Resolved } from '$lib/common/json'
 	import { get_resolved_entries } from '../stores/helpers'
-	import type { Id } from '$lib/common/models/Id'
 
-	const { entity_id, fields }: { entity_id: Id; fields: Resolved<typeof Field>[] } = $props()
+	const { entity_id, fields }: { entity_id: string; fields: Field[] } = $props()
 
-	function check_condition(field: Resolved<typeof Field>) {
+	function check_condition(field: Field) {
 		if (!field.condition) return true // has no condition
 
 		const { field: field_to_compare, value, comparison } = field.condition

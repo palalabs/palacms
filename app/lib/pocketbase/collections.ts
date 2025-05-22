@@ -13,7 +13,7 @@ import { Symbol } from '$lib/common/models/Symbol'
 import { SymbolEntry } from '$lib/common/models/SymbolEntry'
 import { SymbolField } from '$lib/common/models/SymbolField'
 import { User } from '$lib/common/models/User'
-import { createCollectionMapping } from './CollectionMapping.svelte'
+import { createCollectionMapping } from './CollectionMapping'
 
 export const Users = createCollectionMapping('users', User, {
 	links: {

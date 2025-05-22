@@ -6,7 +6,8 @@
 	import { pb } from '$lib/pocketbase/PocketBase'
 	import { onMount } from 'svelte'
 	import { goto } from '$app/navigation'
-	import { require_library, require_marketplace_symbol_groups, require_site_groups } from '$lib/loaders'
+	import { SiteGroups } from '$lib/pocketbase/collections'
+	import { require_library, require_marketplace_symbol_groups } from '$lib/loaders'
 
 	onMount(async () => {
 		if (!pb.authStore.isValid) {
@@ -16,7 +17,7 @@
 
 	let { children } = $props()
 
-	const site_groups = require_site_groups()
+	const site_groups = $derived(SiteGroups.list())
 	const library = require_library()
 	const marketplace_symbol_groups = require_marketplace_symbol_groups()
 

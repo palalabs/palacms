@@ -10,21 +10,16 @@
 	import { convert_site_v3 } from '$lib/builder/new_converter'
 	import DesignFields from './Modals/DesignFields.svelte'
 	import * as code_generators from '$lib/builder/code_generators'
-	import { require_site_groups, require_site_list } from '$lib/loaders'
 	import { Site } from '$lib/common/models/Site'
-	import type { Resolved } from '$lib/common/json'
-	import { Sites } from '$lib/pocketbase/collections'
-	import { readable, type Readable } from 'svelte/store'
+	import { Sites, SiteGroups } from '$lib/pocketbase/collections'
 	import { page } from '$app/state'
 	import type { PageType } from '$lib/common/models/PageType'
-	import { Sites } from '$lib/pocketbase/collections'
 
 	let { onclose } = $props()
 
 	const site_group_id = $derived(page.url.searchParams.get('group'))
-	const starter_sites = require_site_list(null)
-	const site_groups = require_site_groups()
-	const active_site_group = $derived($site_groups?.find((group) => group.id === site_group_id))
+	const starter_sites = $derived(Sites.list())
+	const active_site_group = $derived(site_group_id && SiteGroups.one(site_group_id))
 
 	let site_name = $state(``)
 
@@ -88,7 +83,7 @@
 		}
 	}
 
-	const blank_site_home_page_type: Resolved<typeof PageType> = {
+	const blank_site_home_page_type: Omit<PageType, 'id'> = {
 		name: 'Home',
 		code: {
 			head: '',
@@ -101,7 +96,7 @@
 		symbols: []
 	}
 
-	const blank_site_data: Resolved<typeof Site>['data'] = {
+	const blank_site_data: Omit<Site, 'id'> = {
 		code: {
 			head: '',
 			foot: ''
@@ -145,7 +140,7 @@
 			data: $selected_starter?.data || blank_site_data,
 			index: 0
 		})
-		require_site_list.refresh()
+		// require_site_list.refresh()
 		onclose()
 	}
 </script>

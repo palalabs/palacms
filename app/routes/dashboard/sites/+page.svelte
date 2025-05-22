@@ -13,16 +13,15 @@
 	import { CirclePlus, Globe, Loader, ChevronDown, SquarePen, Trash2, EllipsisVertical, ArrowLeftRight, Download } from 'lucide-svelte'
 	import CreateSite from '$lib/components/CreateSite.svelte'
 	import { useSidebar } from '$lib/components/ui/sidebar'
-	import { require_site_groups, require_site_list } from '$lib/loaders'
 	import { page } from '$app/state'
 	import type { Site } from '$lib/common/models/Site'
 	import { Sites, SiteGroups } from '$lib/pocketbase/collections'
 	const sidebar = useSidebar()
 
-	const site_group_id = $derived(page.url.searchParams.get('group'))
-	const site_groups = require_site_groups()
-	const active_site_group = $derived($site_groups?.find((group) => group.id === site_group_id))
-	const sites = $derived(active_site_group && require_site_list(active_site_group.id))
+	const site_group_id = $derived(page.url.searchParams.get('group')!)
+	// const site_groups = $derived(SiteGroups.list())
+	const active_site_group = $derived(SiteGroups.one(site_group_id))
+	const sites = $derived(active_site_group?.sites())
 
 	let creating_site = $state(false)
 
@@ -37,7 +36,7 @@
 		e.preventDefault()
 		if (!active_site_group) return
 		await SiteGroups.update(active_site_group.id, { name: new_group_name })
-		require_site_groups.refresh()
+		// require_site_groups.refresh()
 		is_rename_group_open = false
 	}
 
@@ -47,7 +46,7 @@
 		deleting_group = true
 		if (!active_site_group) return
 		await SiteGroups.delete(active_site_group.id)
-		require_site_groups.refresh()
+		// require_site_groups.refresh()
 		deleting_group = false
 		is_delete_group_open = false
 	}
