@@ -13,12 +13,20 @@ import { SiteSymbol } from './SiteSymbol'
 import { SiteSymbolEntry } from './SiteSymbolEntry'
 import { SiteSymbolField } from './SiteSymbolField'
 import { User } from './User'
+import { LibrarySymbolEntry } from './LibrarySymbolEntry'
+import { LibrarySymbolField } from './LibrarySymbolField'
+import { LibrarySymbolGroup } from './LibrarySymbolGroup'
+import { LibrarySymbol } from './LibrarySymbol'
 
 /**
  * Model for each collection. Used in a PocketBase hook to validate records.
  */
 export const models = {
 	users: User,
+	library_symbol_entries: LibrarySymbolEntry,
+	library_symbol_fields: LibrarySymbolField,
+	library_symbol_groups: LibrarySymbolGroup,
+	library_symbols: LibrarySymbol,
 	page_section_entries: PageSectionEntry,
 	page_sections: PageSection,
 	page_type_section_entries: PageTypeSectionEntry,
