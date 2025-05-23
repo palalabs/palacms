@@ -1,3 +1,7 @@
+import { LibrarySymbol } from '$lib/common/models/LibrarySymbol'
+import { LibrarySymbolEntry } from '$lib/common/models/LibrarySymbolEntry'
+import { LibrarySymbolField } from '$lib/common/models/LibrarySymbolField'
+import { LibrarySymbolGroup } from '$lib/common/models/LibrarySymbolGroup'
 import { Page } from '$lib/common/models/Page'
 import { PageSection } from '$lib/common/models/PageSection'
 import { PageSectionEntry } from '$lib/common/models/PageSectionEntry'
@@ -21,6 +25,34 @@ export const Users = createCollectionMapping('users', User, {
 			return SiteGroups.list({ filter: `owner = "${this.id}"` })
 		}
 	}
+})
+
+export const LibrarySymbolGroups = createCollectionMapping('library_symbol_groups', LibrarySymbolGroup, {
+	links: {
+		symbols() {
+			return LibrarySymbols.list({ filter: `group = "${this.id}"` })
+		}
+	}
+})
+
+export const LibrarySymbols = createCollectionMapping('library_symbols', LibrarySymbol, {
+	links: {
+		symbol_fields() {
+			return LibrarySymbolFields.list({ filter: `symbol = "${this.id}"` })
+		}
+	}
+})
+
+export const LibrarySymbolFields = createCollectionMapping('library_symbol_fields', LibrarySymbolField, {
+	links: {
+		symbol_entries() {
+			return LibrarySymbolEntries.list({ filter: `field = "${this.id}"` })
+		}
+	}
+})
+
+export const LibrarySymbolEntries = createCollectionMapping('library_symbol_entries', LibrarySymbolEntry, {
+	links: {}
 })
 
 export const SiteGroups = createCollectionMapping('site_groups', SiteGroup, {
@@ -51,23 +83,23 @@ export const SiteEntries = createCollectionMapping('site_entries', SiteEntry, {
 	links: {}
 })
 
-export const Symbols = createCollectionMapping('symbols', SiteSymbol, {
+export const SiteSymbols = createCollectionMapping('site_symbols', SiteSymbol, {
 	links: {
 		symbol_fields() {
-			return SymbolFields.list({ filter: `symbol = "${this.id}"` })
+			return SiteSymbolFields.list({ filter: `symbol = "${this.id}"` })
 		}
 	}
 })
 
-export const SymbolFields = createCollectionMapping('symbol_fields', SiteSymbolField, {
+export const SiteSymbolFields = createCollectionMapping('site_symbol_fields', SiteSymbolField, {
 	links: {
 		symbol_entries() {
-			return SymbolEntries.list({ filter: `field = "${this.id}"` })
+			return SiteSymbolEntries.list({ filter: `field = "${this.id}"` })
 		}
 	}
 })
 
-export const SymbolEntries = createCollectionMapping('symbol_entries', SiteSymbolEntry, {
+export const SiteSymbolEntries = createCollectionMapping('site_symbol_entries', SiteSymbolEntry, {
 	links: {}
 })
 
