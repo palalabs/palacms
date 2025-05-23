@@ -3,7 +3,7 @@
 	import * as Sidebar from '$lib/components/ui/sidebar'
 	import Symbol from '../../components/Site_Symbol.svelte'
 	import { site_html } from '$lib/builder/stores/app/page'
-	import type { Symbol as SymbolModel } from '$lib/common/models/Symbol'
+	import type { SiteSymbol as SymbolModel } from '$lib/common/models/SiteSymbol'
 	import { require_library } from '$lib/loaders'
 	import type { SymbolGroup } from '$lib/common/models/Library'
 

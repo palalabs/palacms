@@ -7,12 +7,12 @@
 	import { find as _find } from 'lodash-es'
 	import { Button, buttonVariants } from '$lib/components/ui/button'
 	import * as RadioGroup from '$lib/components/ui/radio-group'
-	import { Symbol } from '$lib/common/models/Symbol'
+	import { SiteSymbol } from '$lib/common/models/SiteSymbol'
 	import { require_library } from '$lib/loaders'
 
 	/**
 	 * @typedef {Object} Props
-	 * @property {Symbol} symbol
+	 * @property {SiteSymbol} symbol
 	 * @property {string | null} [preview]
 	 * @property {string} [head]
 	 */

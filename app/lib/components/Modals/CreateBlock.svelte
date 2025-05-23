@@ -8,10 +8,10 @@
 	import * as Dialog from '$lib/components/ui/dialog'
 	import { static_iframe_srcdoc } from '$lib/builder/components/misc'
 	import { block_html } from '$lib/builder/code_generators.js'
-	import type { Symbol } from '$lib/common/models/Symbol'
+	import type { SiteSymbol } from '$lib/common/models/SiteSymbol'
 	import { get_content } from '$lib/builder/stores/helpers'
 
-	let { symbol = { name: '', code: { css: '', html: '', js: '' }, fields: [] }, head = '', append = '' }: { symbol: Symbol; head?: string; append?: string } = $props()
+	let { symbol = { name: '', code: { css: '', html: '', js: '' }, fields: [] }, head = '', append = '' }: { symbol: SiteSymbol; head?: string; append?: string } = $props()
 
 	let component_data = $derived(get_content(symbol.id, symbol.fields)['en'])
 

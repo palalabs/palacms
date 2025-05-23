@@ -9,7 +9,7 @@
 	import { locale } from '../../stores/app/misc'
 	import { draggable } from '../../libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
 	import IFrame from '../../components/IFrame.svelte'
-	import type { Symbol } from '$lib/common/models/Symbol'
+	import type { SiteSymbol } from '$lib/common/models/SiteSymbol'
 	import { get_content } from '$lib/builder/stores/helpers'
 	import { createEventDispatcher, onMount } from 'svelte'
 	import { block_html } from '$lib/builder/code_generators'
@@ -23,7 +23,7 @@
 		toggled = false,
 		head = '',
 		append = ''
-	}: { symbol: Symbol; controls_enabled?: boolean; show_toggle?: boolean; toggled?: boolean; head?: string; append?: string } = $props()
+	}: { symbol: SiteSymbol; controls_enabled?: boolean; show_toggle?: boolean; toggled?: boolean; head?: string; append?: string } = $props()
 
 	let name_el = $state()
 

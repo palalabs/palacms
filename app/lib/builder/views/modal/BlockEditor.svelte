@@ -14,7 +14,7 @@
 	import { locale } from '$lib/builder/stores/app/misc.js'
 	import hotkey_events from '$lib/builder/stores/app/hotkey_events.js'
 	import { get_content } from '$lib/builder/stores/helpers'
-	import { Symbol } from '$lib/common/models/Symbol'
+	import { SiteSymbol } from '$lib/common/models/SiteSymbol'
 
 	let {
 		block: existing_block,
@@ -30,9 +30,9 @@
 				}
 			}
 		}
-	}: { block?: Symbol; tab?: string; header?: any } = $props()
+	}: { block?: SiteSymbol; tab?: string; header?: any } = $props()
 
-	let block = $state({} as Symbol)
+	let block = $state({} as SiteSymbol)
 	$effect.pre(() => {
 		if (existing_block) {
 			block = existing_block

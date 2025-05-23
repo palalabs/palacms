@@ -2,8 +2,8 @@
 migrate(
 	(app) => {
 		const collection = new Collection({
-			createRule: '@request.auth.id = page_section.page.site.group.owner.id && symbol_field.symbol.id = page_section.symbol.id',
-			deleteRule: '@request.auth.id = page_section.page.site.group.owner.id && symbol_field.symbol.id = page_section.symbol.id',
+			createRule: '@request.auth.id = page_section.page.site.group.owner.id && site_symbol_field.site_symbol.id = page_section.site_symbol.id',
+			deleteRule: '@request.auth.id = page_section.page.site.group.owner.id && site_symbol_field.site_symbol.id = page_section.site_symbol.id',
 			fields: [
 				{
 					autogeneratePattern: '[a-z0-9]{15}',
@@ -53,7 +53,7 @@ migrate(
 					id: 'relation3727704862',
 					maxSelect: 1,
 					minSelect: 0,
-					name: 'symbol_field',
+					name: 'site_symbol_field',
 					presentable: false,
 					required: true,
 					system: false,
@@ -91,13 +91,13 @@ migrate(
 				}
 			],
 			id: 'pbc_2653269516',
-			indexes: ['CREATE UNIQUE INDEX `idx_AFuS36r6qS` ON `page_section_entries` (\n  `locale`,\n  `page_section`,\n  `symbol_field`\n)'],
-			listRule: '@request.auth.id = page_section.page.site.group.owner.id && symbol_field.symbol.id = page_section.symbol.id',
+			indexes: ['CREATE UNIQUE INDEX `idx_AFuS36r6qS` ON `page_section_entries` (\n  `locale`,\n  `page_section`,\n  `site_symbol_field`\n)'],
+			listRule: '@request.auth.id = page_section.page.site.group.owner.id && site_symbol_field.site_symbol.id = page_section.site_symbol.id',
 			name: 'page_section_entries',
 			system: false,
 			type: 'base',
-			updateRule: '@request.auth.id = page_section.page.site.group.owner.id && symbol_field.symbol.id = page_section.symbol.id',
-			viewRule: '@request.auth.id = page_section.page.site.group.owner.id && symbol_field.symbol.id = page_section.symbol.id'
+			updateRule: '@request.auth.id = page_section.page.site.group.owner.id && site_symbol_field.site_symbol.id = page_section.site_symbol.id',
+			viewRule: '@request.auth.id = page_section.page.site.group.owner.id && site_symbol_field.site_symbol.id = page_section.site_symbol.id'
 		})
 
 		return app.save(collection)

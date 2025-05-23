@@ -5,12 +5,12 @@
 	import { processCode } from '../utils'
 	import { locale } from '../stores/app/misc'
 	import IFrame from '../components/IFrame.svelte'
-	import type { Symbol } from '$lib/common/models/Symbol'
+	import type { SiteSymbol } from '$lib/common/models/SiteSymbol'
 	import { get_content } from '../stores/helpers'
 	import { page } from '$app/state'
 	import { Sites } from '$lib/pocketbase/collections'
 
-	let { symbol = $bindable(), checked = false, onclick }: { symbol: Symbol; checked?: boolean; onclick?: () => void } = $props()
+	let { symbol = $bindable(), checked = false, onclick }: { symbol: SiteSymbol; checked?: boolean; onclick?: () => void } = $props()
 
 	const site_id = page.params.site
 	const site = $derived(Sites.one(site_id))
@@ -30,7 +30,7 @@
 
 	let componentCode = $state()
 	let component_error = $state()
-	async function compile_component_code(symbol: Symbol) {
+	async function compile_component_code(symbol: SiteSymbol) {
 		const data = get_content(symbol.id, symbol.fields)[$locale]
 		let res = await processCode({
 			component: {

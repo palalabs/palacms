@@ -5,8 +5,7 @@ export const Symbol = z.object({
 	name: z.string().nonempty(),
 	js: z.string(),
 	css: z.string(),
-	html: z.string(),
-	site: z.string().nonempty()
+	html: z.string()
 })
 
 export type Symbol = z.infer<typeof Symbol>

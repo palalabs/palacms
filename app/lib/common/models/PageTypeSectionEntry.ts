@@ -5,7 +5,7 @@ export const PageTypeSectionEntry = z.object({
 	id: z.string().nonempty(),
 	locale: z.enum(locales),
 	page_type_section: z.string().nonempty(),
-	symbol_field: z.string().nonempty(),
+	site_symbol_field: z.string().nonempty(),
 	value: z.any()
 })
 

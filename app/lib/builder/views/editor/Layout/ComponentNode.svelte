@@ -31,7 +31,7 @@
 	import { site_html } from '$lib/builder/stores/app/page'
 	import MarkdownButton from './MarkdownButton.svelte'
 	import { component_iframe_srcdoc } from '$lib/builder/components/misc'
-	import type { Symbol } from '$lib/common/models/Symbol'
+	import type { SiteSymbol } from '$lib/common/models/SiteSymbol'
 	import type { Section } from '$lib/common/models/Section'
 	import { get_content } from '$lib/builder/stores/helpers'
 

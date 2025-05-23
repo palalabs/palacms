@@ -9,9 +9,9 @@ import { Site } from '$lib/common/models/Site'
 import { SiteEntry } from '$lib/common/models/SiteEntry'
 import { SiteField } from '$lib/common/models/SiteField'
 import { SiteGroup } from '$lib/common/models/SiteGroup'
-import { Symbol } from '$lib/common/models/Symbol'
-import { SymbolEntry } from '$lib/common/models/SymbolEntry'
-import { SymbolField } from '$lib/common/models/SymbolField'
+import { SiteSymbol } from '$lib/common/models/SiteSymbol'
+import { SiteSymbolEntry } from '$lib/common/models/SiteSymbolEntry'
+import { SiteSymbolField } from '$lib/common/models/SiteSymbolField'
 import { User } from '$lib/common/models/User'
 import { createCollectionMapping } from './CollectionMapping'
 
@@ -51,7 +51,7 @@ export const SiteEntries = createCollectionMapping('site_entries', SiteEntry, {
 	links: {}
 })
 
-export const Symbols = createCollectionMapping('symbols', Symbol, {
+export const Symbols = createCollectionMapping('symbols', SiteSymbol, {
 	links: {
 		symbol_fields() {
 			return SymbolFields.list({ filter: `symbol = "${this.id}"` })
@@ -59,7 +59,7 @@ export const Symbols = createCollectionMapping('symbols', Symbol, {
 	}
 })
 
-export const SymbolFields = createCollectionMapping('symbol_fields', SymbolField, {
+export const SymbolFields = createCollectionMapping('symbol_fields', SiteSymbolField, {
 	links: {
 		symbol_entries() {
 			return SymbolEntries.list({ filter: `symbol_field = "${this.id}"` })
@@ -67,7 +67,7 @@ export const SymbolFields = createCollectionMapping('symbol_fields', SymbolField
 	}
 })
 
-export const SymbolEntries = createCollectionMapping('symbol_entries', SymbolEntry, {
+export const SymbolEntries = createCollectionMapping('symbol_entries', SiteSymbolEntry, {
 	links: {}
 })
 

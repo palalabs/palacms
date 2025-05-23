@@ -2,8 +2,8 @@
 migrate(
 	(app) => {
 		const collection = new Collection({
-			createRule: '@request.auth.id = page_type.site.group.owner.id && symbol.site.id = page_type.site.id',
-			deleteRule: '@request.auth.id = page_type.site.group.owner.id && symbol.site.id = page_type.site.id',
+			createRule: '@request.auth.id = page_type.site.group.owner.id && site_symbol.site.id = page_type.site.id',
+			deleteRule: '@request.auth.id = page_type.site.group.owner.id && site_symbol.site.id = page_type.site.id',
 			fields: [
 				{
 					autogeneratePattern: '[a-z0-9]{15}',
@@ -39,7 +39,7 @@ migrate(
 					id: 'relation3972544249',
 					maxSelect: 1,
 					minSelect: 0,
-					name: 'symbol',
+					name: 'site_symbol',
 					presentable: false,
 					required: true,
 					system: false,
@@ -67,13 +67,13 @@ migrate(
 				}
 			],
 			id: 'pbc_3564279343',
-			indexes: ['CREATE UNIQUE INDEX `idx_6lGEJ55d9O` ON `page_type_symbols` (\n  `page_type`,\n  `symbol`\n)'],
-			listRule: '@request.auth.id = page_type.site.group.owner.id && symbol.site.id = page_type.site.id',
+			indexes: ['CREATE UNIQUE INDEX `idx_6lGEJ55d9O` ON `page_type_symbols` (\n  `page_type`,\n  `site_symbol`\n)'],
+			listRule: '@request.auth.id = page_type.site.group.owner.id && site_symbol.site.id = page_type.site.id',
 			name: 'page_type_symbols',
 			system: false,
 			type: 'base',
-			updateRule: '@request.auth.id = page_type.site.group.owner.id && symbol.site.id = page_type.site.id',
-			viewRule: '@request.auth.id = page_type.site.group.owner.id && symbol.site.id = page_type.site.id'
+			updateRule: '@request.auth.id = page_type.site.group.owner.id && site_symbol.site.id = page_type.site.id',
+			viewRule: '@request.auth.id = page_type.site.group.owner.id && site_symbol.site.id = page_type.site.id'
 		})
 
 		return app.save(collection)

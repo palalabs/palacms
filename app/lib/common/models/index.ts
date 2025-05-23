@@ -9,9 +9,9 @@ import { PageTypeSymbol } from './PageTypeSymbol'
 import { SiteEntry } from './SiteEntry'
 import { SiteField } from './SiteField'
 import { SiteGroup } from './SiteGroup'
-import { Symbol } from './Symbol'
-import { SymbolEntry } from './SymbolEntry'
-import { SymbolField } from './SymbolField'
+import { SiteSymbol } from './SiteSymbol'
+import { SiteSymbolEntry } from './SiteSymbolEntry'
+import { SiteSymbolField } from './SiteSymbolField'
 import { User } from './User'
 
 /**
@@ -30,7 +30,7 @@ export const models = {
 	site_fields: SiteField,
 	site_groups: SiteGroup,
 	sites: Site,
-	symbol_entries: SymbolEntry,
-	symbol_fields: SymbolField,
-	symbols: Symbol
+	site_symbol_entries: SiteSymbolEntry,
+	site_symbol_fields: SiteSymbolField,
+	site_symbols: SiteSymbol
 } satisfies Record<string, import('zod').ZodType>

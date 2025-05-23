@@ -110,9 +110,9 @@ migrate(
 				}
 			],
 			id: 'pbc_1322267247',
-			indexes: ['CREATE UNIQUE INDEX `idx_bP8ZfDMEWA` ON `symbols` (\n  `name`,\n  `site`\n)'],
+			indexes: ['CREATE UNIQUE INDEX `idx_bP8ZfDMEWA` ON `site_symbols` (\n  `name`,\n  `site`\n)'],
 			listRule: '@request.auth.id = site.group.owner.id',
-			name: 'symbols',
+			name: 'site_symbols',
 			system: false,
 			type: 'base',
 			updateRule: '@request.auth.id = site.group.owner.id',

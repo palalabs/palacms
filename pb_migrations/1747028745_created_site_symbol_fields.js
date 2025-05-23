@@ -2,8 +2,8 @@
 migrate(
 	(app) => {
 		const collection = new Collection({
-			createRule: '@request.auth.id = symbol_field.symbol.site.group.owner.id',
-			deleteRule: '@request.auth.id = symbol_field.symbol.site.group.owner.id',
+			createRule: '@request.auth.id = site_symbol.site.group.owner.id',
+			deleteRule: '@request.auth.id = site_symbol.site.group.owner.id',
 			fields: [
 				{
 					autogeneratePattern: '[a-z0-9]{15}',
@@ -22,10 +22,38 @@ migrate(
 				{
 					autogeneratePattern: '',
 					hidden: false,
-					id: 'text1098958488',
+					id: 'text2324736937',
 					max: 0,
 					min: 0,
-					name: 'locale',
+					name: 'key',
+					pattern: '',
+					presentable: false,
+					primaryKey: false,
+					required: true,
+					system: false,
+					type: 'text'
+				},
+				{
+					autogeneratePattern: '',
+					hidden: false,
+					id: 'text245846248',
+					max: 0,
+					min: 0,
+					name: 'label',
+					pattern: '',
+					presentable: true,
+					primaryKey: false,
+					required: true,
+					system: false,
+					type: 'text'
+				},
+				{
+					autogeneratePattern: '',
+					hidden: false,
+					id: 'text2363381545',
+					max: 0,
+					min: 0,
+					name: 'type',
 					pattern: '',
 					presentable: false,
 					primaryKey: false,
@@ -35,12 +63,12 @@ migrate(
 				},
 				{
 					cascadeDelete: true,
-					collectionId: 'pbc_149684058',
+					collectionId: 'pbc_1322267247',
 					hidden: false,
-					id: 'relation1542800728',
+					id: 'relation3972544249',
 					maxSelect: 1,
 					minSelect: 0,
-					name: 'symbol_field',
+					name: 'site_symbol',
 					presentable: false,
 					required: true,
 					system: false,
@@ -48,9 +76,9 @@ migrate(
 				},
 				{
 					hidden: false,
-					id: 'json494360628',
+					id: 'json3565825916',
 					maxSize: 0,
-					name: 'value',
+					name: 'config',
 					presentable: false,
 					required: false,
 					system: false,
@@ -77,20 +105,20 @@ migrate(
 					type: 'autodate'
 				}
 			],
-			id: 'pbc_1163071009',
-			indexes: ['CREATE INDEX `idx_XKqGoolCRa` ON `symbol_entries` (\n  `locale`,\n  `symbol_field`\n)'],
-			listRule: '@request.auth.id = symbol_field.symbol.site.group.owner.id',
-			name: 'symbol_entries',
+			id: 'pbc_149684058',
+			indexes: ['CREATE UNIQUE INDEX `idx_FAyFVAS8Jh` ON `site_symbol_fields` (\n  `key`,\n  `site_symbol`\n)'],
+			listRule: '@request.auth.id = site_symbol.site.group.owner.id',
+			name: 'site_symbol_fields',
 			system: false,
 			type: 'base',
-			updateRule: '@request.auth.id = symbol_field.symbol.site.group.owner.id',
-			viewRule: '@request.auth.id = symbol_field.symbol.site.group.owner.id'
+			updateRule: '@request.auth.id = site_symbol.site.group.owner.id',
+			viewRule: '@request.auth.id = site_symbol.site.group.owner.id'
 		})
 
 		return app.save(collection)
 	},
 	(app) => {
-		const collection = app.findCollectionByNameOrId('pbc_1163071009')
+		const collection = app.findCollectionByNameOrId('pbc_149684058')
 
 		return app.delete(collection)
 	}
