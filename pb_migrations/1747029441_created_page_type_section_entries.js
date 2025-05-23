@@ -2,8 +2,8 @@
 migrate(
 	(app) => {
 		const collection = new Collection({
-			createRule: '@request.auth.id = page_type_section.page_type.site.group.owner.id && site_symbol_field.site_symbol.id = page_type_section.site_symbol.id',
-			deleteRule: '@request.auth.id = page_type_section.page_type.site.group.owner.id && site_symbol_field.site_symbol.id = page_type_section.site_symbol.id',
+			createRule: '@request.auth.id = section.page_type.site.group.owner.id && field.symbol.id = section.symbol.id',
+			deleteRule: '@request.auth.id = section.page_type.site.group.owner.id && field.symbol.id = section.symbol.id',
 			fields: [
 				{
 					autogeneratePattern: '[a-z0-9]{15}',
@@ -40,7 +40,7 @@ migrate(
 					id: 'relation3142498644',
 					maxSelect: 1,
 					minSelect: 0,
-					name: 'page_type_section',
+					name: 'section',
 					presentable: false,
 					required: true,
 					system: false,
@@ -53,7 +53,7 @@ migrate(
 					id: 'relation3727704862',
 					maxSelect: 1,
 					minSelect: 0,
-					name: 'site_symbol_field',
+					name: 'field',
 					presentable: false,
 					required: true,
 					system: false,
@@ -91,13 +91,13 @@ migrate(
 				}
 			],
 			id: 'pbc_3303549340',
-			indexes: ['CREATE UNIQUE INDEX `idx_iN1Hji8J4T` ON `page_type_section_entries` (\n  `page_type_section`,\n  `locale`,\n  `site_symbol_field`\n)'],
-			listRule: '@request.auth.id = page_type_section.page_type.site.group.owner.id && site_symbol_field.site_symbol.id = page_type_section.site_symbol.id',
+			indexes: ['CREATE UNIQUE INDEX `idx_iN1Hji8J4T` ON `page_type_section_entries` (\n  `section`,\n  `locale`,\n  `field`\n)'],
+			listRule: '@request.auth.id = section.page_type.site.group.owner.id && field.symbol.id = section.symbol.id',
 			name: 'page_type_section_entries',
 			system: false,
 			type: 'base',
-			updateRule: '@request.auth.id = page_type_section.page_type.site.group.owner.id && site_symbol_field.site_symbol.id = page_type_section.site_symbol.id',
-			viewRule: '@request.auth.id = page_type_section.page_type.site.group.owner.id && site_symbol_field.site_symbol.id = page_type_section.site_symbol.id'
+			updateRule: '@request.auth.id = section.page_type.site.group.owner.id && field.symbol.id = section.symbol.id',
+			viewRule: '@request.auth.id = section.page_type.site.group.owner.id && field.symbol.id = section.symbol.id'
 		})
 
 		return app.save(collection)

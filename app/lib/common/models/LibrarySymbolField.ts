@@ -3,7 +3,7 @@ import { Field } from './Field'
 
 export const LibrarySymbolField = Field.and(
 	z.object({
-		library_symbol: z.string().nonempty()
+		symbol: z.string().nonempty()
 	})
 )
 

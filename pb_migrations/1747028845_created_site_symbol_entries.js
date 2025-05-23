@@ -2,8 +2,8 @@
 migrate(
 	(app) => {
 		const collection = new Collection({
-			createRule: '@request.auth.id = site_symbol_field.site_symbol.site.group.owner.id',
-			deleteRule: '@request.auth.id = site_symbol_field.site_symbol.site.group.owner.id',
+			createRule: '@request.auth.id = field.symbol.site.group.owner.id',
+			deleteRule: '@request.auth.id = field.symbol.site.group.owner.id',
 			fields: [
 				{
 					autogeneratePattern: '[a-z0-9]{15}',
@@ -40,7 +40,7 @@ migrate(
 					id: 'relation1542800728',
 					maxSelect: 1,
 					minSelect: 0,
-					name: 'site_symbol_field',
+					name: 'field',
 					presentable: false,
 					required: true,
 					system: false,
@@ -78,13 +78,13 @@ migrate(
 				}
 			],
 			id: 'pbc_1163071009',
-			indexes: ['CREATE INDEX `idx_XKqGoolCRa` ON `site_symbol_entries` (\n  `locale`,\n  `site_symbol_field`\n)'],
-			listRule: '@request.auth.id = site_symbol_field.site_symbol.site.group.owner.id',
+			indexes: ['CREATE INDEX `idx_XKqGoolCRa` ON `site_symbol_entries` (\n  `locale`,\n  `field`\n)'],
+			listRule: '@request.auth.id = field.symbol.site.group.owner.id',
 			name: 'site_symbol_entries',
 			system: false,
 			type: 'base',
-			updateRule: '@request.auth.id = site_symbol_field.site_symbol.site.group.owner.id',
-			viewRule: '@request.auth.id = site_symbol_field.site_symbol.site.group.owner.id'
+			updateRule: '@request.auth.id = field.symbol.site.group.owner.id',
+			viewRule: '@request.auth.id = field.symbol.site.group.owner.id'
 		})
 
 		return app.save(collection)

@@ -42,7 +42,7 @@ export const Sites = createCollectionMapping('sites', Site, {
 export const SiteFields = createCollectionMapping('site_fields', SiteField, {
 	links: {
 		site_entries() {
-			return SiteEntries.list({ filter: `site_field = "${this.id}"` })
+			return SiteEntries.list({ filter: `field = "${this.id}"` })
 		}
 	}
 })
@@ -62,7 +62,7 @@ export const Symbols = createCollectionMapping('symbols', SiteSymbol, {
 export const SymbolFields = createCollectionMapping('symbol_fields', SiteSymbolField, {
 	links: {
 		symbol_entries() {
-			return SymbolEntries.list({ filter: `symbol_field = "${this.id}"` })
+			return SymbolEntries.list({ filter: `field = "${this.id}"` })
 		}
 	}
 })
@@ -86,7 +86,7 @@ export const PageTypeSymbols = createCollectionMapping('page_type_symbols', Page
 export const PageTypeSections = createCollectionMapping('page_type_sections', PageTypeSection, {
 	links: {
 		page_type_section_entries() {
-			return PageTypeSectionEntries.list({ filter: `page_type_section = "${this.id}"` })
+			return PageTypeSectionEntries.list({ filter: `section = "${this.id}"` })
 		}
 	}
 })
@@ -106,7 +106,7 @@ export const Pages = createCollectionMapping('pages', Page, {
 export const PageSections = createCollectionMapping('page_sections', PageSection, {
 	links: {
 		page_section_entries() {
-			return PageSectionEntries.list({ filter: `page_section = "${this.id}"` })
+			return PageSectionEntries.list({ filter: `section = "${this.id}"` })
 		}
 	}
 })

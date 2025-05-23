@@ -2,8 +2,8 @@
 migrate(
 	(app) => {
 		const collection = new Collection({
-			createRule: '@request.auth.id = library_symbol_group.owner.id',
-			deleteRule: '@request.auth.id = library_symbol_group.owner.id',
+			createRule: '@request.auth.id = group.owner.id',
+			deleteRule: '@request.auth.id = group.owner.id',
 			fields: [
 				{
 					autogeneratePattern: '[a-z0-9]{15}',
@@ -82,7 +82,7 @@ migrate(
 					id: 'relation3563057531',
 					maxSelect: 1,
 					minSelect: 0,
-					name: 'library_symbol_group',
+					name: 'group',
 					presentable: false,
 					required: true,
 					system: false,
@@ -110,13 +110,13 @@ migrate(
 				}
 			],
 			id: 'pbc_3406698535',
-			indexes: ['CREATE UNIQUE INDEX `idx_GYqoayJsVW` ON `library_symbols` (\n  `name`,\n  `library_symbol_group`\n)'],
-			listRule: '@request.auth.id = library_symbol_group.owner.id',
+			indexes: ['CREATE UNIQUE INDEX `idx_GYqoayJsVW` ON `library_symbols` (\n  `name`,\n  `group`\n)'],
+			listRule: '@request.auth.id = group.owner.id',
 			name: 'library_symbols',
 			system: false,
 			type: 'base',
-			updateRule: '@request.auth.id = library_symbol_group.owner.id',
-			viewRule: '@request.auth.id = library_symbol_group.owner.id'
+			updateRule: '@request.auth.id = group.owner.id',
+			viewRule: '@request.auth.id = group.owner.id'
 		})
 
 		return app.save(collection)

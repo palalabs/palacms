@@ -3,7 +3,7 @@ import { Field } from './Field'
 
 export const SiteSymbolField = Field.and(
 	z.object({
-		site_symbol: z.string().nonempty()
+		symbol: z.string().nonempty()
 	})
 )
 
