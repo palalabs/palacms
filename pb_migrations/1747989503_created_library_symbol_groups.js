@@ -80,7 +80,7 @@ migrate(
 				}
 			],
 			id: 'pbc_3479997895',
-			indexes: [],
+			indexes: ['CREATE UNIQUE INDEX `idx_NbjcYI8OY4` ON `library_symbol_groups` (\n  `name`,\n  `owner`\n)'],
 			listRule: '@request.auth.id = owner.id',
 			name: 'library_symbol_groups',
 			system: false,

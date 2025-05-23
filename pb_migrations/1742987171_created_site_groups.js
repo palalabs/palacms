@@ -80,7 +80,7 @@ migrate(
 				}
 			],
 			id: 'pbc_1192439887',
-			indexes: [],
+			indexes: ['CREATE UNIQUE INDEX `idx_q2lOPpX7Th` ON `site_groups` (\n  `name`,\n  `owner`\n)'],
 			listRule: '@request.auth.id = owner.id',
 			name: 'site_groups',
 			system: false,
