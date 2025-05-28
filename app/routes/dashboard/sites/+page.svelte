@@ -19,7 +19,7 @@
 	const sidebar = useSidebar()
 
 	const site_group_id = $derived(page.url.searchParams.get('group')!)
-	// const site_groups = $derived(SiteGroups.list())
+	const site_groups = $derived(SiteGroups.list())
 	const active_site_group = $derived(SiteGroups.one(site_group_id))
 	const sites = $derived(active_site_group?.sites())
 
@@ -69,7 +69,7 @@
 	async function handle_rename() {
 		if (!current_site) return
 		await Sites.update(current_site.id, { name: new_site_name })
-		require_site_list.refresh()
+		// require_site_list.refresh()
 		is_rename_site_open = false
 	}
 
@@ -79,17 +79,17 @@
 		if (!current_site) return
 		deleting_site = true
 		await Sites.delete(current_site.id)
-		require_site_list.refresh()
+		// require_site_list.refresh()
 		is_delete_site_open = false
 		deleting_site = false
 	}
 
 	let is_move_site_open = $state(false)
-	let selected_group_id = $state($site_groups[0]?.id ?? '')
+	let selected_group_id = $state(site_groups[0]?.id ?? '')
 	async function move_site() {
 		if (!current_site) return
 		await Sites.update(current_site.id, { group: selected_group_id })
-		require_site_list.refresh()
+		// require_site_list.refresh()
 		is_move_site_open = false
 	}
 </script>
@@ -113,7 +113,7 @@
 					<SquarePen class="text-muted-foreground" />
 					<span>Rename</span>
 				</DropdownMenu.Item>
-				{#if $site_groups?.length}
+				{#if site_groups?.length}
 					<DropdownMenu.Item onclick={() => (is_delete_group_open = true)}>
 						<Trash2 class="text-muted-foreground" />
 						<span>Delete</span>
@@ -135,9 +135,9 @@
 	</div>
 </header>
 <div class="flex flex-1 flex-col gap-4 px-4 pb-4">
-	{#if $sites?.length}
+	{#if sites?.length}
 		<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-			{#each $sites as site}
+			{#each sites as site}
 				{@render SiteButton(site)}
 			{/each}
 		</div>
@@ -169,7 +169,7 @@
 						<SquarePen class="h-4 w-4" />
 						<span>Rename</span>
 					</DropdownMenu.Item>
-					{#if $site_groups.length > 1}
+					{#if site_groups.length > 1}
 						<DropdownMenu.Item
 							onclick={() => {
 								current_site = site
@@ -248,7 +248,7 @@
 				<p class="text-muted-foreground text-sm">Select a group for this site</p>
 			</div>
 			<RadioGroup.Root bind:value={selected_group_id}>
-				{#each $site_groups as group}
+				{#each site_groups as group}
 					<div class="flex items-center space-x-2">
 						<RadioGroup.Item value={group.id} id={group.id} />
 						<Label for={group.id}>{group.name}</Label>
