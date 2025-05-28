@@ -10,7 +10,8 @@
 	import * as Dialog from '$lib/components/ui/dialog'
 	import { Input } from '$lib/components/ui/input'
 	import * as AlertDialog from '$lib/components/ui/alert-dialog'
-	import { require_library } from '$lib/loaders'
+	import { LibrarySymbolGroups, LibrarySymbols } from '$lib/pocketbase/collections'
+	import { LibrarySymbol } from '$lib/common/models/LibrarySymbol'
 
 	/**
 	 * @typedef {Object} Props
@@ -22,8 +23,7 @@
 	/** @type {Props} */
 	let { symbol_id, preview = null, head = '' } = $props()
 
-	const library = require_library()
-	const symbol = $derived($library?.data.entities.symbols[symbol_id])
+	const symbol = $derived(LibrarySymbols.one(symbol_id))
 
 	if (!preview) {
 		get_preview()
@@ -46,13 +46,12 @@
 	}
 
 	async function save_symbol(data) {
-		if (!$library) return
 		preview = data.preview
-		$library.data.entities.symbols[symbol_id] = data
+		LibrarySymbols.update(symbol_id, data)
 		is_editor_open = false
 	}
 
-	const original_group_id = $derived(Object.entries($library?.data.entities.symbol_groups ?? {}).find(([, group]) => symbol && group.symbols.includes(symbol))?.[0])
+	const original_group_id = $derived(symbol?.group)
 	let selected_group_id = $state('')
 	$effect(() => {
 		selected_group_id = original_group_id ?? ''
@@ -60,17 +59,16 @@
 
 	let is_move_open = $state(false)
 	async function move_symbol() {
-		if (!$library || !symbol || !original_group_id) return
+		if (!symbol || !original_group_id) return
 		is_move_open = false
-		$library.data.entities.symbol_groups[selected_group_id].symbols.push(symbol)
-		$library.data.entities.symbol_groups[original_group_id].symbols.filter((s) => s === symbol)
+		LibrarySymbols.update(symbol_id, { group: selected_group_id })
 	}
 
 	let deleting = $state(false)
 	async function delete_library_symbol() {
-		if (!$library || !symbol_id) return
+		if (!symbol_id) return
 		is_delete_open = false
-		delete $library?.data.entities.symbols[symbol_id]
+		LibrarySymbols.delete(symbol_id)
 	}
 </script>
 

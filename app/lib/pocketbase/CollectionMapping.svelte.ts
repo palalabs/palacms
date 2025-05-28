@@ -8,6 +8,8 @@ export type ListOptions = {
 	filter?: string
 }
 
+export type ObjectOf<T> = T extends CollectionMapping<infer Object, infer Options> ? MappedObject<Object, Options> : never
+
 export type ObjectWithId = { id: string }
 
 export type CollectionMappingOptions<T extends ObjectWithId> = {

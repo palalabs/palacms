@@ -3,20 +3,19 @@
 	import * as Sidebar from '$lib/components/ui/sidebar'
 	import Symbol from '../../components/Site_Symbol.svelte'
 	import { site_html } from '$lib/builder/stores/app/page'
-	import type { SiteSymbol as SymbolModel } from '$lib/common/models/SiteSymbol'
-	import { require_library } from '$lib/loaders'
-	import type { SymbolGroup } from '$lib/common/models/Library'
+	import type { LibrarySymbol as SymbolModel } from '$lib/common/models/LibrarySymbol'
+	import { LibrarySymbolGroups } from '$lib/pocketbase/collections'
+	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
 
 	let { site, onsave } = $props()
 
-	const library = require_library()
-	let selected_symbol_group = $state<SymbolGroup | null>(null)
+	let selected_symbol_group = $state<ObjectOf<typeof LibrarySymbolGroups> | null>(null)
 	let columns = $derived(
 		selected_symbol_group
 			? [
-					selected_symbol_group.symbols.slice((selected_symbol_group.symbols.length / 3) * 2, (selected_symbol_group.symbols.length / 3) * 3),
-					selected_symbol_group.symbols.slice(selected_symbol_group.symbols.length / 3, (selected_symbol_group.symbols.length / 3) * 2),
-					selected_symbol_group.symbols.slice(0, selected_symbol_group.symbols.length / 3)
+					selected_symbol_group.symbols().slice((selected_symbol_group.symbols.length / 3) * 2, (selected_symbol_group.symbols.length / 3) * 3),
+					selected_symbol_group.symbols().slice(selected_symbol_group.symbols.length / 3, (selected_symbol_group.symbols.length / 3) * 2),
+					selected_symbol_group.symbols().slice(0, selected_symbol_group.symbols.length / 3)
 				]
 			: []
 	)
@@ -49,7 +48,7 @@
 	<Sidebar.Root collapsible="none">
 		<Sidebar.Content class="p-2">
 			<Sidebar.Menu>
-				{#each $library?.data.symbol_groups ?? [] as group}
+				{#each LibrarySymbolGroups.list() as group}
 					<Sidebar.MenuItem>
 						<Sidebar.MenuButton isActive={selected_symbol_group?.id === group.id}>
 							{#snippet child({ props })}

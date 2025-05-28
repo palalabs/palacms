@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { find as _find } from 'lodash-es'
 	import IFrame from '$lib/builder/components/IFrame.svelte'
-	import { require_library } from '$lib/loaders'
+	import { LibrarySymbols } from '$lib/pocketbase/collections'
 
 	/**
 	 * @typedef {Object} Props
@@ -15,8 +15,7 @@
 	/** @type {Props} */
 	let { symbol_id, preview = null, head = '', onclick, children } = $props()
 
-	const library = require_library()
-	const symbol = $derived($library?.data.entities.symbols[symbol_id])
+	const symbol = $derived(LibrarySymbols.one(symbol_id))
 
 	if (!preview) {
 		get_preview()

@@ -9,8 +9,9 @@
 	import { get_content } from '../stores/helpers'
 	import { page } from '$app/state'
 	import { Sites } from '$lib/pocketbase/collections'
+	import type { LibrarySymbol } from '$lib/common/models/LibrarySymbol'
 
-	let { symbol = $bindable(), checked = false, onclick }: { symbol: SiteSymbol; checked?: boolean; onclick?: () => void } = $props()
+	let { symbol = $bindable(), checked = false, onclick }: { symbol: SiteSymbol | LibrarySymbol; checked?: boolean; onclick?: () => void } = $props()
 
 	const site_id = page.params.site
 	const site = $derived(Sites.one(site_id))

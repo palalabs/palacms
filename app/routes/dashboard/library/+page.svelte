@@ -14,17 +14,16 @@
 	import { Separator } from '$lib/components/ui/separator'
 	import { Button } from '$lib/components/ui/button'
 	import EmptyState from '$lib/components/EmptyState.svelte'
-	import { CirclePlus, Cuboid, Palette, Code, Upload, SquarePen, Trash2, ChevronDown, Loader, EllipsisVertical, ArrowLeftRight } from 'lucide-svelte'
+	import { CirclePlus, Cuboid, Palette, Code, Upload, SquarePen, Trash2, ChevronDown, Loader, EllipsisVertical, ArrowLeftRight, Library } from 'lucide-svelte'
 	import SymbolButton from '$lib/components/SymbolButton.svelte'
 	import { page } from '$app/state'
 	import { goto } from '$app/navigation'
 	import { useSidebar } from '$lib/components/ui/sidebar'
-	import { require_library } from '$lib/loaders'
-	import type { LibraryEntityReference } from '$lib/common/models/LibraryEntityReference'
+	import { LibrarySymbolGroups, LibrarySymbols } from '$lib/pocketbase/collections'
+	import type { LibrarySymbol } from '$lib/common/models/LibrarySymbol'
 
-	const library = require_library()
 	const active_symbol_group_id = $derived(page.url.searchParams.get('group') as string)
-	const active_symbol_group = $derived(active_symbol_group_id && $library?.data.entities.symbol_groups[active_symbol_group_id])
+	const active_symbol_group = $derived(active_symbol_group_id ? LibrarySymbolGroups.one(active_symbol_group_id) : undefined)
 
 	const sidebar = useSidebar()
 
@@ -39,21 +38,13 @@
 		throw new Error('Not implemented')
 	}
 
-	let design_variables_css = $state($library && code_generators.site_design_css($library.data.design))
+	let design_variables_css = $state(undefined)
 	function update_design_value(token, value) {
-		if (!$library) return
-		$library.data.design[token] = value
-		design_variables_css = code_generators.site_design_css($library.data.design)
+		// TODO: Remove
 	}
 
+	// TODO: Remove?
 	let generated_head_code = $state('')
-
-	// Generate <head> tag code
-	$effect.pre(() => {
-		compile_component_head(`<svelte:head>${$library?.data.head}</svelte:head>`).then((generated) => {
-			generated_head_code = generated
-		})
-	})
 
 	async function compile_component_head(html) {
 		const compiled = await processCode({
@@ -87,8 +78,8 @@
 	async function handle_rename(e) {
 		e.preventDefault()
 		if (!active_symbol_group) return
-		active_symbol_group.name = new_name
-		require_library.refresh()
+		LibrarySymbolGroups.update(active_symbol_group_id, { name: new_name })
+		// require_library.refresh()
 		is_rename_open = false
 	}
 
@@ -98,24 +89,24 @@
 		deleting = true
 		await goto('/dashboard/library/starters')
 		if (!active_symbol_group) return
-		delete $library?.data.entities.symbol_groups[active_symbol_group_id]
-		require_library.refresh()
+		LibrarySymbolGroups.delete(active_symbol_group_id)
+		// require_library.refresh()
 		deleting = false
 	}
 
-	let symbol_being_edited: LibraryEntityReference<'symbols'> | null = $state(null)
+	let symbol_being_edited: LibrarySymbol | null = $state(null)
 	let is_symbol_editor_open = $state(false)
 
-	function begin_symbol_edit(symbol: LibraryEntityReference<'symbols'>) {
+	function begin_symbol_edit(symbol: LibrarySymbol) {
 		symbol_being_edited = symbol
 		is_symbol_editor_open = true
 	}
 
 	// Symbol rename
-	let symbol_being_renamed: LibraryEntityReference<'symbols'> | null = $state(null)
+	let symbol_being_renamed: LibrarySymbol | null = $state(null)
 	let is_symbol_renamer_open = $state(false)
 
-	function begin_symbol_rename(symbol: LibraryEntityReference<'symbols'>) {
+	function begin_symbol_rename(symbol: LibrarySymbol) {
 		symbol_being_renamed = symbol
 		new_name = symbol.name
 		is_symbol_renamer_open = true
@@ -130,46 +121,46 @@
 	}
 
 	// Symbol move
-	let symbol_being_moved: LibraryEntityReference<'symbols'> | null = $state(null)
+	let symbol_being_moved: LibrarySymbol | null = $state(null)
 	let is_symbol_move_open = $state(false)
 	let selected_group_id = $state('')
 
-	function begin_symbol_move(symbol: LibraryEntityReference<'symbols'>) {
+	function begin_symbol_move(symbol: LibrarySymbol) {
 		symbol_being_moved = symbol
-		const original_group_id = Object.entries($library?.data.entities.symbol_groups ?? {}).find(([, group]) => group.symbols.includes(symbol))?.[0]
+		const original_group_id = symbol.group
 		selected_group_id = original_group_id ?? ''
 		is_symbol_move_open = true
 	}
 
 	async function move_symbol() {
-		if (!$library || !symbol_being_moved) return
+		if (!symbol_being_moved) return
 		// Move implementation
 		is_symbol_move_open = false
 		symbol_being_moved = null
 	}
 
 	// Symbol delete
-	let symbol_being_deleted: LibraryEntityReference<'symbols'> | null = $state(null)
+	let symbol_being_deleted: LibrarySymbol | null = $state(null)
 	let is_delete_symbol_open = $state(false)
 
-	function begin_symbol_delete(symbol: LibraryEntityReference<'symbols'>) {
+	function begin_symbol_delete(symbol: LibrarySymbol) {
 		symbol_being_deleted = symbol
 		is_delete_symbol_open = true
 	}
 
 	async function delete_library_symbol() {
-		if (!$library || !symbol_being_deleted) return
+		if (!symbol_being_deleted) return
 		deleting = true
-		// Delete implementation
+		LibrarySymbols.delete(symbol_being_deleted.id)
 		is_delete_symbol_open = false
 		symbol_being_deleted = null
 		deleting = false
 	}
 
 	async function save_symbol(data) {
-		if (!$library) return
+		if (!symbol_being_edited) return
 		// preview = data.preview
-		// $library.data.entities.symbols[symbol_being_edited?.id] = data
+		LibrarySymbols.update(symbol_being_edited.id, data)
 		is_symbol_editor_open = false
 		symbol_being_edited = null
 	}
@@ -243,7 +234,7 @@
 		</DropdownMenu.Root>
 	</div>
 	<!-- !data.user.collaborator -->
-	{#if $library}
+	{#if false}
 		<div class="ml-auto mr-4 flex gap-2">
 			<Button size="sm" variant="ghost" onclick={() => (editing_head = true)} aria-label="Design">
 				<Code class="h-4 w-4" />
@@ -315,7 +306,7 @@
 	{#if active_symbol_group?.symbols.length}
 		<div class="masonry">
 			<ul>
-				{#each active_symbol_group.symbols as symbol (symbol.id)}
+				{#each active_symbol_group.symbols() as symbol (symbol.id)}
 					<li>
 						<SymbolButton {symbol} head={generated_head_code + design_variables_css}>
 							<DropdownMenu.Root>

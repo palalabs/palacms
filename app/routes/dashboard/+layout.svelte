@@ -6,8 +6,8 @@
 	import { pb } from '$lib/pocketbase/PocketBase'
 	import { onMount } from 'svelte'
 	import { goto } from '$app/navigation'
-	import { SiteGroups } from '$lib/pocketbase/collections'
-	import { require_library, require_marketplace_symbol_groups } from '$lib/loaders'
+	import { LibrarySymbolGroups, SiteGroups } from '$lib/pocketbase/collections'
+	import { require_marketplace_symbol_groups } from '$lib/loaders'
 
 	onMount(async () => {
 		if (!pb.authStore.isValid) {
@@ -18,7 +18,6 @@
 	let { children } = $props()
 
 	const site_groups = $derived(SiteGroups.list())
-	const library = require_library()
 	const marketplace_symbol_groups = require_marketplace_symbol_groups()
 
 	const sidebar_menu = $derived.by(() => {
@@ -28,12 +27,12 @@
 			'/dashboard/sites': {
 				title: 'Sites',
 				icon: Globe,
-				site_groups: $site_groups
+				site_groups: SiteGroups.list()
 			},
 			'/dashboard/library': {
 				title: 'Block Library',
 				icon: Library,
-				symbol_groups: $library?.data.symbol_groups ?? []
+				symbol_groups: LibrarySymbolGroups.list()
 			},
 			'/dashboard/marketplace': {
 				title: 'Marketplace',

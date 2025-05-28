@@ -11,8 +11,8 @@
 	import * as RadioGroup from '$lib/components/ui/radio-group'
 	import { Label } from '$lib/components/ui/label'
 	import { require_marketplace_symbols } from '$lib/loaders'
-	import { require_library } from '$lib/loaders'
 	import { page } from '$app/state'
+	import { LibrarySymbolGroups } from '$lib/pocketbase/collections'
 
 	const group_id = $derived(+(page.url.searchParams.get('group') ?? 0))
 	const marketplace_symbols = $derived(require_marketplace_symbols(group_id))
@@ -42,8 +42,7 @@
 		} else return ''
 	}
 
-	const library = require_library()
-	let selected_group_id = $state($library?.data.symbol_groups[0]?.id ?? '')
+	let selected_group_id = $state(LibrarySymbolGroups.list()[0]?.id ?? '')
 
 	let is_popover_open = $state(false)
 	let added_to_library = $state(false)

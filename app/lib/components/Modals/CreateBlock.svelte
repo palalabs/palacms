@@ -10,8 +10,9 @@
 	import { block_html } from '$lib/builder/code_generators.js'
 	import type { SiteSymbol } from '$lib/common/models/SiteSymbol'
 	import { get_content } from '$lib/builder/stores/helpers'
+	import type { LibrarySymbol } from '$lib/common/models/LibrarySymbol'
 
-	let { symbol = { name: '', code: { css: '', html: '', js: '' }, fields: [] }, head = '', append = '' }: { symbol: SiteSymbol; head?: string; append?: string } = $props()
+	let { symbol = { name: '', code: { css: '', html: '', js: '' }, fields: [] }, head = '', append = '' }: { symbol: SiteSymbol | LibrarySymbol; head?: string; append?: string } = $props()
 
 	let component_data = $derived(get_content(symbol.id, symbol.fields)['en'])
 

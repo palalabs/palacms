@@ -12,11 +12,9 @@
 	import { useSidebar } from '$lib/components/ui/sidebar/index.js'
 	import { pb, user } from '$lib/pocketbase/PocketBase'
 	import type { Component } from 'svelte'
-	import { require_library } from '$lib/loaders'
-	import { SiteGroups } from '$lib/pocketbase/collections'
+	import { LibrarySymbolGroups, SiteGroups } from '$lib/pocketbase/collections'
 
 	const sidebar = useSidebar()
-	const library = require_library()
 
 	interface MenuItem {
 		title: string
@@ -54,8 +52,9 @@
 	let new_symbol_group_name = $state('')
 	async function create_symbol_group(e) {
 		e.preventDefault()
-		if (!$library) return
-		$library.data.symbol_groups.push({ name: new_symbol_group_name, symbols: [] })
+		const userId = user()?.id
+		if (!$library || !userId) return
+		LibrarySymbolGroups.create({ name: new_symbol_group_name, owner: userId, index: 0 })
 		is_creating_symbol_group = false
 	}
 
