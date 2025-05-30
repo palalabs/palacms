@@ -20,7 +20,7 @@
 
 	const site_group_id = $derived(page.url.searchParams.get('group')!)
 	const site_groups = $derived(SiteGroups.list())
-	const active_site_group = $derived(SiteGroups.one(site_group_id))
+	const active_site_group = $derived(site_group_id ? SiteGroups.one(site_group_id) : undefined)
 	const sites = $derived(active_site_group?.sites())
 
 	let creating_site = $state(false)
