@@ -45,7 +45,7 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 		return Object.assign(object, links, { _instance: instance })
 	}
 
-	const collectionMapping = {
+	const collectionMapping: CollectionMapping<T, Options> = {
 		one: (id) => {
 			if (!objects.has(id)) {
 				collection.getOne(id).then((record) => {
