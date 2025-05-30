@@ -80,7 +80,6 @@
 		e.preventDefault()
 		if (!active_symbol_group) return
 		LibrarySymbolGroups.update(active_symbol_group_id, { name: new_name })
-		// require_library.refresh()
 		is_rename_open = false
 	}
 
@@ -91,7 +90,6 @@
 		await goto('/dashboard/library/starters')
 		if (!active_symbol_group) return
 		LibrarySymbolGroups.delete(active_symbol_group_id)
-		// require_library.refresh()
 		deleting = false
 	}
 

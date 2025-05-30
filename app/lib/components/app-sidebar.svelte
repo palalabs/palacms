@@ -44,7 +44,6 @@
 		const userId = user()?.id
 		if (!userId) return
 		await SiteGroups.create({ name: new_site_group_name, owner: userId, index: 0 })
-		// require_site_groups.refresh()
 		is_creating_site_group = false
 	}
 

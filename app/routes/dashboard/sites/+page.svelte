@@ -36,7 +36,6 @@
 		e.preventDefault()
 		if (!active_site_group) return
 		await SiteGroups.update(active_site_group.id, { name: new_group_name })
-		// require_site_groups.refresh()
 		is_rename_group_open = false
 	}
 
@@ -46,7 +45,6 @@
 		deleting_group = true
 		if (!active_site_group) return
 		await SiteGroups.delete(active_site_group.id)
-		// require_site_groups.refresh()
 		deleting_group = false
 		is_delete_group_open = false
 	}
@@ -69,7 +67,6 @@
 	async function handle_rename() {
 		if (!current_site) return
 		await Sites.update(current_site.id, { name: new_site_name })
-		// require_site_list.refresh()
 		is_rename_site_open = false
 	}
 
@@ -79,7 +76,6 @@
 		if (!current_site) return
 		deleting_site = true
 		await Sites.delete(current_site.id)
-		// require_site_list.refresh()
 		is_delete_site_open = false
 		deleting_site = false
 	}
@@ -89,7 +85,6 @@
 	async function move_site() {
 		if (!current_site) return
 		await Sites.update(current_site.id, { group: selected_group_id })
-		// require_site_list.refresh()
 		is_move_site_open = false
 	}
 </script>
