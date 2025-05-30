@@ -19,7 +19,7 @@
 			label="Page Type"
 			value={field.page_type}
 			fullwidth={true}
-			options={$site?.data.page_types.map((page_type) => ({
+			options={site?.page_types().map((page_type) => ({
 				label: page_type.name,
 				value: page_type,
 				icon: page_type.icon

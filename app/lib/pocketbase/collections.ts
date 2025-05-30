@@ -67,6 +67,9 @@ export const Sites = createCollectionMapping('sites', Site, {
 	links: {
 		site_fields() {
 			return SiteFields.from(this._instance).list({ filter: `site = "${this.id}"` })
+		},
+		page_types() {
+			return PageTypes.from(this._instance).list({ filter: `site = ${this.id}` })
 		}
 	}
 })

@@ -10,6 +10,7 @@
 	import { page } from '$app/state'
 	import { Sites } from '$lib/pocketbase/collections'
 	import type { LibrarySymbol } from '$lib/common/models/LibrarySymbol'
+	import type { Symbol } from '$lib/common/models/Symbol'
 
 	let { symbol = $bindable(), checked = false, onclick }: { symbol: SiteSymbol | LibrarySymbol; checked?: boolean; onclick?: () => void } = $props()
 
@@ -31,14 +32,14 @@
 
 	let componentCode = $state()
 	let component_error = $state()
-	async function compile_component_code(symbol: SiteSymbol) {
-		const data = get_content(symbol.id, symbol.fields)[$locale]
+	async function compile_component_code(symbol: Symbol) {
+		if (!site) return
+		const data = {} // TODO
 		let res = await processCode({
 			component: {
-				...symbol.code,
-				head: $site?.data.code.head,
-				css: symbol.code.css,
-				html: symbol.code.html,
+				head: site.head,
+				css: symbol.css,
+				html: symbol.html,
 				data: data
 			},
 			buildStatic: true,

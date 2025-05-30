@@ -11,7 +11,6 @@
 	import Page_Sidebar from './components/Sidebar/Page_Sidebar.svelte'
 	import PageType_Sidebar from './components/Sidebar/PageType_Sidebar.svelte'
 	import { PaneGroup, Pane, PaneResizer } from 'paneforge'
-	import { site_design_css } from '$lib/builder/code_generators.js'
 	import { site_html } from '$lib/builder/stores/app/page'
 	import { processCode } from '$lib/builder/utils.js'
 	import type { Site } from '$lib/common/models/Site'
@@ -120,11 +119,11 @@
 	// Generate <head> tag code
 	let previous
 	$effect.pre(() => {
-		if (!$site) return
-		if (_.isEqual(previous, { head: $site.data.code.head, design: $site.data.design })) return
-		compile_component_head(`<svelte:head>${site_design_css($site.data.design) + $site.data.code.head}</svelte:head>`).then((generated_code) => {
+		if (!site) return
+		if (_.isEqual(previous, { head: site.head })) return
+		compile_component_head(`<svelte:head>${site.head}</svelte:head>`).then((generated_code) => {
 			$site_html = generated_code
-			previous = _.cloneDeep({ head: $site.data.code.head, design: $site.data.design })
+			previous = _.cloneDeep({ head: site.head })
 		})
 	})
 
@@ -138,8 +137,8 @@
 			component: {
 				html,
 				css: '',
-				js: '',
-				data: $site
+				js: ''
+				// data: $site
 			}
 		})
 		if (!compiled.error) {

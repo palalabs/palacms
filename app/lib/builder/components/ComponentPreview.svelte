@@ -74,11 +74,11 @@
 		}, 200)
 
 		async function compile() {
-			if (!$site) return
+			if (!site) return
 
 			const compiled_head = await processCode({
 				component: {
-					html: `<svelte:head>${$site.data.code.head + site_design_css($site.data.design)}</svelte:head>`,
+					html: `<svelte:head>${site.head}</svelte:head>`,
 					css: '',
 					js: '',
 					data
