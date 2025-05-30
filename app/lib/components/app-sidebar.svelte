@@ -10,7 +10,7 @@
 	import * as Collapsible from '$lib/components/ui/collapsible'
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
 	import { useSidebar } from '$lib/components/ui/sidebar/index.js'
-	import { self, user } from '$lib/pocketbase/PocketBase'
+	import { marketplace, self, user } from '$lib/pocketbase/PocketBase'
 	import type { Component } from 'svelte'
 	import { LibrarySymbolGroups, SiteGroups } from '$lib/pocketbase/collections'
 
@@ -230,7 +230,7 @@
 			</Sidebar.Header>
 			<Sidebar.Content class="p-2">
 				<Sidebar.Menu>
-					{#each sidebar_menu.site_groups as group}
+					{#each SiteGroups.list() as group}
 						{@const url = `/dashboard/sites?group=${group.id}`}
 						<Sidebar.MenuItem>
 							<Sidebar.MenuButton isActive={$page.url.pathname + $page.url.search === url}>
@@ -263,7 +263,7 @@
 			</Sidebar.Header>
 			<Sidebar.Content class="p-2">
 				<Sidebar.Menu>
-					{#each sidebar_menu.symbol_groups as group}
+					{#each LibrarySymbolGroups.list() as group}
 						{@const url = `/dashboard/library/blocks?group=${group.id}`}
 						<Sidebar.MenuItem>
 							<Sidebar.MenuButton isActive={$page.url.pathname + $page.url.search === url}>
@@ -323,7 +323,7 @@
 								<Collapsible.Content>
 									<Sidebar.GroupContent>
 										<Sidebar.Menu>
-											{#each sidebar_menu.marketplace_symbol_groups as group}
+											{#each LibrarySymbolGroups.from(marketplace).list() as group}
 												{@const url = `/dashboard/marketplace/blocks?group=${group.id}`}
 												<Sidebar.MenuItem>
 													<Sidebar.MenuButton isActive={$page.url.pathname + $page.url.search === url}>

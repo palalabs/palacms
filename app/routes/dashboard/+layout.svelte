@@ -2,7 +2,7 @@
 	import * as Sidebar from '$lib/components/ui/sidebar'
 	import AppSidebar from '$lib/components/app-sidebar.svelte'
 	import { Globe, LayoutTemplate, Store, Library, Cuboid } from 'lucide-svelte'
-	import { page } from '$app/stores'
+	import { page } from '$app/state'
 	import { marketplace, self } from '$lib/pocketbase/PocketBase'
 	import { onMount } from 'svelte'
 	import { goto } from '$app/navigation'
@@ -17,23 +17,20 @@
 	let { children } = $props()
 
 	const sidebar_menu = $derived.by(() => {
-		const pathname = $page.url.pathname
+		const pathname = page.url.pathname
 		const path = pathname.split('/').slice(0, 3).join('/')
 		return {
 			'/dashboard/sites': {
 				title: 'Sites',
-				icon: Globe,
-				site_groups: SiteGroups.list()
+				icon: Globe
 			},
 			'/dashboard/library': {
 				title: 'Block Library',
-				icon: Library,
-				symbol_groups: LibrarySymbolGroups.list()
+				icon: Library
 			},
 			'/dashboard/marketplace': {
 				title: 'Marketplace',
 				icon: Store,
-				marketplace_symbol_groups: LibrarySymbolGroups.from(marketplace).list(),
 				buttons: [
 					{
 						icon: LayoutTemplate,

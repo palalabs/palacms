@@ -37,8 +37,8 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 	const instance = options?.instance ?? self
 	const instanceCache = new Map<PocketBase, CollectionMapping<T, Options>>()
 	const collection = instance.collection(name)
-	const objects = new SvelteMap<string, MappedObject<T, Options>>()
-	const lists = new SvelteMap<string, MappedObjectList<T, Options>>()
+	const objects = new SvelteMap<string, MappedObject<T, Options> | undefined>()
+	const lists = new SvelteMap<string, string[] | undefined>()
 	const mapObject = (record: unknown): MappedObject<T, Options> => {
 		const object = model.parse(record)
 		const links = Object.fromEntries(Object.entries(options?.links ?? {}).map(([property, factory]) => [property, factory.bind({ ...object, _instance: instance })]))
@@ -47,53 +47,56 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 
 	const collectionMapping: CollectionMapping<T, Options> = {
 		one: (id) => {
-			if (!objects.has(id)) {
-				collection.getOne(id).then((record) => {
-					objects.set(id, mapObject(record))
-				})
-			}
+			$effect.pre(() => {
+				if (!objects.has(id)) {
+					objects.set(id, undefined)
+					collection.getOne(id).then((record) => {
+						objects.set(id, mapObject(record))
+					})
+				}
+			})
+
 			return objects.get(id)
 		},
 		list: (options) => {
-			const listId = JSON.stringify(options ?? {})
-			if (!lists.has(listId)) {
-				collection.getFullList(options).then((records) => {
-					const list = records.map(mapObject)
-					lists.set(listId, list)
-					for (const one of list) {
-						objects[one.id] = one
-					}
-				})
-			}
-			return lists.get(listId) ?? []
+			const listId = $derived(JSON.stringify(options ?? {}))
+			$effect.pre(() => {
+				if (!lists.has(listId)) {
+					lists.set(listId, undefined)
+					collection.getFullList({ ...options, fields: 'id' }).then((records) => {
+						lists.set(
+							listId,
+							records.map(({ id }) => id)
+						)
+					})
+				}
+			})
+
+			return (lists.get(listId) ?? []).map((id) => collectionMapping.one(id)).filter((object) => object !== undefined)
 		},
 		create: async (values) => {
 			const record = await collection.create(values)
-			objects[record.id] = mapObject(record)
-
-			const theOne = $derived(objects[record.id])
-			return theOne
+			const object = mapObject(record)
+			objects.set(record.id, object)
+			lists.clear()
+			return object
 		},
 		update: async (id, values) => {
 			const record = await collection.update(id, values)
-			objects[id] = mapObject(record)
-
-			const theOne = $derived(objects[record.id])
-			return theOne
+			const object = mapObject(record)
+			objects.set(id, object)
+			return object
 		},
 		delete: async (id) => {
 			await collection.delete(id)
-			delete objects[id]
+			objects.delete(id)
+			lists.clear()
 		},
 		authWithPassword: async (usernameOrEmail, password) => {
 			const response = await collection.authWithPassword(usernameOrEmail, password)
-			objects[response.record.id] = mapObject(response.record)
-
-			const theOne = $derived(objects[response.record.id])
-			return {
-				...response,
-				record: theOne
-			}
+			const object = mapObject(response.record)
+			objects.set(response.record.id, object)
+			return { ...response, record: object }
 		},
 		requestPasswordReset: async (email) => {
 			await collection.requestPasswordReset(email)
