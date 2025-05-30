@@ -11,7 +11,6 @@
 	import { Input } from '$lib/components/ui/input'
 	import * as AlertDialog from '$lib/components/ui/alert-dialog'
 	import { LibrarySymbolGroups, LibrarySymbols } from '$lib/pocketbase/collections'
-	import { LibrarySymbol } from '$lib/common/models/LibrarySymbol'
 
 	/**
 	 * @typedef {Object} Props
@@ -23,6 +22,7 @@
 	/** @type {Props} */
 	let { symbol_id, preview = null, head = '' } = $props()
 
+	const symbol_groups = $derived(LibrarySymbolGroups.list())
 	const symbol = $derived(LibrarySymbols.one(symbol_id))
 
 	if (!preview) {
@@ -116,7 +116,7 @@
 				<p class="text-muted-foreground text-sm">Select a group for this block</p>
 			</div>
 			<RadioGroup.Root bind:value={selected_group_id}>
-				{#each $library?.data.symbol_groups ?? [] as group}
+				{#each symbol_groups ?? [] as group}
 					<div class="flex items-center space-x-2">
 						<RadioGroup.Item value={group.name} id={group.name} />
 						<Label for={group.name}>{group.name}</Label>

@@ -24,6 +24,7 @@
 
 	const active_symbol_group_id = $derived(page.url.searchParams.get('group') as string)
 	const active_symbol_group = $derived(active_symbol_group_id ? LibrarySymbolGroups.one(active_symbol_group_id) : undefined)
+	const symbol_groups = $derived(LibrarySymbolGroups.list())
 
 	const sidebar = useSidebar()
 
@@ -233,73 +234,6 @@
 			</DropdownMenu.Content>
 		</DropdownMenu.Root>
 	</div>
-	<!-- !data.user.collaborator -->
-	{#if false}
-		<div class="ml-auto mr-4 flex gap-2">
-			<Button size="sm" variant="ghost" onclick={() => (editing_head = true)} aria-label="Design">
-				<Code class="h-4 w-4" />
-			</Button>
-			<Dialog.Root bind:open={editing_head}>
-				<Dialog.Content class="max-w-[900px] h-full max-h-[80vh] flex flex-col p-4 gap-4">
-					<Dialog.Header
-						title=""
-						button={{
-							label: 'Save',
-							onclick: save_settings
-						}}
-					/>
-					<div class="space-y-2">
-						<h4 class="font-medium leading-none">Head Code</h4>
-						<p class="text-muted-foreground text-sm">
-							Add code that will be included in the head section when displaying blocks in this library (CSS resets, shared styles, meta tags, etc). When blocks are used in sites, they'll use the head
-							code from those sites instead.
-						</p>
-					</div>
-					<CodeEditor mode="html" bind:value={$library.data.head} on:save={() => {}} />
-				</Dialog.Content>
-			</Dialog.Root>
-			<Button class="mr-2" size="sm" variant="ghost" onclick={() => (editing_design = true)} aria-label="Design">
-				<Palette class="h-4 w-4" />
-			</Button>
-			<Dialog.Root bind:open={editing_design}>
-				<Dialog.Content class="max-w-[600px] h-full max-h-[90vh] flex flex-col p-4 gap-0">
-					<Dialog.Header
-						title="Design"
-						button={{
-							label: 'Save',
-							onclick: save_settings
-						}}
-					/>
-					<div
-						class="overflow-auto"
-						style:--label-font-size="0.875rem"
-						style:--label-font-weight="400"
-						style:--DesignPanel-brand-color={$library?.data.design['primary_color']}
-						style:--DesignPanel-font-heading={$library?.data.design['heading_font']}
-						style:--DesignPanel-border-radius={$library?.data.design['radius']}
-					>
-						<DesignFields values={$library?.data.design} oninput={(token, val) => update_design_value(token, val)} />
-					</div>
-				</Dialog.Content>
-			</Dialog.Root>
-			<Button variant="outline" size="sm">
-				<label class="flex items-center gap-2 cursor-pointer">
-					<input onchange={upload_block_file} type="file" class="sr-only" />
-					<Upload class="h-4 w-4" />
-					Upload
-				</label>
-			</Button>
-			<Button size="sm" variant="outline" onclick={() => (creating_block = true)}>
-				<CirclePlus class="h-4 w-4" />
-				Create Block
-			</Button>
-			<Dialog.Root bind:open={creating_block}>
-				<Dialog.Content class="max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4 gap-0">
-					<CreateBlock />
-				</Dialog.Content>
-			</Dialog.Root>
-		</div>
-	{/if}
 </header>
 
 <div class="flex flex-1 flex-col gap-4 px-4 pb-4">
@@ -351,7 +285,7 @@
 				<p class="text-muted-foreground text-sm">Select a group for this block</p>
 			</div>
 			<RadioGroup.Root bind:value={selected_group_id}>
-				{#each $library?.data.symbol_groups ?? [] as group}
+				{#each symbol_groups ?? [] as group}
 					<div class="flex items-center space-x-2">
 						<RadioGroup.Item value={group.name} id={group.name} />
 						<Label for={group.name}>{group.name}</Label>
