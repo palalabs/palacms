@@ -9,7 +9,7 @@
 	const site_id = page.params.site
 	const site = $derived(Sites.one(site_id))
 	const entry = $derived(get_direct_entries(entity_id, field)[0])
-	const selectable_pages = $derived(Object.values($site?.data.entities.pages ?? {}).filter((p) => p?.page_type.id === field.page_type.id))
+	const selectable_pages = $derived(site?.site_pages()).filter((p) => p.page_type === field.page_type.id))
 </script>
 
 <div>

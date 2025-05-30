@@ -4,7 +4,6 @@
 	import * as Dialog from '$lib/components/ui/dialog'
 	import SitePreview from '$lib/components/SitePreview.svelte'
 	import * as Tabs from '$lib/components/ui/tabs'
-	import { Button } from '$lib/components/ui/button'
 	import { Input } from '$lib/components/ui/input/index.js'
 	import { Label } from '$lib/components/ui/label/index.js'
 	import { convert_site_v3 } from '$lib/builder/new_converter'

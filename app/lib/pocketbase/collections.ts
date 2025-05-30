@@ -70,6 +70,12 @@ export const Sites = createCollectionMapping('sites', Site, {
 		},
 		page_types() {
 			return PageTypes.from(this._instance).list({ filter: `site = ${this.id}` })
+		},
+		site_pages() {
+			return Pages.from(this._instance).list({ filter: `site = ${this.id}` })
+		},
+		home_page() {
+			return Pages.from(this._instance).list({ filter: `parent = '' && site = ${this.id}` })
 		}
 	}
 })

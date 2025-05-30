@@ -5,7 +5,6 @@
 	import { browser } from '$app/environment'
 	import UI from '../../ui/index.js'
 	import Icon from '@iconify/svelte'
-	import { block_html, site_design_css } from '../../code_generators'
 	import BlockEditor from '$lib/builder/views/modal/BlockEditor.svelte'
 	import BlockPicker from '$lib/builder/views/modal/BlockPicker.svelte'
 	import PageEditor from '$lib/builder/views/modal/PageEditor.svelte'
@@ -17,7 +16,7 @@
 	import * as Tabs from '$lib/components/ui/tabs'
 	import { Cuboid, SquarePen } from 'lucide-svelte'
 	import { page } from '$app/state'
-	import { Sites } from '$lib/pocketbase/collections'
+	import { Sites, PageTypes, SiteSymbols, PageTypeSymbols } from '$lib/pocketbase/collections'
 	import { site_html } from '$lib/builder/stores/app/page.js'
 
 	const UPDATE_COUNTER = Symbol('UPDATE_COUNTER')
@@ -25,7 +24,7 @@
 	const site_id = $derived(page.params.site)
 	const page_type_id = $derived(page.params.page_type)
 	const site = $derived(Sites.one(site_id))
-	const page_type = $derived($site?.data.page_types.find((page_type) => page_type.id === page_type_id))
+	const page_type = $derived(PageTypes.list().find((page_type) => page_type.id === page_type_id))
 
 	// get the query param to set the tab when navigating from page (i.e. 'Edit Fields')
 	let active_tab = $state(page.url.searchParams.get('t') === 'p' ? 'CONTENT' : 'BLOCKS')
@@ -37,28 +36,6 @@
 
 	async function create_block() {
 		creating_block = true
-		// modal.show(
-		// 	'BLOCK_EDITOR',
-		// 	{
-		// 		header: {
-		// 			title: `Create Block'}`,
-		// 			icon: 'fas fa-check',
-		// 			button: {
-		// 				label: `Save Block`,
-		// 				icon: 'fas fa-check',
-		// 				onclick: (new_block, changes) => {
-		// 					$site?.data.symbols.push(new_block)
-		// 					modal.hide()
-		// 				}
-		// 			}
-		// 		},
-		// 		tab: 'code'
-		// 	},
-		// 	{
-		// 		showSwitch: true,
-		// 		disabledBgClose: true
-		// 	}
-		// )
 	}
 
 	let active_block_id = $state(null)
@@ -72,19 +49,6 @@
 
 	async function show_block_picker() {
 		adding_block = true
-		// modal.show(
-		// 	'BLOCK_PICKER',
-		// 	{
-		// 		site: $site,
-		// 		append: site_design_css($site?.data.design),
-		// 		onsave: (symbols) => {
-		// 			modal.hide()
-		// 		}
-		// 	},
-		// 	{
-		// 		hideLocaleSelector: true
-		// 	}
-		// )
 	}
 
 	function drag_target(element, block) {
@@ -101,18 +65,18 @@
 				)
 			},
 			onDrop({ self, source }) {
-				if (!$site) return
-				const { data } = $site
+				if (!site) return
 				const closestEdgeOfTarget = extractClosestEdge(self.data)
 				const block_dragged_over = self.data.block
 				const block_being_dragged = source.data.block
-				const block_dragged_over_index = data.symbols.findIndex((symbol) => symbol.id === block_dragged_over.id)
+				const block_dragged_over_index = SiteSymbols.list().findIndex((symbol) => symbol.id === block_dragged_over.id)
 				const target_index = closestEdgeOfTarget === 'top' ? block_dragged_over_index : block_dragged_over_index + 1
-				data.symbols = [
-					...data.symbols.slice(0, target_index).filter((symbol) => symbol.id !== block_being_dragged.id),
-					block_being_dragged,
-					...data.symbols.slice(target_index).filter((symbol) => symbol.id !== block_being_dragged.id)
-				]
+				// TODO: reconfigure
+				// data.symbols = [
+				// 	...data.symbols.slice(0, target_index).filter((symbol) => symbol.id !== block_being_dragged.id),
+				// 	block_being_dragged,
+				// 	...data.symbols.slice(target_index).filter((symbol) => symbol.id !== block_being_dragged.id)
+				// ]
 			}
 		})
 	}
@@ -133,7 +97,7 @@
 					label: 'Save',
 					onclick: (updated_data) => {
 						// grabbing this again here since there seems to be an issue w/ Object.assign when active_block is in a rune
-						const active_block = $site?.data.symbols.find((s) => s.id === active_block_id)
+						const active_block = SiteSymbols.list().find((s) => s.id === active_block_id)
 						Object.assign(active_block, updated_data)
 						// Force rerender for the sidebar preview
 						active_block[UPDATE_COUNTER] = (active_block[UPDATE_COUNTER] ?? 0) + 1
@@ -153,7 +117,8 @@
 				button: {
 					label: 'Create Block',
 					onclick: (new_block) => {
-						$site?.data.symbols.push(new_block)
+						// TODO: test this
+						SiteSymbols.create(new_block)
 						creating_block = false
 					}
 				}
@@ -165,8 +130,7 @@
 <Dialog.Root bind:open={adding_block}>
 	<Dialog.Content class="z-[999] max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4">
 		<BlockPicker
-			site={$site}
-			append={site_design_css($site?.data.design)}
+			{site}
 			onsave={(blocks) => {
 				console.log({ blocks })
 				// TODO: add blocks to site
@@ -195,7 +159,7 @@
 			</Tabs.Trigger>
 		</Tabs.List>
 		<Tabs.Content value="blocks" class="px-1">
-			{#if Object.values($site?.data.entities.symbols ?? {}).length > 0}
+			{#if Object.values(SiteSymbols.list().length > 0)}
 				<div class="primo-buttons">
 					<button class="primo-button" onclick={show_block_picker}>
 						<Icon icon="mdi:plus" />
@@ -216,21 +180,21 @@
 				</div>
 				{#if $site_html !== null}
 					<div class="block-list">
-						{#each $site?.data.symbols ?? [] as symbol (symbol.id + symbol[UPDATE_COUNTER])}
-							{@const toggled = page_type?.symbols.some((active) => active.id == symbol.id)}
+						{#each SiteSymbols.list() ?? [] as symbol (symbol.id + symbol[UPDATE_COUNTER])}
+							{@const toggled = PageTypeSymbols.list().some((active) => active.id == symbol.id)}
 							<div class="block" animate:flip={{ duration: 200 }} use:drag_target={symbol}>
 								<Sidebar_Symbol
 									{symbol}
 									head={$site_html}
-									append={site_design_css($site?.data.design)}
 									show_toggle={true}
 									{toggled}
 									on:toggle={({ detail }) => {
 										if (!page_type || detail === toggled) return // dispatches on creation for some reason
 										if (toggled) {
-											page_type.symbols = page_type.symbols.filter((active) => active.id !== symbol.id)
+											// TODO
+											// page_type.symbols = page_type.symbols.filter((active) => active.id !== symbol.id)
 										} else {
-											page_type.symbols.push(symbol)
+											// page_type.symbols.push(symbol)
 										}
 									}}
 									on:edit={() => edit_block(symbol, symbol.id)}

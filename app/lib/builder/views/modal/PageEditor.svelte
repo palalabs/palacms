@@ -6,12 +6,12 @@
 	import * as _ from 'lodash-es'
 	import CodeEditor from '$lib/builder/components/CodeEditor/CodeMirror.svelte'
 	import { page } from '$app/state'
-	import { Sites } from '$lib/pocketbase/collections'
+	import { Sites, PageTypes } from '$lib/pocketbase/collections'
 
 	const site_id = page.params.site
 	const page_type_id = page.params.page_type
 	const site = $derived(Sites.one(site_id))
-	const page_type = $derived($site?.data.entities.page_types[page_type_id])
+	const page_type = $derived(PageTypes.one(page_type_id))
 
 	let disableSave = false
 

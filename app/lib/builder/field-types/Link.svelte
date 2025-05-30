@@ -6,7 +6,7 @@
 	import type { LinkField } from '$lib/common/models/fields/LinkField'
 	import { page } from '$app/state'
 	import { get_direct_entries } from '../stores/helpers'
-	import { Sites } from '$lib/pocketbase/collections'
+	import { Sites, Pages } from '$lib/pocketbase/collections'
 
 	const default_value = {
 		label: '',
@@ -18,7 +18,7 @@
 	const site_id = $derived(page.params.site)
 	const site = $derived(Sites.one(site_id))
 	const entry = $derived(get_direct_entries(entity_id, field)[0])
-	const selectable_pages = $derived(Object.values($site?.data.entities.pages ?? {}).filter((p) => p?.page_type.id === field.page_type.id))
+	const selectable_pages = $derived(Object.values(Pages.list()).filter((p) => p.page_type === field.page_type.id))
 
 	let selected = $state(urlMatchesPage(entry?.value.url))
 
@@ -30,7 +30,7 @@
 		}
 	}
 
-	let selected_page = $derived(entry.value.page ?? $site?.data.root)
+	let selected_page = $derived(entry.value.page ?? site.home_page())
 	function get_page_url(page) {
 		const prefix = $locale === 'en' ? '/' : `/${$locale}/`
 		if (page.slug === '') {
@@ -67,7 +67,7 @@
 			{#if selected === 'page'}
 				<UI.Select
 					value={selected_page}
-					options={[$site?.data.root]}
+					options={[site.home_page()]}
 					on:input={({ detail: page }) => {
 						selected_page = page
 					}}

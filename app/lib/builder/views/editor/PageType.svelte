@@ -13,13 +13,14 @@
 	import { locale } from '../../stores/app/misc.js'
 	import { dropTargetForElements } from '../../libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
 	import { attachClosestEdge, extractClosestEdge } from '../../libraries/pragmatic-drag-and-drop-hitbox/closest-edge.js'
-	import { Sites } from '$lib/pocketbase/collections'
+	import { Sites, PageTypes } from '$lib/pocketbase/collections'
+	import type { PageTypeSection } from '$lib/common/models/PageTypeSection.ts'
 	import { page } from '$app/state'
 
 	const site_id = $derived(page.params.site)
 	const page_type_id = $derived(page.params.page_type)
 	const site = $derived(Sites.one(site_id))
-	const page_type = $derived($site?.data.entities.page_types[page_type_id] ?? null)
+	const page_type = $derived(PageTypes.one(page_type_id) ?? null)
 
 	// Fade in page when all components mounted
 	let page_mounted = $state(true)
@@ -35,7 +36,7 @@
 		// TODO
 	}
 
-	let hovered_section_id: Section | null = $state(null)
+	let hovered_section_id: PageTypeSection | null = $state(null)
 	let hovered_section = $derived(page_type?.sections.find((s) => s.id === hovered_section_id))
 
 	let block_toolbar_element = $state()
