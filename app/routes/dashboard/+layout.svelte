@@ -3,22 +3,18 @@
 	import AppSidebar from '$lib/components/app-sidebar.svelte'
 	import { Globe, LayoutTemplate, Store, Library, Cuboid } from 'lucide-svelte'
 	import { page } from '$app/stores'
-	import { pb } from '$lib/pocketbase/PocketBase'
+	import { marketplace, self } from '$lib/pocketbase/PocketBase'
 	import { onMount } from 'svelte'
 	import { goto } from '$app/navigation'
 	import { LibrarySymbolGroups, SiteGroups } from '$lib/pocketbase/collections'
-	import { require_marketplace_symbol_groups } from '$lib/loaders'
 
 	onMount(async () => {
-		if (!pb.authStore.isValid) {
+		if (!self.authStore.isValid) {
 			await goto('/auth')
 		}
 	})
 
 	let { children } = $props()
-
-	const site_groups = $derived(SiteGroups.list())
-	const marketplace_symbol_groups = require_marketplace_symbol_groups()
 
 	const sidebar_menu = $derived.by(() => {
 		const pathname = $page.url.pathname
@@ -37,7 +33,7 @@
 			'/dashboard/marketplace': {
 				title: 'Marketplace',
 				icon: Store,
-				marketplace_symbol_groups: $marketplace_symbol_groups ?? [],
+				marketplace_symbol_groups: LibrarySymbolGroups.from(marketplace).list(),
 				buttons: [
 					{
 						icon: LayoutTemplate,

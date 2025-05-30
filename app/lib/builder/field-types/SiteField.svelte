@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { SITE } from '$lib/common/constants'
 	import type { SiteFieldField } from '$lib/common/models/fields/SiteFieldField'
 	import { fieldTypes } from '../stores/app'
 	import { get_direct_entries } from '../stores/helpers'
@@ -11,7 +10,7 @@
 
 {#if entry && fieldType}
 	{@const SvelteComponent = fieldType.component}
-	<SvelteComponent entity_id={SITE} field={{ ...entry.value, label: field.label }} />
+	<SvelteComponent entity_id={''} field={{ ...entry.value, label: field.label }} />
 {:else}
 	<span>This field has been deleted</span>
 {/if}

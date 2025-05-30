@@ -10,7 +10,7 @@
 	import * as Collapsible from '$lib/components/ui/collapsible'
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
 	import { useSidebar } from '$lib/components/ui/sidebar/index.js'
-	import { pb, user } from '$lib/pocketbase/PocketBase'
+	import { self, user } from '$lib/pocketbase/PocketBase'
 	import type { Component } from 'svelte'
 	import { LibrarySymbolGroups, SiteGroups } from '$lib/pocketbase/collections'
 
@@ -53,7 +53,7 @@
 	async function create_symbol_group(e) {
 		e.preventDefault()
 		const userId = user()?.id
-		if (!$library || !userId) return
+		if (!userId) return
 		LibrarySymbolGroups.create({ name: new_symbol_group_name, owner: userId, index: 0 })
 		is_creating_symbol_group = false
 	}
@@ -206,7 +206,7 @@
 							<DropdownMenu.Separator />
 							<DropdownMenu.Item
 								onclick={async () => {
-									pb.authStore.clear()
+									self.authStore.clear()
 									await goto('/auth')
 								}}
 							>

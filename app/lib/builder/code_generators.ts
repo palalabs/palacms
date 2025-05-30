@@ -3,11 +3,9 @@ import * as _ from 'lodash-es'
 import { processors } from './component.js'
 import { get_content } from './stores/helpers'
 import { design_tokens } from './constants.js'
-import type { Resolved } from '$lib/common/json/index.js'
 import type { Page } from '$lib/common/models/Page.js'
-import { ID, SITE, type locales } from '$lib/common/constants.js'
+import { type locales } from '$lib/common/constants.js'
 import type { Site } from '$lib/common/models/Site.js'
-import type { Id } from '$lib/common/models/Id.js'
 
 export async function block_html({ code, data }) {
 	const { html, css: postcss, js } = code
@@ -19,23 +17,24 @@ export async function block_html({ code, data }) {
 	return res
 }
 
-export async function page_html({ site, page, locale = 'en', no_js = false }: { site: Resolved<typeof Site>; page: Resolved<typeof Page>; locale?: (typeof locales)[number]; no_js?: boolean }) {
-	const site_data = get_content(SITE, site.data.fields)[locale] ?? {}
+export async function page_html({ site, page, locale = 'en', no_js = false }: { site: Site; page: Page; locale?: (typeof locales)[number]; no_js?: boolean }) {
+	const site_data = {} // TODO
 	const head = {
-		code: site_design_css(site.data.design) + site.data.code.head + page.page_type.code.head,
+		code: site.head, // + page.page_type.head,
 		data: site_data
 	}
 	const component = await Promise.all([
-		...page.sections.map(async (section) => {
+		// page.sections
+		...[].map(async (section) => {
 			const { html, css: postcss, js } = section.symbol.code
 
-			const data = get_content(section[ID], section.symbol.fields)[locale] ?? {}
+			const data = {} // TODO
 
 			// @ts-ignore
 			const { css, error } = await processors.css(postcss || '')
 			return {
 				html: `
-         <div data-section="${section[ID]}" id="section-${section[ID]}" data-symbol="${section.symbol[ID]}">
+         <div data-section="${section.id}" id="section-${section.id}" data-symbol="${section.symbol.id}">
            ${html}
          </div>`,
 				js,
@@ -45,7 +44,7 @@ export async function page_html({ site, page, locale = 'en', no_js = false }: { 
 		}),
 		(async () => {
 			return {
-				html: site.data.code.foot,
+				html: site.foot,
 				css: ``,
 				js: ``,
 				data: site_data
@@ -59,7 +58,8 @@ export async function page_html({ site, page, locale = 'en', no_js = false }: { 
 		locale
 	})
 
-	const symbol_ids = page.sections.map((section) => section.symbol[ID]).filter((value, index, array) => array.indexOf(value) === index)
+	/// page.sections
+	const symbol_ids = [].map((section) => section.symbol.id).filter((value, index, array) => array.indexOf(value) === index)
 
 	const final = `\
  <!DOCTYPE html>
@@ -83,19 +83,19 @@ export async function page_html({ site, page, locale = 'en', no_js = false }: { 
 	}
 
 	// fetch module to hydrate component, include hydration data
-	function fetch_modules(symbol_ids: Id[]) {
+	function fetch_modules(symbol_ids: string[]) {
 		return symbol_ids
 			.map(
 				(id) => `
      import('/_symbols/${id}.js')
      .then(({default:App}) => {
        ${page.sections
-					.filter((section) => section.symbol[ID] === id)
+					.filter((section) => section.symbol.id === id)
 					.map((section) => {
-						const instance_content = get_content(section[ID], section.symbol.fields)[locale]
+						const instance_content = get_content(section.id, section.symbol.fields)[locale]
 						return `
            new App({
-             target: document.querySelector('#section-${section[ID]}'),
+             target: document.querySelector('#section-${section.id}'),
              hydrate: true,
              props: ${JSON.stringify(instance_content)}
            })

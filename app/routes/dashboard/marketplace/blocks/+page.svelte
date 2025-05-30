@@ -10,12 +10,14 @@
 	import { toast } from 'svelte-sonner'
 	import * as RadioGroup from '$lib/components/ui/radio-group'
 	import { Label } from '$lib/components/ui/label'
-	import { require_marketplace_symbols } from '$lib/loaders'
 	import { page } from '$app/state'
-	import { LibrarySymbolGroups } from '$lib/pocketbase/collections'
+	import { LibrarySymbolGroups, LibrarySymbols } from '$lib/pocketbase/collections'
+	import { marketplace } from '$lib/pocketbase/PocketBase'
 
-	const group_id = $derived(+(page.url.searchParams.get('group') ?? 0))
-	const marketplace_symbols = $derived(require_marketplace_symbols(group_id))
+	const group_id = $derived(page.url.searchParams.get('group') ?? undefined)
+	const marketplace_symbol_group = $derived(group_id ? LibrarySymbolGroups.from(marketplace).one(group_id) : undefined)
+	const marketplace_symbols = $derived(marketplace_symbol_group?.symbols())
+	const library_symbol_groups = $derived(LibrarySymbolGroups.list())
 
 	let design_variables_css = ''
 
@@ -64,9 +66,9 @@
 </header>
 
 <div class="flex flex-1 flex-col gap-4 px-4 pb-4">
-	{#if $marketplace_symbols?.length}
+	{#if marketplace_symbols?.length}
 		<ul class="blocks">
-			{#each $marketplace_symbols as symbol (symbol.id)}
+			{#each marketplace_symbols as symbol (symbol.id)}
 				<li>
 					<SymbolButton symbol={symbol.data} preview={symbol.preview} head={generated_head_code + design_variables_css}>
 						<Popover.Root bind:open={is_popover_open}>
@@ -84,7 +86,7 @@
 										<p class="text-muted-foreground text-sm">Select a group for this block</p>
 									</div>
 									<RadioGroup.Root bind:value={selected_group_id}>
-										{#each $library?.data.symbol_groups ?? [] as group}
+										{#each library_symbol_groups ?? [] as group}
 											<div class="flex items-center space-x-2">
 												<RadioGroup.Item value={group.id} id={group.id} />
 												<Label for={group.id}>{group.name}</Label>
