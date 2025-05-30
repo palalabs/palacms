@@ -214,7 +214,7 @@
 								name: 'Blank',
 								data: blank_site_data
 							})}
-							{#each $starter_sites as site}
+							{#each starter_sites as site}
 								{@render StarterButton(site)}
 							{/each}
 						</div>
