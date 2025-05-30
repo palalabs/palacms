@@ -17,13 +17,13 @@
 	let { site_id, preview = $bindable(null), head = '', append = '', style = '' } = $props()
 
 	const site = $derived(site_id ? Sites.one(site_id) : null)
-	$effect(() => {
-		if (!preview && $site) {
-			page_html({ site: $site, page: $site.data.root, no_js: true }).then(({ html }) => {
-				preview = html
-			})
-		}
-	})
+	// $effect(() => {
+	// 	if (!preview && $site) {
+	// 		page_html({ site: $site, page: $site.data.root, no_js: true }).then(({ html }) => {
+	// 			preview = html
+	// 		})
+	// 	}
+	// })
 
 	let container = $state()
 	let scale = $state()

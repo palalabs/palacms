@@ -11,9 +11,10 @@
 	import DesignFields from './Modals/DesignFields.svelte'
 	import * as code_generators from '$lib/builder/code_generators'
 	import { Site } from '$lib/common/models/Site'
-	import { Sites, SiteGroups } from '$lib/pocketbase/collections'
+	import { Sites, SiteGroups, PageTypes, Pages } from '$lib/pocketbase/collections'
 	import { page } from '$app/state'
 	import type { PageType } from '$lib/common/models/PageType'
+	import type { Page } from '$lib/common/models/Page'
 
 	let { onclose } = $props()
 
@@ -83,64 +84,49 @@
 		}
 	}
 
-	const blank_site_home_page_type: Omit<PageType, 'id'> = {
-		name: 'Home',
-		code: {
-			head: '',
-			foot: ''
-		},
-		color: '',
-		icon: '',
-		fields: [],
-		sections: [],
-		symbols: []
-	}
+	const blank_site = {
+		head: '',
+		foot: ''
+	} satisfies Partial<Site>
 
-	const blank_site_data: Omit<Site, 'id'> = {
-		code: {
-			head: '',
-			foot: ''
-		},
-		design: {
-			heading_font: '',
-			body_font: '',
-			primary_color: '',
-			radius: '',
-			shadow: ''
-		},
-		entities: {
-			symbols: {},
-			sections: {},
-			fields: {},
-			page_types: {},
-			pages: {}
-		},
-		symbols: [],
-		fields: [],
-		page_types: [blank_site_home_page_type],
-		root: {
-			name: 'Home',
-			slug: '',
-			page_type: blank_site_home_page_type,
-			fields: [],
-			sections: [],
-			children: []
-		}
-	}
+	const blank_site_home_page_type = {
+		name: 'Home',
+		head: '',
+		foot: '',
+		color: '',
+		icon: ''
+	} satisfies Partial<PageType>
+
+	const black_site_home_page = {
+		name: 'Home',
+		slug: '',
+		parent: ''
+	} satisfies Partial<Page>
 
 	let completed = $derived(!!site_name && (selected_starter_id || !!duplicated_site_data))
 	let loading = $state(false)
 	async function create_site() {
 		if (!selected_starter_id || !active_site_group) return
 		loading = true
-		await Sites.create({
-			name: site_name,
-			description: '',
-			group: active_site_group.id,
-			data: $selected_starter?.data || blank_site_data,
-			index: 0
-		})
-		// require_site_list.refresh()
+		if (selected_starter_id === 'blank') {
+			const site = await Sites.create({
+				...blank_site,
+				name: site_name,
+				description: '',
+				group: active_site_group.id,
+				index: 0
+			})
+			const page_type = await PageTypes.create({
+				...blank_site_home_page_type,
+				site: site.id
+			})
+			await Pages.create({
+				...black_site_home_page,
+				page_type: page_type.id,
+				site: site.id
+			})
+		}
+
 		onclose()
 	}
 </script>
@@ -212,7 +198,7 @@
 							{@render StarterButton({
 								id: 'blank',
 								name: 'Blank',
-								data: blank_site_data
+								data: blank_site
 							})}
 							{#each starter_sites as site}
 								{@render StarterButton(site)}
