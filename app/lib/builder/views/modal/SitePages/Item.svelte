@@ -8,7 +8,7 @@
 	import MenuPopup from '$lib/builder/ui/Dropdown.svelte'
 	import type { Page } from '$lib/common/models/Page'
 	import { page as pageState } from '$app/state'
-	import { Sites } from '$lib/pocketbase/collections'
+	import { Sites, Pages } from '$lib/pocketbase/collections'
 
 	let editing_page = $state(false)
 
@@ -164,8 +164,9 @@
 									label: 'Delete',
 									icon: 'ic:outline-delete',
 									on_click: () => {
-										if (!$site) return
-										delete $site.data.entities.pages[page.id]
+										if (!site) return
+										Pages.delete(page.id)
+										// delete site.data.entities.pages[page.id]
 									}
 								}
 							]
@@ -190,8 +191,8 @@
 				on:create={({ detail: new_page }) => {
 					creating_page = false
 					showing_children = true
-					if (!$site) return
-					const url_taken = Object.values($site.data.entities.pages).some((page) => page?.slug === new_page.slug)
+					if (!site) return
+					const url_taken = Pages.list().some((page) => page?.slug === new_page.slug)
 					if (url_taken) {
 						alert(`That URL is already in use`)
 					} else {

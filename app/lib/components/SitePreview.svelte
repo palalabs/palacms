@@ -18,8 +18,8 @@
 
 	const site = $derived(site_id ? Sites.one(site_id) : null)
 	// $effect(() => {
-	// 	if (!preview && $site) {
-	// 		page_html({ site: $site, page: $site.data.root, no_js: true }).then(({ html }) => {
+	// 	if (!preview && site) {
+	// 		page_html({ site, page: site.home_page(), no_js: true }).then(({ html }) => {
 	// 			preview = html
 	// 		})
 	// 	}

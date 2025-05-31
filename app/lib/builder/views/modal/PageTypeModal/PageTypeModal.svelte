@@ -5,18 +5,21 @@
 	import Button from '$lib/builder/ui/Button.svelte'
 	import PageForm from './PageTypeForm.svelte'
 	import { page } from '$app/state'
-	import { Sites } from '$lib/pocketbase/collections'
+	import { Sites, PageTypes } from '$lib/pocketbase/collections'
 	import type { PageType } from '$lib/common/models/PageType'
 
 	const site_id = $derived(page.params.site)
 	const site = $derived(Sites.one(site_id))
 
 	async function create_page_type(new_page_type: PageType) {
-		if (!$site) return
+		if (!site) return
 
-		$site.data.page_types.push(new_page_type)
-		const [created_page_type] = $site.data.page_types.slice(-1)
-		goto(`/${$site.id}/page-type--${created_page_type.id}`)
+		PageTypes.create(new_page_type)
+		// TODO: test & configure navigate to
+
+		// site.data.page_types.push(new_page_type)
+		// const [created_page_type] = site.data.page_types.slice(-1)
+		// goto(`/${site.id}/page-type--${created_page_type.id}`)
 	}
 
 	let creating_page_type = $state(false)
@@ -24,9 +27,9 @@
 
 <Dialog.Header title="Page Types" />
 <main class="grid gap-2 p-2 bg-[var(--primo-color-black)]">
-	{#if $site?.data.page_types.length}
+	{#if PageTypes.list().length}
 		<ul class="grid gap-2">
-			{#each $site.data.page_types as page_type}
+			{#each PageTypes.list() as page_type}
 				<li>
 					<Item {page_type} active={false} />
 				</li>

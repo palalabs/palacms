@@ -31,13 +31,13 @@
 	}}
 />
 
-{#if $site}
+{#if site}
 	<main class="SiteEditor">
 		<!-- TODO: $userRole === 'DEV' -->
 		{#if true}
 			<PaneGroup direction="horizontal" style="display: flex;">
 				<Pane defaultSize={50}>
-					<Fields id="site-{$site.id}" fields={$site.data.fields} />
+					<Fields id="site-{site.id}" fields={site.site_fields()} />
 				</Pane>
 				<PaneResizer class="PaneResizer-primary">
 					<div class="icon primary">
@@ -49,7 +49,7 @@
 						<Pane>
 							<div class="container" style="margin-bottom: 1rem">
 								<span class="primo--field-label">Head</span>
-								<CodeEditor mode="html" bind:value={$site.data.code.head} on:save={saveComponent} />
+								<CodeEditor mode="html" bind:value={site.head} on:save={saveComponent} />
 							</div>
 						</Pane>
 						<PaneResizer class="PaneResizer-secondary">
@@ -60,14 +60,14 @@
 						<Pane>
 							<div class="container">
 								<span class="primo--field-label">Foot</span>
-								<CodeEditor mode="html" bind:value={$site.data.code.foot} on:save={saveComponent} />
+								<CodeEditor mode="html" bind:value={site.foot} on:save={saveComponent} />
 							</div>
 						</Pane>
 					</PaneGroup>
 				</Pane>
 			</PaneGroup>
 		{:else}
-			<Fields id="site-{$site.id}" fields={$site.data.fields} />
+			<!-- <Fields id="site-{site.id}" fields={site.data.fields} /> -->
 		{/if}
 	</main>
 {/if}

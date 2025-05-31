@@ -6,8 +6,7 @@
 
 	const site_id = $derived(page.params.site)
 	const site = $derived(Sites.one(site_id))
-	const root_page = $derived($site?.data.root)
-	$inspect({ $site })
+	const root_page = $derived(site?.home_page())
 </script>
 
 <Dialog.Header title="Pages" />
@@ -15,6 +14,7 @@
 	<li>
 		<Item page={root_page} active={false} />
 	</li>
+	<!-- TODO: fix children -->
 	{#each root_page?.children as child_page}
 		<li>
 			<Item page={child_page} active={false} />

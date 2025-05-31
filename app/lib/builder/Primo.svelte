@@ -138,7 +138,6 @@
 				html,
 				css: '',
 				js: ''
-				// data: $site
 			}
 		})
 		if (!compiled.error) {

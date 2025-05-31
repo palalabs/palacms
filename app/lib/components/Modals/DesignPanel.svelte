@@ -22,7 +22,7 @@
 
 	const site_id = $derived(page.params.site)
 	const site = $derived(Sites.one(site_id))
-	const local_design_values = $state(cloneDeep($site?.data.design!))
+	const local_design_values = $state(cloneDeep(site?.data.design!))
 	let design_variables_css = $state(code_generators.site_design_css(local_design_values))
 
 	let loading = $state(false)
@@ -47,8 +47,8 @@
 		}, 200)
 
 		async function compile() {
-			if (!$site) return
-			preview = (await code_generators.page_html({ no_js: true, site: { ...$site, data: { ...$site.data, design: local_design_values } } }))?.html
+			if (!site) return
+			preview = (await code_generators.page_html({ no_js: true, site: { ...site, data: { ...site.data, design: local_design_values } } }))?.html
 			previewUpToDate = true
 		}
 	}
@@ -59,8 +59,8 @@
 	}) // reset when code changes
 
 	async function saveComponent() {
-		if (!disableSave && $site) {
-			$site.data.design = local_design_values
+		if (!disableSave && site) {
+			site.data.design = local_design_values
 		}
 	}
 </script>
