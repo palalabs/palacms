@@ -7,7 +7,7 @@
 	const site_id = $derived(pageState.params.site)
 	const slug = $derived(pageState.params.page)
 	const site = $derived(Sites.one(site_id))
-	const page = $derived(site?.site_pages().find((page) => page?.slug == slug))
+	const page = $derived(site?.pages().find((page) => page?.slug == slug))
 </script>
 
 {#if $compilers_registered && page}

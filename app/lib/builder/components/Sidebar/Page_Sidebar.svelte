@@ -14,16 +14,18 @@
 	import * as Tabs from '$lib/components/ui/tabs'
 	import { Cuboid, SquarePen } from 'lucide-svelte'
 	import { page as pageState } from '$app/state'
-	import { Sites } from '$lib/pocketbase/collections'
+	import { Pages, PageTypes, Sites } from '$lib/pocketbase/collections'
+	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
 
 	let active_tab = $state((browser && localStorage.getItem('page-tab')) || 'BLOCKS')
 
 	const site_id = $derived(pageState.params.site)
 	const slug = $derived(pageState.params.page)
 	const site = $derived(Sites.one(site_id))
-	const page = $derived(Object.values(site?.data.entities.pages ?? {}).find((page) => page?.slug == slug) ?? site?.data.root)
+	const page = $derived(site?.pages().find((page) => page.slug === slug) ?? site?.home_page())
+	const page_type = $derived(page && PageTypes.one(page.page_type))
 
-	let page_type_symbols = $derived(page?.page_type.symbols)
+	let page_type_symbols = $derived(page_type?.symbols())
 	let has_symbols = $derived(!!page_type_symbols?.length)
 
 	$effect(() => {

@@ -17,7 +17,7 @@ export type CollectionMappingOptions<T extends ObjectWithId> = {
 	links?: Record<string, (this: MappedObject<T, { links: {} }>) => unknown>
 }
 
-export type MappedObject<T extends ObjectWithId, Options extends CollectionMappingOptions<T>> = T & NonNullable<Options['links']> & { _instance: PocketBase }
+export type MappedObject<T extends ObjectWithId, Options extends CollectionMappingOptions<T>> = T & NonNullable<Options['links']> & { collection: CollectionMapping<T, CollectionMappingOptions<T>> }
 
 export type MappedObjectList<T extends ObjectWithId, Options extends CollectionMappingOptions<T>> = MappedObject<T, Options>[]
 
@@ -31,6 +31,7 @@ export type CollectionMapping<T extends ObjectWithId, Options extends Collection
 	requestPasswordReset: (email: string) => Promise<void>
 	confirmPasswordReset: (passwordResetToken: string, password: string, passwordConfirm: string) => Promise<void>
 	from: (instance: PocketBase) => CollectionMapping<T, Options>
+	instance: PocketBase
 }
 
 export const createCollectionMapping = <T extends ObjectWithId, Options extends CollectionMappingOptions<T>>(name: string, model: z.ZodType<T>, options?: Options): CollectionMapping<T, Options> => {
@@ -41,8 +42,8 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 	const lists = new SvelteMap<string, string[] | undefined>()
 	const mapObject = (record: unknown): MappedObject<T, Options> => {
 		const object = model.parse(record)
-		const links = Object.fromEntries(Object.entries(options?.links ?? {}).map(([property, factory]) => [property, factory.bind({ ...object, _instance: instance })]))
-		return Object.assign(object, links, { _instance: instance })
+		const links = Object.fromEntries(Object.entries(options?.links ?? {}).map(([property, factory]) => [property, factory.bind({ ...object, collection: collectionMapping })]))
+		return Object.assign(object, links, { collection: collectionMapping })
 	}
 
 	const collectionMapping: CollectionMapping<T, Options> = {
@@ -112,7 +113,8 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 			const collectionMapping = createCollectionMapping(name, model, { ...options, instance })
 			instanceCache.set(instance, collectionMapping)
 			return collectionMapping
-		}
+		},
+		instance
 	}
 
 	instanceCache.set(instance, collectionMapping)

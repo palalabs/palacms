@@ -6,16 +6,15 @@
 
 	const site_id = $derived(page.params.site)
 	const site = $derived(Sites.one(site_id))
-	const root_page = $derived(site?.home_page())
+	const home_page = $derived(site?.home_page())
 </script>
 
 <Dialog.Header title="Pages" />
 <ul class="grid p-2 bg-[var(--primo-color-black)]">
 	<li>
-		<Item page={root_page} active={false} />
+		<Item page={home_page} active={false} />
 	</li>
-	<!-- TODO: fix children -->
-	{#each root_page?.children as child_page}
+	{#each home_page?.children() ?? [] as child_page}
 		<li>
 			<Item page={child_page} active={false} />
 		</li>

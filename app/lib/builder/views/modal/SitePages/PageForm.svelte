@@ -6,9 +6,10 @@
 	import { validate_url } from '../../../utilities'
 	import { Page } from '$lib/common/models/Page'
 	import { page } from '$app/state'
-	import { Sites, PageTypes } from '$lib/pocketbase/collections'
+	import { Sites, PageTypes, Pages } from '$lib/pocketbase/collections'
+	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
 
-	let { parent }: { parent?: Page } = $props()
+	let { parent }: { parent?: ObjectOf<typeof Pages> } = $props()
 
 	const site_id = $derived(page.params.site)
 	const site = $derived(Sites.one(site_id))
@@ -16,15 +17,18 @@
 	const dispatch = createEventDispatcher()
 
 	// set page type equal to the last type used under this parent
-	// const default_page_type = $derived(parent?.children[0]?.page_type ?? site?.data.page_types[0])
-	const default_page_type = $derived(site?.page_types()[0])
+	const default_page_type_id = $derived(parent?.children()[0].page_type ?? site?.page_types()[0].id ?? '')
 
-	let new_page = $state()
+	let new_page = $state<Omit<Page, 'id' | 'parent' | 'site'>>({
+		name: '',
+		slug: '',
+		page_type: ''
+	})
 	$effect.pre(() => {
 		new_page = {
 			name: '',
 			slug: '',
-			page_type: default_page_type
+			page_type: default_page_type_id
 		}
 	})
 
@@ -34,21 +38,12 @@
 	$effect(() => {
 		new_page.slug = page_label_edited ? validate_url(new_page.slug) : validate_url(new_page.name)
 	})
-
-	let new_page_details = $derived({
-		name: new_page.name,
-		slug: new_page.slug,
-		page_type: new_page.page_type,
-		fields: [],
-		children: [],
-		sections: []
-	} satisfies Page)
 </script>
 
 <form
 	onsubmit={(e) => {
 		e.preventDefault()
-		dispatch('create', new_page_details)
+		dispatch('create', new_page)
 	}}
 	in:fade={{ duration: 100 }}
 	class:has-page-types={!!site?.page_types().length}
@@ -59,9 +54,9 @@
 		<UI.Select
 			fullwidth={true}
 			label="Page Type"
-			value={new_page.page_type.id}
+			value={new_page.page_type}
 			options={site.page_types().map((p) => ({ value: p.id, icon: p.icon, label: p.name }))}
-			on:input={({ detail: page_type_id }) => (new_page.page_type = PageTypes.one(page_type_id))}
+			on:input={({ detail: page_type_id }) => (new_page.page_type = page_type_id)}
 		/>
 	{/if}
 	<button disabled={page_creation_disabled}>

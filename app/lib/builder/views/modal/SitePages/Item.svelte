@@ -6,21 +6,21 @@
 	import { content_editable, validate_url } from '$lib/builder/utilities'
 	import PageForm from './PageForm.svelte'
 	import MenuPopup from '$lib/builder/ui/Dropdown.svelte'
-	import type { Page } from '$lib/common/models/Page'
 	import { page as pageState } from '$app/state'
-	import { Sites, Pages } from '$lib/pocketbase/collections'
+	import { Pages, PageTypes } from '$lib/pocketbase/collections'
+	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
 
 	let editing_page = $state(false)
 
 	/** @type {Props} */
-	let { parent, page, active }: { parent?: Page; page: Page; active: boolean } = $props()
+	let { parent, page, active }: { parent?: ObjectOf<typeof Pages>; page: ObjectOf<typeof Pages>; active: boolean } = $props()
 
 	const site_id = $derived(pageState.params.site)
-	const site = $derived(Sites.one(site_id))
 	const full_url = $derived(`/${site_id}/${page.slug}`)
+	const page_type = $derived(PageTypes.one(page.page_type))
 
 	let showing_children = $state(false)
-	let has_children = $derived(page.children.length > 0 && page.slug !== '')
+	let has_children = $derived(page.children().length > 0 && page.slug !== '')
 
 	get(`page-list-toggle--${page.id}`).then((toggled) => {
 		if (toggled !== undefined) showing_children = toggled
@@ -117,8 +117,8 @@
 				</div>
 			{:else}
 				<div class="details">
-					<span class="icon" style:background={page.page_type.color}>
-						<Icon icon={page.page_type.icon} />
+					<span class="icon" style:background={page_type?.color}>
+						<Icon icon={page_type?.icon} />
 					</span>
 					<a class:active href={full_url} onclick={() => {}} class="name">{page.name}</a>
 					<span class="url">/{page.slug}</span>
@@ -164,9 +164,7 @@
 									label: 'Delete',
 									icon: 'ic:outline-delete',
 									on_click: () => {
-										if (!site) return
 										Pages.delete(page.id)
-										// delete site.data.entities.pages[page.id]
 									}
 								}
 							]
@@ -178,7 +176,7 @@
 
 	{#if showing_children && has_children}
 		<ul class="page-list child">
-			{#each page.children as subpage}
+			{#each page.children() as subpage}
 				<Item parent={page} page={subpage} active={false} on:delete on:create />
 			{/each}
 		</ul>
@@ -191,12 +189,11 @@
 				on:create={({ detail: new_page }) => {
 					creating_page = false
 					showing_children = true
-					if (!site) return
 					const url_taken = Pages.list().some((page) => page?.slug === new_page.slug)
 					if (url_taken) {
 						alert(`That URL is already in use`)
 					} else {
-						page.children.push(new_page)
+						Pages.create({ ...new_page, parent: page.id })
 					}
 				}}
 			/>

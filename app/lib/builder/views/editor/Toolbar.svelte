@@ -1,7 +1,5 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui/button'
 	import * as Dialog from '$lib/components/ui/dialog'
-	import { Input } from '$lib/components/ui/input'
 	import { fade } from 'svelte/transition'
 	import { find as _find } from 'lodash-es'
 	import Icon from '@iconify/svelte'
@@ -27,8 +25,9 @@
 	const page_slug = $derived(pageState.params.page || '')
 	const page_type_id = $derived(pageState.params.page_type)
 	const site = $derived(Sites.one(site_id))
-	const page = $derived(site?.site_pages().find((p) => p.slug === page_slug))
-	const page_type = $derived(PageTypes.one(page_type_id))
+	const page = $derived(site?.pages().find((p) => p.slug === page_slug))
+	const page_type = $derived(page_type_id && PageTypes.one(page_type_id))
+	const page_page_type = $derived(page && PageTypes.one(page.page_type))
 
 	let going_up = $state(false)
 	let going_down = $state(false)
@@ -111,22 +110,22 @@
 			</div>
 		</div>
 		<div class="site-name">
-			<span class="site">{site.name} /</span>
+			<span class="site">{site?.name} /</span>
 			{#if page_type}
 				<div class="page-type" style:background={page_type.color}>
 					<Icon icon={page_type.icon} />
 					<span>{page_type.name}</span>
 				</div>
-			{:else if page}
+			{:else if page && page_page_type}
 				<span class="page">{page.name}</span>
 				<!-- $userRole === 'DEV' -->
 				{#if true}
-					<a class="page-type-badge" style="background-color: {page.page_type.color};" href="/{site?.id}/page-type--{page.page_type.id}">
-						<Icon icon={page.page_type.icon} />
+					<a class="page-type-badge" style="background-color: {page_page_type.color};" href="/{site?.id}/page-type--{page_page_type.id}">
+						<Icon icon={page_page_type.icon} />
 					</a>
 				{:else}
-					<span class="page-type-badge" style="background-color: {page.page_type.color};">
-						<Icon icon={page.page_type.icon} />
+					<span class="page-type-badge" style="background-color: {page_page_type.color};">
+						<Icon icon={page_page_type.icon} />
 					</span>
 				{/if}
 			{:else}
