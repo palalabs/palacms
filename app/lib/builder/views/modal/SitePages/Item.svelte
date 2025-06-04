@@ -18,6 +18,7 @@
 	const site_id = $derived(pageState.params.site)
 	const full_url = $derived(`/${site_id}/${page.slug}`)
 	const page_type = $derived(PageTypes.one(page.page_type))
+	const allPages = $derived(Pages.list())
 
 	let showing_children = $state(false)
 	let has_children = $derived(page.children().length > 0 && page.slug !== '')
@@ -189,11 +190,11 @@
 				on:create={({ detail: new_page }) => {
 					creating_page = false
 					showing_children = true
-					const url_taken = Pages.list().some((page) => page?.slug === new_page.slug)
+					const url_taken = allPages.some((page) => page?.slug === new_page.slug)
 					if (url_taken) {
 						alert(`That URL is already in use`)
 					} else {
-						Pages.create({ ...new_page, parent: page.id })
+						Pages.create({ ...new_page, parent: page.id, site: site_id })
 					}
 				}}
 			/>

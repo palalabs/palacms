@@ -13,14 +13,15 @@
 	import { dropTargetForElements } from '$lib/builder/libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
 	import { attachClosestEdge, extractClosestEdge } from '$lib/builder/libraries/pragmatic-drag-and-drop-hitbox/closest-edge.js'
 	import { beforeNavigate } from '$app/navigation'
-	import type { Page } from '$lib/common/models/Page'
 	import { page as pageState } from '$app/state'
-	import { Sites } from '$lib/pocketbase/collections'
+	import { Pages, Sites } from '$lib/pocketbase/collections'
+	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
 
-	let { page }: { page: Page } = $props()
+	let { page }: { page: ObjectOf<typeof Pages> } = $props()
 
 	const site_id = $derived(pageState.params.site)
 	const site = $derived(Sites.one(site_id))
+	const sections = $derived(page.sections())
 
 	// Fade in page when all components mounted
 	let page_mounted = $state(false)
@@ -142,7 +143,7 @@
 	function edit_section(tab) {
 		if (!hovered_section) return
 		lock_block(hovered_section_id)
-		const section = page.sections.find((s) => s.id === hovered_section_id) // get updated block (necessary if actively editing on-page)
+		const section = sections.find((s) => s.id === hovered_section_id) // get updated block (necessary if actively editing on-page)
 		editing_section = true
 		editing_section_tab = tab
 	}
@@ -250,7 +251,7 @@
 			},
 			async onDrop({ self, source }) {
 				const is_first_pallete_section = palette_sections.length === 0
-				const section_dragged_over_index = page.sections.find((s) => s.id === self.data.section.id).index
+				const section_dragged_over_index = sections.find((s) => s.id === self.data.section.id).index
 				const block_being_dragged = source.data.block
 				const closestEdgeOfTarget = extractClosestEdge(self.data)
 				if (closestEdgeOfTarget === 'top') {
@@ -284,8 +285,8 @@
 		})
 	}
 
-	let page_is_empty = $derived(page.sections.length === 1) // just has palette
-	let non_palette_sections = $derived(page.sections.filter((s) => s.palette || s.master?.symbol))
+	let page_is_empty = $derived(sections.length === 1) // just has palette
+	let non_palette_sections = $derived(sections.filter((s) => s.palette || s.master?.symbol))
 	$effect(() => {
 		if (sections_mounted === non_palette_sections.length && sections_mounted !== 0) {
 			page_mounted = true
@@ -293,7 +294,7 @@
 			page_mounted = true
 		}
 	})
-	let palette_section = $derived(page.sections.find((s) => !s.symbol && !s.master?.symbol))
+	let palette_section = $derived(sections.find((s) => !s.symbol && !s.master?.symbol))
 	let block_toolbar_on_locked_block = $derived($locked_blocks.find((b) => b.block_id === hovered_section?.id))
 	$effect(() => {
 		if (block_toolbar_on_locked_block) hide_block_toolbar()
@@ -302,9 +303,9 @@
 	// on drag, display palette drop zone
 	// only respond to hover within palette drop zone
 
-	let top_level_sections = $derived(page.sections.filter((s) => !s.palette))
-	let palette_sections = $derived(page.sections.filter((s) => s.palette))
-	let static_sections = $derived(page.sections.filter((s) => s.master?.symbol))
+	let top_level_sections = $derived(sections.filter((s) => !s.palette))
+	let palette_sections = $derived(sections.filter((s) => s.palette))
+	let static_sections = $derived(sections.filter((s) => s.master?.symbol))
 
 	let hovered_section_id: string | null = $state(null)
 	let hovered_section = $derived(page?.sections.find((s) => s.id === hovered_section_id))
@@ -332,7 +333,7 @@
 </Dialog.Root>
 
 <!-- Loading Spinner -->
-{#if !page_mounted && page.sections.length > 1}
+{#if !page_mounted && sections.length > 1}
 	<div class="spinner" style="--Spinner-color: var(--color-gray-7);">
 		<UI.Spinner variant="loop" />
 	</div>
