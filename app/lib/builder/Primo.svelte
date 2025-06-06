@@ -126,7 +126,7 @@
 		// 	$site_html = true
 		// 	previous = _.cloneDeep({ head: site.head })
 		// })
-		$site_html = true
+		$site_html = '   '
 	})
 
 	// reset site html to avoid issues when navigating to new site
