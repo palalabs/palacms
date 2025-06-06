@@ -155,7 +155,7 @@
 		&:hover,
 		&:focus {
 			/* background: var(--primo-color-codeblack); */
-			background: #1f1f1f;
+			background: var(--primo-color-codeblack);
 			/* z-index: 2; */
 		}
 

@@ -174,7 +174,7 @@
 		align-items: center;
 		gap: 0.25rem;
 		width: 100%;
-		background: #1f1f1f; /* TODO: set to variable (this is nice inbetween color) */
+		background: var(--primo-color-codeblack);
 		border: 1px solid var(--color-gray-8);
 		color: var(--color-gray-2);
 		font-weight: 400;

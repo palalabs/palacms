@@ -92,7 +92,7 @@
 						<DropdownMenu.Root>
 							<DropdownMenu.Trigger>
 								{#snippet child({ props })}
-									<button {...props} class="hover:bg-[#1f1f1f]" style="border-left: 1px solid #222">
+									<button {...props} class="hover:bg-[var(--primo-color-codeblack)]" style="border-left: 1px solid #222">
 										<ChevronDown class="h-4" />
 										<span class="sr-only">More</span>
 									</button>

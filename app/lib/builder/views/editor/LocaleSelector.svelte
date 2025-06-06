@@ -13,7 +13,7 @@
 	 */
 
 	/** @type {Props} */
-	let { align = 'right' } = $props();
+	let { align = 'right' } = $props()
 
 	const Language_Name = (language) => _find(available_languages, ['key', language])['name']
 
@@ -22,18 +22,20 @@
 	let site_languages = $derived($entries ? Object.keys($entries) : [])
 
 	let searchText = $state('')
-	let filtered_available_languages = $derived(((text) => {
-		return text.length > 0 ? available_languages.filter((l) => !site_languages.includes(l.key)).filter(match) : available_languages
-		function match(language) {
-			let matching_language
-			try {
-				matching_language = language.key.match(text.toLowerCase()) || language.name.toLowerCase().match(text.toLowerCase())
-			} catch (e) {
-				matching_language = false
+	let filtered_available_languages = $derived(
+		((text) => {
+			return text.length > 0 ? available_languages.filter((l) => !site_languages.includes(l.key)).filter(match) : available_languages
+			function match(language) {
+				let matching_language
+				try {
+					matching_language = language.key.match(text.toLowerCase()) || language.name.toLowerCase().match(text.toLowerCase())
+				} catch (e) {
+					matching_language = false
+				}
+				return matching_language
 			}
-			return matching_language
-		}
-	})(searchText))
+		})(searchText)
+	)
 
 	// Reset when closing
 	$effect(() => {
@@ -41,7 +43,7 @@
 			addingLanguage = false
 			searchText = ''
 		}
-	});
+	})
 </script>
 
 <div id="language-selector" class:left={align === 'left'} in:fly={{ duration: 200, x: 50, opacity: 0 }}>
@@ -182,7 +184,7 @@
 				&:hover,
 				&:focus,
 				&.active {
-					background: #1f1f1f;
+					background: var(--primo-color-codeblack);
 				}
 				&:focus {
 					outline: 0;

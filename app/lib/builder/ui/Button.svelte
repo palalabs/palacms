@@ -91,7 +91,7 @@
 			align-items: center;
 			gap: 0.25rem;
 			padding-block: 0.5rem;
-			background: #1f1f1f;
+			background: var(--primo-color-codeblack);
 			border-radius: 0.25rem;
 			justify-self: start;
 			border-color: transparent;

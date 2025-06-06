@@ -212,7 +212,7 @@
 <style lang="postcss">
 	button.create-page {
 		padding: 0.5rem;
-		background: #1f1f1f;
+		background: var(--primo-color-codeblack);
 		margin-left: 0.5rem;
 		width: calc(100% - 0.5rem);
 		font-size: 0.75rem;

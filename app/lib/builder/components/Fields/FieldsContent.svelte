@@ -268,7 +268,7 @@
 	.field-button {
 		width: 100%;
 		/* background: #292929; */
-		background: #1f1f1f;
+		background: var(--primo-color-codeblack);
 		color: var(--button-color);
 		transition:
 			background 0.1s,

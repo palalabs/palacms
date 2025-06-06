@@ -140,7 +140,7 @@
 		/* height: 2rem; */
 		/* color: var(--primo-color-white); */
 		/* background-color: var(--primo-color-black-opaque); */
-		background: #1f1f1f;
+		background: var(--primo-color-codeblack);
 		color: white;
 
 		/* font-size: var(--font-size-2); */

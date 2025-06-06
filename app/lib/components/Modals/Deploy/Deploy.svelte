@@ -100,7 +100,7 @@
 		align-items: center;
 		gap: 0.25rem;
 		padding: 7px 16px;
-		background: #1f1f1f;
+		background: var(--primo-color-codeblack);
 		border-radius: 0.25rem;
 		justify-self: start;
 		/* height: 100%; */

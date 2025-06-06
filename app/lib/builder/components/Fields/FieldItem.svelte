@@ -492,7 +492,7 @@
 		/* margin-top: 10px; */
 		padding: 0.5rem 1rem;
 		font-size: var(--font-size-2);
-		/* background: #1f1f1f; */
+		/* background: var(--primo-color-codeblack); */
 		background: #292929;
 		color: var(--button-color);
 		/* background-color: #292929; */
