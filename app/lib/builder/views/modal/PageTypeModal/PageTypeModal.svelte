@@ -27,9 +27,9 @@
 
 <Dialog.Header title="Page Types" />
 <main class="grid gap-2 p-2 bg-[var(--primo-color-black)]">
-	{#if PageTypes.list().length}
+	{#if site?.page_types().length}
 		<ul class="grid gap-2">
-			{#each PageTypes.list() as page_type}
+			{#each site.page_types() as page_type}
 				<li>
 					<Item {page_type} active={false} />
 				</li>
