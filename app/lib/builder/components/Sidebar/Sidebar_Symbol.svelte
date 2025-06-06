@@ -48,11 +48,11 @@
 	let component_error = $state()
 	onMount(() => {
 		const code = {
-			html: symbol.code.html,
-			css: symbol.code.css,
-			js: symbol.code.js
+			html: symbol.html,
+			css: symbol.css,
+			js: symbol.js
 		}
-		const data = get_content(symbol.id, symbol.fields)[$locale] ?? {}
+		const data = get_content(symbol.id, symbol.fields())[$locale] ?? {}
 		block_html({
 			code,
 			data

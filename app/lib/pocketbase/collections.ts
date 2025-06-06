@@ -77,7 +77,7 @@ export const Sites = createCollectionMapping('sites', Site, {
 		pages() {
 			return Pages.from(this.collection.instance).list({ filter: `site = "${this.id}"` })
 		},
-		home_page() {
+		homepage() {
 			return Pages.from(this.collection.instance).list({ filter: `site = "${this.id}" && parent = ''` })[0]
 		}
 	}
@@ -119,6 +119,9 @@ export const PageTypes = createCollectionMapping('page_types', PageType, {
 	links: {
 		symbols() {
 			return PageTypeSymbols.from(this.collection.instance).list({ filter: `page_type = "${this.id}"` })
+		},
+		sections() {
+			return PageTypeSections.from(this.collection.instance).list({ filter: `section = "${this.id}"` })
 		}
 	}
 })
@@ -160,6 +163,9 @@ export const PageSections = createCollectionMapping('page_sections', PageSection
 	links: {
 		entries() {
 			return PageSectionEntries.from(this.collection.instance).list({ filter: `section = "${this.id}"` })
+		},
+		symbol() {
+			return SiteSymbols.from(this.collection.instance).one(this.symbol)
 		}
 	}
 })

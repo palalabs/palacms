@@ -39,7 +39,7 @@
 
 	const dispatch = createEventDispatcher()
 
-	let { block, section }: { block: Symbol; section: Section } = $props()
+	let { block, section }: { block: SiteSymbol; section: Section } = $props()
 
 	let node = $state()
 
@@ -58,13 +58,13 @@
 	let error = $state('')
 
 	let generated_js = $state('')
-	async function generate_component_code(code) {
+	async function generate_component_code(block) {
 		const res = await processCode({
 			component: {
 				head: '',
-				html: code.html,
-				css: code.css,
-				js: code.js,
+				html: block.html,
+				css: block.css,
+				js: block.js,
 				data: component_data
 			},
 			buildStatic: false,
@@ -106,7 +106,7 @@
 		const assigned_entry_ids = new Set() // elements that have been matched to a field ID
 
 		const static_field_types = ['text', 'link', 'image', 'markdown']
-		const static_fields = block.fields.filter((f) => static_field_types.includes(f.type))
+		const static_fields = block.fields().filter((f) => static_field_types.includes(f.type))
 
 		for (const field of static_fields) {
 			const relevant_entries = section.entries.filter((e) => e.field === field.id)
@@ -460,9 +460,9 @@
 
 	let compiled_code = $state(null)
 	$effect(() => {
-		if (!_.isEqual(compiled_code, block.code)) {
-			generate_component_code(block.code)
-			compiled_code = _.cloneDeep(block.code)
+		if (block && !_.isEqual(compiled_code, block.html)) {
+			generate_component_code(block)
+			compiled_code = _.cloneDeep(block.html)
 		}
 	})
 
@@ -600,7 +600,7 @@
 	async function send_component_to_iframe(js, data) {
 		try {
 			node.contentWindow.postMessage({ type: 'component', payload: { js, data: _.cloneDeep(data) } }, '*')
-			setTimeout(make_content_editable, 200) // wait for component to mount within iframe
+			// setTimeout(make_content_editable, 200) // wait for component to mount within iframe
 		} catch (e) {
 			console.error(e)
 			error = e

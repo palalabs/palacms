@@ -6,7 +6,7 @@
 
 	const site_id = $derived(pageState.params.site)
 	const site = $derived(Sites.one(site_id))
-	const page = $derived(site?.home_page())
+	const page = $derived(site?.homepage())
 </script>
 
 {#if $compilers_registered && page}

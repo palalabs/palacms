@@ -30,7 +30,7 @@
 		}
 	}
 
-	let selected_page = $derived(entry.value.page ?? site.home_page())
+	let selected_page = $derived(entry.value.page ?? site.homepage())
 	function get_page_url(page) {
 		const prefix = $locale === 'en' ? '/' : `/${$locale}/`
 		if (page.slug === '') {
@@ -67,7 +67,7 @@
 			{#if selected === 'page'}
 				<UI.Select
 					value={selected_page}
-					options={[site.home_page()]}
+					options={[site.homepage()]}
 					on:input={({ detail: page }) => {
 						selected_page = page
 					}}

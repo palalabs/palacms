@@ -18,6 +18,8 @@
 	const site = $derived(Sites.one(site_id))
 </script>
 
-<Primo {site}>
-	{@render children?.()}
-</Primo>
+{#if site}
+	<Primo {site}>
+		{@render children?.()}
+	</Primo>
+{/if}

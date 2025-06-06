@@ -389,8 +389,8 @@
 {/if}
 
 <!-- Page Blocks -->
-<main id="Page" bind:this={page_el} class:fadein={$page_loaded && page_mounted} class:dragging={$dragging_symbol} lang={$locale} use:drag_fallback>
-	{#each top_level_sections as section (section.id)}
+<main id="Page" bind:this={page_el} class:fadein={true} class:dragging={$dragging_symbol} lang={$locale} use:drag_fallback>
+	{#each sections as section (section.id)}
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<!-- svelte-ignore a11y_mouse_events_have_key_events -->
 		{@const is_palette = !section.symbol && !section.master?.symbol}
@@ -401,9 +401,9 @@
 			<div data-section={section.id} data-type="palette" class:empty={palette_sections.length === 0}>
 				{#if palette_sections.length > 0}
 					{#each palette_sections as section (section.id)}
-						{@const block = section.symbol}
+						{@const block = section.symbol()}
 						{@const locked = $locked_blocks.find((b) => b.block_id === section.id)}
-						{@const in_current_tab = locked?.instance === instance_key}
+						{@const in_current_tab = false}
 						<div
 							role="presentation"
 							data-section={section.id}
@@ -457,9 +457,9 @@
 				{/if}
 			</div>
 		{:else if !is_palette}
-			{@const block = section.symbol}
+			{@const block = section.symbol()}
 			{@const locked = $locked_blocks.find((b) => b.block_id === section.id)}
-			{@const in_current_tab = locked?.instance === instance_key}
+			{@const in_current_tab = false}
 			<div
 				role="presentation"
 				data-section={section.id}
