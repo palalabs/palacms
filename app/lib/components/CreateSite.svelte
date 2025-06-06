@@ -10,7 +10,7 @@
 	import DesignFields from './Modals/DesignFields.svelte'
 	import * as code_generators from '$lib/builder/code_generators'
 	import { Site } from '$lib/common/models/Site'
-	import { Sites, SiteGroups, PageTypes, Pages } from '$lib/pocketbase/collections'
+	import { Sites, SiteGroups, PageTypes, Pages, SiteSymbols, PageSections, PageTypeSections } from '$lib/pocketbase/collections'
 	import { page } from '$app/state'
 	import type { PageType } from '$lib/common/models/PageType'
 	import type { Page } from '$lib/common/models/Page'
@@ -117,12 +117,35 @@
 			})
 			const page_type = await PageTypes.create({
 				...blank_site_home_page_type,
+				name: 'Default',
 				site: site.id
 			})
-			await Pages.create({
+			const page = await Pages.create({
 				...black_site_home_page,
 				page_type: page_type.id,
 				site: site.id
+			})
+
+			// Create a default "Welcome" symbol for the homepage
+			const welcome_symbol = await SiteSymbols.create({
+				name: 'Welcome',
+				html: '<div class="welcome"><h1>Welcome to Pala</h1><p>Start building your site by editing this content.</p></div>',
+				css: '.welcome { padding: 2rem; text-align: center; }\n.welcome h1 { margin-bottom: 1rem; }',
+				js: '',
+				site: site.id
+			})
+
+			// Create a section on the homepage using the welcome symbol
+			await PageSections.create({
+				page: page.id,
+				symbol: welcome_symbol.id,
+				index: 0
+			})
+
+			await PageTypeSections.create({
+				symbol: welcome_symbol.id,
+				index: 0,
+				page_type: page_type.id
 			})
 		}
 
