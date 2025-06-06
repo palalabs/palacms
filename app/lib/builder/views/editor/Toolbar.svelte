@@ -27,7 +27,7 @@
 	const site = $derived(Sites.one(site_id))
 	const page = $derived(site?.pages().find((p) => p.slug === page_slug))
 	const page_type = $derived(page_type_id && PageTypes.one(page_type_id))
-	const page_page_type = $derived(page && PageTypes.one(page.page_type))
+	const page_page_type = $derived(page?.page_type())
 
 	let going_up = $state(false)
 	let going_down = $state(false)

@@ -23,7 +23,7 @@
 	const slug = $derived(pageState.params.page)
 	const site = $derived(Sites.one(site_id))
 	const page = $derived(site?.pages().find((page) => page.slug === slug) ?? site?.home_page())
-	const page_type = $derived(page && PageTypes.one(page.page_type))
+	const page_type = $derived(page?.page_type())
 
 	let page_type_symbols = $derived(page_type?.symbols())
 	let has_symbols = $derived(!!page_type_symbols?.length)

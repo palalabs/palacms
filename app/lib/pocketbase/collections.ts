@@ -143,6 +143,12 @@ export const Pages = createCollectionMapping('pages', Page, {
 		},
 		sections() {
 			return PageSections.from(this.collection.instance).list({ filter: `page = "${this.id}"` })
+		},
+		site() {
+			return Sites.from(this.collection.instance).one(this.site)
+		},
+		page_type() {
+			return PageTypes.from(this.collection.instance).one(this.page_type)
 		}
 	}
 })
