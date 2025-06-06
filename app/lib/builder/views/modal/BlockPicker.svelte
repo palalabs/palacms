@@ -2,7 +2,6 @@
 	import * as Dialog from '$lib/components/ui/dialog'
 	import * as Sidebar from '$lib/components/ui/sidebar'
 	import Symbol from '../../components/Site_Symbol.svelte'
-	import { site_html } from '$lib/builder/stores/app/page'
 	import type { LibrarySymbol as SymbolModel } from '$lib/common/models/LibrarySymbol'
 	import { LibrarySymbolGroups } from '$lib/pocketbase/collections'
 	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'

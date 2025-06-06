@@ -65,7 +65,10 @@ export const SiteGroups = createCollectionMapping('site_groups', SiteGroup, {
 
 export const Sites = createCollectionMapping('sites', Site, {
 	links: {
-		site_fields() {
+		symbols() {
+			return SiteSymbols.from(this.collection.instance).list({ filter: `site = "${this.id}"` })
+		},
+		fields() {
 			return SiteFields.from(this.collection.instance).list({ filter: `site = "${this.id}"` })
 		},
 		page_types() {

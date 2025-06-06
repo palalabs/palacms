@@ -18,8 +18,7 @@
 	import { page } from '$app/state'
 	import { Sites, PageTypes, SiteSymbols, PageTypeSymbols } from '$lib/pocketbase/collections'
 	import { site_html } from '$lib/builder/stores/app/page.js'
-
-	const UPDATE_COUNTER = Symbol('UPDATE_COUNTER')
+	import { Symbol } from '$lib/common/models/Symbol.js'
 
 	const site_id = $derived(page.params.site)
 	const page_type_id = $derived(page.params.page_type)
@@ -95,12 +94,9 @@
 				title: `Edit ${active_block?.title || 'Block'}`,
 				button: {
 					label: 'Save',
-					onclick: (updated_data) => {
-						// grabbing this again here since there seems to be an issue w/ Object.assign when active_block is in a rune
-						const active_block = SiteSymbols.list().find((s) => s.id === active_block_id)
-						Object.assign(active_block, updated_data)
-						// Force rerender for the sidebar preview
-						active_block[UPDATE_COUNTER] = (active_block[UPDATE_COUNTER] ?? 0) + 1
+					onclick: (updated_data: Omit<Symbol, 'id'>) => {
+						if (!active_block_id) return
+						SiteSymbols.update(active_block_id, updated_data)
 						editing_block = false
 						active_block_id = null
 					}
@@ -116,9 +112,8 @@
 			header={{
 				button: {
 					label: 'Create Block',
-					onclick: (new_block) => {
-						// TODO: test this
-						SiteSymbols.create(new_block)
+					onclick: (new_block: Symbol) => {
+						SiteSymbols.create({ ...new_block, id: undefined, site: site_id })
 						creating_block = false
 					}
 				}
@@ -180,8 +175,9 @@
 				</div>
 				{#if $site_html !== null}
 					<div class="block-list">
-						{#each SiteSymbols.list() ?? [] as symbol (symbol.id + symbol[UPDATE_COUNTER])}
-							{@const toggled = PageTypeSymbols.list().some((active) => active.id == symbol.id)}
+						{#each site?.symbols() ?? [] as symbol (symbol.id)}
+							{@const relation = page_type?.symbols().find((relation) => relation.symbol === symbol.id)}
+							{@const toggled = !!relation}
 							<div class="block" animate:flip={{ duration: 200 }} use:drag_target={symbol}>
 								<Sidebar_Symbol
 									{symbol}
@@ -191,13 +187,15 @@
 									on:toggle={({ detail }) => {
 										if (!page_type || detail === toggled) return // dispatches on creation for some reason
 										if (toggled) {
-											// TODO
-											// page_type.symbols = page_type.symbols.filter((active) => active.id !== symbol.id)
+											PageTypeSymbols.delete(relation.id)
 										} else {
-											// page_type.symbols.push(symbol)
+											PageTypeSymbols.create({ page_type: page_type.id, symbol: symbol.id })
 										}
 									}}
 									on:edit={() => edit_block(symbol, symbol.id)}
+									on:delete={() => {
+										SiteSymbols.delete(symbol.id)
+									}}
 								/>
 							</div>
 						{/each}

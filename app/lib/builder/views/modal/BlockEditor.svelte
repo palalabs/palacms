@@ -15,6 +15,7 @@
 	import hotkey_events from '$lib/builder/stores/app/hotkey_events.js'
 	import { get_content } from '$lib/builder/stores/helpers'
 	import { SiteSymbol } from '$lib/common/models/SiteSymbol'
+	import { Symbol } from '$lib/common/models/Symbol'
 
 	let {
 		block: existing_block,
@@ -32,20 +33,11 @@
 		}
 	}: { block?: SiteSymbol; tab?: string; header?: any } = $props()
 
-	let block = $state({} as SiteSymbol)
-	$effect.pre(() => {
-		if (existing_block) {
-			block = existing_block
-		} else {
-			block = { code: { css: '', html: '', js: '' }, fields: [], name: 'New Block' }
-		}
-	})
-
-	$inspect({ block })
+	let block = $state<Omit<Symbol, 'id'>>(_.cloneDeep(existing_block) || { css: '', html: '', js: '', name: 'New Block' })
 
 	let loading = false
 
-	let component_data = $derived(get_content(block.id, block.fields)[$locale])
+	let component_data = $derived({}) // TODO
 
 	hotkey_events.on('e', toggle_tab)
 
@@ -68,7 +60,6 @@
 
 	async function save_component() {
 		if (!$has_error) {
-			console.log({ the_block: _.cloneDeep(block) })
 			header.button.onclick(_.cloneDeep(block))
 		}
 	}
@@ -90,14 +81,14 @@
 	<PaneGroup direction={$orientation} class="flex">
 		<Pane defaultSize={50}>
 			{#if tab === 'code'}
-				<FullCodeEditor bind:html={block.code.html} bind:css={block.code.css} bind:js={block.code.js} data={component_data} on:save={save_component} on:mod-e={toggle_tab} />
+				<FullCodeEditor bind:html={block.html} bind:css={block.css} bind:js={block.js} data={component_data} on:save={save_component} on:mod-e={toggle_tab} />
 			{:else if tab === 'content'}
-				<Fields id={block.id} entity_id={block.id} fields={block.fields} />
+				<Fields id={block.id} entity_id={block.id} fields={[]} />
 			{/if}
 		</Pane>
 		<PaneResizer class="PaneResizer" />
 		<Pane defaultSize={50}>
-			<ComponentPreview bind:orientation={$orientation} view="small" {loading} code={block.code} data={component_data} />
+			<ComponentPreview bind:orientation={$orientation} view="small" {loading} code={{ html: block.html, css: block.css, js: block.js }} data={component_data} />
 		</Pane>
 	</PaneGroup>
 </main>
