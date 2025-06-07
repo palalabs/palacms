@@ -17,7 +17,7 @@
 	const dispatch = createEventDispatcher()
 
 	let {
-		symbol = $bindable(),
+		symbol,
 		controls_enabled = true,
 		show_toggle = false,
 		toggled = false,
