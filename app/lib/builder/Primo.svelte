@@ -121,12 +121,10 @@
 	$effect.pre(() => {
 		if (!site) return
 		if (_.isEqual(previous, { head: site.head })) return
-		// compile_component_head(`<svelte:head>${site.head}</svelte:head>`).then((generated_code) => {
-		// 	console.log({ site, generated_code })
-		// 	$site_html = true
-		// 	previous = _.cloneDeep({ head: site.head })
-		// })
-		$site_html = '   '
+		compile_component_head(`<svelte:head>${site.head}</svelte:head>`).then((generated_code) => {
+			$site_html = generated_code
+			previous = _.cloneDeep({ head: site.head })
+		})
 	})
 
 	// reset site html to avoid issues when navigating to new site
@@ -139,7 +137,8 @@
 			component: {
 				html,
 				css: '',
-				js: ''
+				js: '',
+				data: {}
 			}
 		})
 		if (!compiled.error) {

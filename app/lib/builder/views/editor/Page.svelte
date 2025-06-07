@@ -306,7 +306,7 @@
 	let static_sections = $derived(sections.filter((s) => s.master?.symbol))
 
 	let hovered_section_id: string | null = $state(null)
-	let hovered_section = $derived(page?.sections.find((s) => s.id === hovered_section_id))
+	let hovered_section = $derived(page?.sections().find((s) => s.id === hovered_section_id))
 	let editing_section = $state(false)
 </script>
 
@@ -471,7 +471,7 @@
 					// 	...section,
 					// 	is_last: section.index === top_level_sections.length - 1
 					// }
-					// hovered_block_el = target
+					hovered_block_el = target
 					show_block_toolbar()
 				}}
 				onmouseleave={hide_block_toolbar}
