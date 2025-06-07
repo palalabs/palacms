@@ -32,11 +32,13 @@
 		}
 	}: { component: Section; tab: string; header?: any } = $props()
 
+	const symbol = $derived(component?.symbol())
+
 	let loading = false
 
 	let component_data = $state({})
 	function update_component_data() {
-		component_data = get_content(component.id, component.symbol.fields)[$locale]
+		component_data = get_content(component.id, symbol.fields())[$locale]
 	}
 	$effect.pre(() => {
 		update_component_data()
@@ -61,7 +63,7 @@
 
 <Dialog.Header
 	class="mb-2"
-	title={component.symbol.name || 'Block'}
+	title={symbol.name || 'Block'}
 	button={{
 		label: header.button.label || 'Save',
 		onclick: save_component,
@@ -76,25 +78,25 @@
 		<Pane defaultSize={50} class="flex flex-col">
 			{#if tab === 'code'}
 				<FullCodeEditor
-					bind:html={component.symbol.code.html}
-					bind:css={component.symbol.code.css}
-					bind:js={component.symbol.code.js}
+					bind:html={symbol.html}
+					bind:css={symbol.css}
+					bind:js={symbol.js}
 					data={_.cloneDeep(component_data)}
 					on:save={save_component}
 					on:mod-e={toggle_tab}
 					on:mod-r={() => $refresh_preview()}
 				/>
 			{:else if tab === 'content'}
-				<Fields id="section-{component.id}" entity_id={component.id} fields={component.symbol.fields} />
+				<Fields id="section-{component.id}" entity_id={component.id} fields={symbol.fields} />
 			{/if}
 		</Pane>
 		<PaneResizer class="PaneResizer" />
 		<Pane defaultSize={50}>
 			<ComponentPreview
 				code={{
-					html: component.symbol.code.html,
-					css: component.symbol.code.css,
-					js: component.symbol.code.js
+					html: symbol.html,
+					css: symbol.css,
+					js: symbol.js
 				}}
 				data={_.cloneDeep(component_data)}
 				bind:orientation={$orientation}
