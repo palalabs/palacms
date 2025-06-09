@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { page } from '$app/state'
 	import type { PageField } from '$lib/common/models/fields/PageField'
-	import { get_direct_entries } from '../stores/helpers.js'
 	import UI from '../ui/index.js'
 	import { Sites } from '$lib/pocketbase/collections'
+	import { getDirectEntries, type Entity } from '$lib/pocketbase/content.js'
 
-	const { entity_id, field }: { entity_id: string; field: PageField } = $props()
+	const { entity, field }: { entity: Entity; field: PageField } = $props()
 	const site_id = page.params.site
 	const site = $derived(Sites.one(site_id))
-	const entry = $derived(get_direct_entries(entity_id, field)[0])
+	const entry = $derived(getDirectEntries(entity, field)[0])
 	const selectable_pages = $derived((site?.pages() ?? []).filter((p) => p.page_type === field.config.page_type))
 </script>
 

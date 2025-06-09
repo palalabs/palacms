@@ -2,7 +2,6 @@ import { z } from 'zod'
 import { Entry } from './Entry'
 
 export const SiteEntry = Entry.extend({
-	id: z.string().nonempty(),
 	field: z.string().nonempty()
 })
 

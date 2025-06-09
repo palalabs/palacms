@@ -2,21 +2,13 @@
 	import Icon from '@iconify/svelte'
 	import * as _ from 'lodash-es'
 	import FieldItem from './FieldItem.svelte'
-	import { fieldTypes, locale } from '../../stores/app/index.js'
-	import { is_regex, get_empty_value } from '../../utils.js'
+	import { fieldTypes } from '../../stores/app/index.js'
 	import Card from '../../ui/Card.svelte'
-	import { get } from 'idb-keyval'
 	import { mod_key_held } from '../../stores/app/misc.js'
 	import type { Field } from '$lib/common/models/Field'
+	import { getDirectEntries, getResolvedEntries, type Entity } from '$lib/pocketbase/content'
 
-	import { get_direct_entries, get_resolved_entries } from '$lib/builder/stores/helpers'
-
-	let { id, entity_id, fields }: { id: string; entity_id: string; fields: Field[] } = $props()
-
-	function create_field() {
-		// TODO: Implement
-		throw new Error('Not implemented')
-	}
+	let { entity, fields, create_field }: { entity: Entity; fields: Field[]; create_field: () => void } = $props()
 
 	function get_component(field: Field) {
 		const fieldType = $fieldTypes.find((ft) => ft.id === field.type)
@@ -29,29 +21,31 @@
 	}
 
 	function check_condition(field: Field) {
-		if (!field.condition) return true // has no condition
+		return true // TODO: Implement
 
-		const { field: field_to_check, value, comparison } = field.condition
+		// if (!field.condition) return true // has no condition
 
-		// TODO: ensure correct field (considering repeaters)
-		const content_entry = get_direct_entries(entity_id, field_to_check)?.[0]
-		if (!content_entry) {
-			// comparable entry is a non-matching data field
-			// TODO: add UI to conditional component that says "this field will show when data field is irrelevant"
-			return true
-		} else if (comparison === '=' && value === content_entry.value) {
-			return true
-		} else if (comparison === '!=' && value !== content_entry.valuerable_value) {
-			return true
-		} else if (typeof value === 'string' && is_regex(value)) {
-			const regex = new RegExp(value.slice(1, -1))
-			if (comparison === '=' && regex.test(content_entry.value)) {
-				return true
-			} else if (comparison === '!=' && !regex.test(content_entry.value)) {
-				return true
-			}
-		}
-		return false
+		// const { field: field_to_check, value, comparison } = field.condition
+
+		// // TODO: ensure correct field (considering repeaters)
+		// const content_entry = get_direct_entries(entity_id, field_to_check)?.[0]
+		// if (!content_entry) {
+		// 	// comparable entry is a non-matching data field
+		// 	// TODO: add UI to conditional component that says "this field will show when data field is irrelevant"
+		// 	return true
+		// } else if (comparison === '=' && value === content_entry.value) {
+		// 	return true
+		// } else if (comparison === '!=' && value !== content_entry.valuerable_value) {
+		// 	return true
+		// } else if (typeof value === 'string' && is_regex(value)) {
+		// 	const regex = new RegExp(value.slice(1, -1))
+		// 	if (comparison === '=' && regex.test(content_entry.value)) {
+		// 		return true
+		// 	} else if (comparison === '!=' && !regex.test(content_entry.value)) {
+		// 		return true
+		// 	}
+		// }
+		// return false
 	}
 
 	// TABS
@@ -67,14 +61,15 @@
 			selected_tabs[field_id] = tab
 		})
 	}
-	get(`active-tabs--${id}`).then((saved) => {
-		if (saved) {
-			Object.keys(saved).forEach((field_id) => {
-				const saved_tab = saved[field_id]
-				selected_tabs[field_id] = ['field', 'entry'].includes(saved_tab) ? saved_tab : 'entry'
-			})
-		}
-	})
+	// TODO: Implement
+	// get(`active-tabs--${id}`).then((saved) => {
+	// 	if (saved) {
+	// 		Object.keys(saved).forEach((field_id) => {
+	// 			const saved_tab = saved[field_id]
+	// 			selected_tabs[field_id] = ['field', 'entry'].includes(saved_tab) ? saved_tab : 'entry'
+	// 		})
+	// 	}
+	// })
 </script>
 
 <div class="Fields">
@@ -133,7 +128,7 @@
 				{:else if active_tab === 'entry'}
 					{#if is_visible}
 						{#if field.type === 'site-field' || field.type === 'page-field'}
-							{@const source_entry = get_resolved_entries(entity_id, field)[0]}
+							{@const source_entry = getResolvedEntries(entity, field)[0]}
 							{#if source_entry}
 								{@const title = ['repeater', 'group'].includes(field.type) ? field.label : null}
 								{@const icon = undefined}
@@ -142,24 +137,24 @@
 										<Icon icon="gg:website" />
 										<span>Site Content</span>
 									{:else if field.type === 'page-field'}
-										{@const content_entry = get_direct_entries(entity_id, field)?.[0]}
+										{@const content_entry = getDirectEntries(entity, field)[0]}
 										<Icon icon={content_entry?.value.page.page_type.icon} />
 										<span>Page Content</span>
 									{/if}
 								</div>
 								<Card {title} {icon}>
-									<Field_Component {entity_id} {field} />
+									<Field_Component {entity} {field} />
 								</Card>
 							{:else}
 								<span>Field {field.id} is corrupted, should be deleted.</span>
 							{/if}
 						{:else}
-							{@const content_entry = get_direct_entries(entity_id, field)?.[0]}
+							{@const content_entry = getDirectEntries(entity, field)[0]}
 							{#if content_entry}
 								{@const title = ['repeater', 'group'].includes(field.type) ? field.label : null}
 								{@const icon = undefined}
 								<Card {title} {icon}>
-									<Field_Component {entity_id} {field} />
+									<Field_Component {entity} {field} />
 								</Card>
 							{:else}
 								<span>Field {field.id} is corrupted, should be deleted.</span>

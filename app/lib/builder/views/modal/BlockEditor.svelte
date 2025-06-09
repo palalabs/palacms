@@ -13,9 +13,9 @@
 	import Fields from '$lib/builder/components/Fields/FieldsContent.svelte'
 	import { locale } from '$lib/builder/stores/app/misc.js'
 	import hotkey_events from '$lib/builder/stores/app/hotkey_events.js'
-	import { get_content } from '$lib/builder/stores/helpers'
-	import { SiteSymbol } from '$lib/common/models/SiteSymbol'
 	import { Symbol } from '$lib/common/models/Symbol'
+	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
+	import type { SiteSymbols } from '$lib/pocketbase/collections'
 
 	let {
 		block: existing_block,
@@ -31,7 +31,7 @@
 				}
 			}
 		}
-	}: { block?: SiteSymbol; tab?: string; header?: any } = $props()
+	}: { block?: ObjectOf<typeof SiteSymbols>; tab?: string; header?: any } = $props()
 
 	let block = $state<Omit<Symbol, 'id'>>(_.cloneDeep(existing_block) || { css: '', html: '', js: '', name: 'New Block' })
 
@@ -83,7 +83,7 @@
 			{#if tab === 'code'}
 				<FullCodeEditor bind:html={block.html} bind:css={block.css} bind:js={block.js} data={component_data} on:save={save_component} on:mod-e={toggle_tab} />
 			{:else if tab === 'content'}
-				<Fields id={block.id} entity_id={block.id} fields={[]} />
+				<Fields entity={existing_block} fields={existing_block?.fields() ?? []} />
 			{/if}
 		</Pane>
 		<PaneResizer class="PaneResizer" />

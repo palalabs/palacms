@@ -1,11 +1,11 @@
 import { find as _find, chain as _chain, flattenDeep as _flattenDeep } from 'lodash-es'
 import * as _ from 'lodash-es'
 import { processors } from './component.js'
-import { get_content } from './stores/helpers'
+import { getContent } from '../pocketbase/content.js'
 import { design_tokens } from './constants.js'
-import type { Page } from '$lib/common/models/Page.js'
 import { type locales } from '$lib/common/constants.js'
-import type { Site } from '$lib/common/models/Site.js'
+import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte.js'
+import { SiteSymbols, type Pages, type Sites } from '$lib/pocketbase/collections.js'
 
 export async function block_html({ code, data }) {
 	const { html, css: postcss, js } = code
@@ -17,30 +17,34 @@ export async function block_html({ code, data }) {
 	return res
 }
 
-export async function page_html({ site, page, locale = 'en', no_js = false }: { site: Site; page: Page; locale?: (typeof locales)[number]; no_js?: boolean }) {
-	const site_data = {} // TODO
+export async function page_html({ site, page, locale = 'en', no_js = false }: { site: ObjectOf<typeof Sites>; page: ObjectOf<typeof Pages>; locale?: (typeof locales)[number]; no_js?: boolean }) {
+	const site_data = getContent(site, site.fields())
 	const head = {
 		code: site.head, // + page.page_type.head,
 		data: site_data
 	}
 	const component = await Promise.all([
-		// page.sections
-		...[].map(async (section) => {
-			const { html, css: postcss, js } = section.symbol.code
+		...page.sections().flatMap(async (section) => {
+			const symbol = SiteSymbols.one(section.symbol)
+			if (!symbol) return []
 
-			const data = {} // TODO
+			const { html, css: postcss, js } = symbol
+
+			const data = getContent(section, symbol?.fields() ?? [])
 
 			// @ts-ignore
 			const { css, error } = await processors.css(postcss || '')
-			return {
-				html: `
-         <div data-section="${section.id}" id="section-${section.id}" data-symbol="${section.symbol.id}">
+			return [
+				{
+					html: `
+         <div data-section="${section.id}" id="section-${section.id}" data-symbol="${symbol.id}">
            ${html}
          </div>`,
-				js,
-				css,
-				data
-			}
+					js,
+					css,
+					data
+				}
+			]
 		}),
 		(async () => {
 			return {
@@ -58,8 +62,10 @@ export async function page_html({ site, page, locale = 'en', no_js = false }: { 
 		locale
 	})
 
-	/// page.sections
-	const symbol_ids = [].map((section) => section.symbol.id).filter((value, index, array) => array.indexOf(value) === index)
+	const symbol_ids = page
+		.sections()
+		.map((section) => section.symbol)
+		.filter((value, index, array) => array.indexOf(value) === index)
 
 	const final = `\
  <!DOCTYPE html>
@@ -92,7 +98,7 @@ export async function page_html({ site, page, locale = 'en', no_js = false }: { 
        ${page.sections
 					.filter((section) => section.symbol.id === id)
 					.map((section) => {
-						const instance_content = get_content(section.id, section.symbol.fields)[locale]
+						const instance_content = getContent(section.id, section.symbol.fields)[locale]
 						return `
            new App({
              target: document.querySelector('#section-${section.id}'),

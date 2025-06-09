@@ -5,8 +5,8 @@
 	import { locale } from '../stores/app'
 	import type { LinkField } from '$lib/common/models/fields/LinkField'
 	import { page } from '$app/state'
-	import { get_direct_entries } from '../stores/helpers'
 	import { Sites, Pages } from '$lib/pocketbase/collections'
+	import { getDirectEntries, type Entity } from '$lib/pocketbase/content'
 
 	const default_value = {
 		label: '',
@@ -14,13 +14,16 @@
 		active: false
 	}
 
-	const { entity_id, field }: { entity_id: string; field: LinkField } = $props()
+	const { entity, field }: { entity: Entity; field: LinkField } = $props()
 	const site_id = $derived(page.params.site)
 	const site = $derived(Sites.one(site_id))
-	const entry = $derived(get_direct_entries(entity_id, field)[0])
+	const entry = $derived(getDirectEntries(entity, field)[0])
 	const selectable_pages = $derived(Object.values(Pages.list()).filter((p) => p.page_type === field.page_type.id))
 
-	let selected = $state(urlMatchesPage(entry?.value.url))
+	let selected = $state<'page' | 'url'>()
+	$effect.pre(() => {
+		selected = urlMatchesPage(entry?.value.url)
+	})
 
 	function urlMatchesPage(url) {
 		if (url && url.startsWith('/')) {
@@ -30,7 +33,7 @@
 		}
 	}
 
-	let selected_page = $derived(entry.value.page ?? site.homepage())
+	let selected_page = $derived(entry.value.page ?? site?.homepage())
 	function get_page_url(page) {
 		const prefix = $locale === 'en' ? '/' : `/${$locale}/`
 		if (page.slug === '') {

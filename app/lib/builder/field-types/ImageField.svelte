@@ -5,23 +5,22 @@
 	import Spinner from '../ui/Spinner.svelte'
 	import imageCompression from 'browser-image-compression'
 	import type { ImageField } from '$lib/common/models/fields/ImageField'
-	import { page } from '$app/state'
-	import { get_direct_entries } from '../stores/helpers'
+	import { getDirectEntries, type Entity } from '$lib/pocketbase/content'
 
 	const default_value = {
 		alt: '',
 		url: ''
 	}
 
-	const { entity_id, field }: { entity_id: string; field: ImageField } = $props()
-	const entry = $derived(get_direct_entries(entity_id, field)[0])
+	const { entity, field }: { entity: Entity; field: ImageField } = $props()
+	const entry = $derived(getDirectEntries(entity, field)[0])
 
 	async function upload_image(image) {
 		loading = true
 
 		// Get compression options from field config or use defaults
-		const maxSizeMB = field.maxSizeMB ?? 1
-		const maxWidthOrHeight = field.maxWidthOrHeight ?? 1920
+		const maxSizeMB = field.config.maxSizeMB ?? 1
+		const maxWidthOrHeight = field.config.maxWidthOrHeight ?? 1920
 
 		// Compression options
 		const options = {

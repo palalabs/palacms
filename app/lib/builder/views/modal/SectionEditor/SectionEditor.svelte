@@ -13,8 +13,10 @@
 	import Fields from '../../../components/Fields/FieldsContent.svelte'
 	import { locale } from '../../../stores/app/misc.js'
 	import hotkey_events from '../../../stores/app/hotkey_events.js'
-	import type { Section } from '$lib/common/models/Section'
-	import { get_content } from '$lib/builder/stores/helpers'
+	import { getContent } from '$lib/pocketbase/content'
+	import { PageSections, SiteSymbols } from '$lib/pocketbase/collections'
+	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
+	import type { PageTypeSection } from '$lib/common/models/PageTypeSection'
 
 	let {
 		component,
@@ -30,15 +32,18 @@
 				}
 			}
 		}
-	}: { component: Section; tab: string; header?: any } = $props()
+	}: { component: ObjectOf<typeof PageTypeSection> | ObjectOf<typeof PageSections>; tab: string; header?: any } = $props()
 
-	const symbol = $derived(component?.symbol())
+	const symbol = $derived(SiteSymbols.one(component.symbol))
 
 	let loading = false
 
 	let component_data = $state({})
 	function update_component_data() {
-		component_data = get_content(component.id, symbol.fields())[$locale]
+		if (!symbol) {
+			return
+		}
+		component_data = getContent(component, symbol.fields())[$locale]
 	}
 	$effect.pre(() => {
 		update_component_data()
@@ -63,7 +68,7 @@
 
 <Dialog.Header
 	class="mb-2"
-	title={symbol.name || 'Block'}
+	title={symbol?.name || 'Block'}
 	button={{
 		label: header.button.label || 'Save',
 		onclick: save_component,

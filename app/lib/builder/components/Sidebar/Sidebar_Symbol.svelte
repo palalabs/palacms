@@ -9,10 +9,11 @@
 	import { locale } from '../../stores/app/misc'
 	import { draggable } from '../../libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
 	import IFrame from '../../components/IFrame.svelte'
-	import type { SiteSymbol } from '$lib/common/models/SiteSymbol'
-	import { get_content } from '$lib/builder/stores/helpers'
+	import { getContent } from '$lib/pocketbase/content'
 	import { createEventDispatcher, onMount } from 'svelte'
 	import { block_html } from '$lib/builder/code_generators'
+	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
+	import type { SiteSymbols } from '$lib/pocketbase/collections'
 
 	const dispatch = createEventDispatcher()
 
@@ -23,7 +24,7 @@
 		toggled = false,
 		head = '',
 		append = ''
-	}: { symbol: SiteSymbol; controls_enabled?: boolean; show_toggle?: boolean; toggled?: boolean; head?: string; append?: string } = $props()
+	}: { symbol: ObjectOf<typeof SiteSymbols>; controls_enabled?: boolean; show_toggle?: boolean; toggled?: boolean; head?: string; append?: string } = $props()
 
 	let name_el = $state()
 
@@ -52,7 +53,7 @@
 			css: symbol.css,
 			js: symbol.js
 		}
-		const data = get_content(symbol.id, symbol.fields())[$locale] ?? {}
+		const data = getContent(symbol, symbol.fields())[$locale] ?? {}
 		block_html({
 			code,
 			data

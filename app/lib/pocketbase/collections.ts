@@ -1,3 +1,5 @@
+import type { locales } from '$lib/common'
+import type { Entry } from '$lib/common/models/Entry'
 import { LibrarySymbol } from '$lib/common/models/LibrarySymbol'
 import { LibrarySymbolEntry } from '$lib/common/models/LibrarySymbolEntry'
 import { LibrarySymbolField } from '$lib/common/models/LibrarySymbolField'
@@ -18,6 +20,7 @@ import { SiteSymbolEntry } from '$lib/common/models/SiteSymbolEntry'
 import { SiteSymbolField } from '$lib/common/models/SiteSymbolField'
 import { User } from '$lib/common/models/User'
 import { createCollectionMapping } from './CollectionMapping.svelte'
+import { getContent } from './content'
 
 export const Users = createCollectionMapping('users', User, {
 	links: {
@@ -39,6 +42,11 @@ export const LibrarySymbols = createCollectionMapping('library_symbols', Library
 	links: {
 		fields() {
 			return LibrarySymbolFields.from(this.collection.instance).list({ filter: `symbol = "${this.id}"` })
+		},
+		entries() {
+			return LibrarySymbolFields.from(this.collection.instance)
+				.list({ filter: `symbol = "${this.id}"` })
+				.flatMap((field) => field.entries())
 		}
 	}
 })
@@ -71,6 +79,11 @@ export const Sites = createCollectionMapping('sites', Site, {
 		fields() {
 			return SiteFields.from(this.collection.instance).list({ filter: `site = "${this.id}"` })
 		},
+		entries() {
+			return SiteFields.from(this.collection.instance)
+				.list({ filter: `site = "${this.id}"` })
+				.flatMap((field) => field.entries())
+		},
 		page_types() {
 			return PageTypes.from(this.collection.instance).list({ filter: `site = "${this.id}"` })
 		},
@@ -99,6 +112,11 @@ export const SiteSymbols = createCollectionMapping('site_symbols', SiteSymbol, {
 	links: {
 		fields() {
 			return SiteSymbolFields.from(this.collection.instance).list({ filter: `symbol = "${this.id}"` })
+		},
+		entries() {
+			return SiteSymbolFields.from(this.collection.instance)
+				.list({ filter: `symbol = "${this.id}"` })
+				.flatMap((field) => field.entries())
 		}
 	}
 })
@@ -149,12 +167,6 @@ export const Pages = createCollectionMapping('pages', Page, {
 		},
 		sections() {
 			return PageSections.from(this.collection.instance).list({ filter: `page = "${this.id}"` })
-		},
-		site() {
-			return Sites.from(this.collection.instance).one(this.site)
-		},
-		page_type() {
-			return PageTypes.from(this.collection.instance).one(this.page_type)
 		}
 	}
 })
@@ -163,9 +175,6 @@ export const PageSections = createCollectionMapping('page_sections', PageSection
 	links: {
 		entries() {
 			return PageSectionEntries.from(this.collection.instance).list({ filter: `section = "${this.id}"` })
-		},
-		symbol() {
-			return SiteSymbols.from(this.collection.instance).one(this.symbol)
 		}
 	}
 })

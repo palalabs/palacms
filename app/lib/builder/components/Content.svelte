@@ -4,28 +4,30 @@
 	import { fieldTypes } from '../stores/app'
 	import { is_regex } from '../utils'
 	import type { Field } from '$lib/common/models/Field'
-	import { get_resolved_entries } from '../stores/helpers'
+	import { getResolvedEntries, type Entity } from '$lib/pocketbase/content'
 
-	const { entity_id, fields }: { entity_id: string; fields: Field[] } = $props()
+	const { entity, fields }: { entity: Entity; fields: Field[] } = $props()
 
 	function check_condition(field: Field) {
-		if (!field.condition) return true // has no condition
+		// TODO: Implement
+		return true
+		// if (!field.condition) return true // has no condition
 
-		const { field: field_to_compare, value, comparison } = field.condition
-		const entry = get_resolved_entries(entity_id, field)[0]
-		if (typeof value === 'string' && is_regex(value)) {
-			const regex = new RegExp(value.slice(1, -1))
-			if (comparison === '=' && regex.test(entry.value)) {
-				return true
-			} else if (comparison === '!=' && !regex.test(entry.value)) {
-				return true
-			}
-		} else if (comparison === '=' && value === entry.value) {
-			return true
-		} else if (comparison === '!=' && value !== entry.value) {
-			return true
-		}
-		return false
+		// const { field: field_to_compare, value, comparison } = field.condition
+		// const entry = getResolvedEntries(entity_id, field)[0]
+		// if (typeof value === 'string' && is_regex(value)) {
+		// 	const regex = new RegExp(value.slice(1, -1))
+		// 	if (comparison === '=' && regex.test(entry.value)) {
+		// 		return true
+		// 	} else if (comparison === '!=' && !regex.test(entry.value)) {
+		// 		return true
+		// 	}
+		// } else if (comparison === '=' && value === entry.value) {
+		// 	return true
+		// } else if (comparison === '!=' && value !== entry.value) {
+		// 	return true
+		// }
+		// return false
 	}
 </script>
 
@@ -40,13 +42,13 @@
 		{#if is_valid && is_visible}
 			<Card title={has_child_fields ? field.label : null} icon={field_type?.icon}>
 				<div class="field-item" id="field-{field.key}" class:repeater={field.key === 'repeater'}>
-					<Field_Component {entity_id} field={{ ...field, label: `${field.label} (PAGE FIELD)` }} />
+					<Field_Component {entity} field={{ ...field, label: `${field.label} (PAGE FIELD)` }} />
 				</div>
 			</Card>
 		{:else if is_valid && is_visible}
 			<Card title={has_child_fields ? field.label : null} icon={field_type?.icon}>
 				<div class="field-item" id="field-{field.key}" class:repeater={field.key === 'repeater'}>
-					<Field_Component {entity_id} {field} />
+					<Field_Component {entity} {field} />
 				</div>
 			</Card>
 		{:else if is_visible}

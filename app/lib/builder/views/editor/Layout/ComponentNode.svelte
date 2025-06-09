@@ -25,25 +25,25 @@
 	import { all, createLowlight } from 'lowlight'
 	import { tick, createEventDispatcher } from 'svelte'
 	import { createUniqueID } from '$lib/builder/utils'
-	import { processCode, convert_html_to_markdown, compare_urls } from '$lib/builder/utils'
+	import { processCode, compare_urls } from '$lib/builder/utils'
 	import { hovering_outside } from '$lib/builder/utilities'
 	import { locale } from '$lib/builder/stores/app/misc'
 	import { site_html } from '$lib/builder/stores/app/page'
 	import MarkdownButton from './MarkdownButton.svelte'
 	import { component_iframe_srcdoc } from '$lib/builder/components/misc'
-	import type { SiteSymbol } from '$lib/common/models/SiteSymbol'
-	import type { Section } from '$lib/common/models/Section'
-	import { get_content } from '$lib/builder/stores/helpers'
+	import { getContent } from '$lib/pocketbase/content'
+	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
+	import { SiteSymbols, type PageSections, type PageTypeSections } from '$lib/pocketbase/collections'
 
 	const lowlight = createLowlight(all)
 
 	const dispatch = createEventDispatcher()
 
-	let { block, section }: { block: SiteSymbol; section: Section } = $props()
+	let { block, section }: { block: ObjectOf<typeof SiteSymbols>; section: ObjectOf<typeof PageTypeSections> | ObjectOf<typeof PageSections> } = $props()
 
 	let node = $state()
 
-	let component_data = $derived(get_content(section.id, section.symbol.fields)[$locale] ?? {})
+	let component_data = $derived(getContent(section, block.fields())[$locale] ?? {})
 
 	let floating_menu = $state()
 	let bubble_menu = $state()
