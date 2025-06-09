@@ -13,8 +13,9 @@
 	import { locale } from '../../stores/app/misc.js'
 	import { dropTargetForElements } from '../../libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
 	import { attachClosestEdge, extractClosestEdge } from '../../libraries/pragmatic-drag-and-drop-hitbox/closest-edge.js'
-	import { Sites, PageTypes } from '$lib/pocketbase/collections'
-	import type { PageTypeSection } from '$lib/common/models/PageTypeSection.ts'
+	import { Sites, PageTypes, PageTypeSections, SiteSymbols } from '$lib/pocketbase/collections'
+	import { PageTypeSection } from '$lib/common/models/PageTypeSection.js'
+
 	import { page } from '$app/state'
 
 	const site_id = $derived(page.params.site)
@@ -36,7 +37,7 @@
 		// TODO
 	}
 
-	let hovered_section_id: PageTypeSection | null = $state(null)
+	let hovered_section_id: string | null = $state(null)
 	let hovered_section = $derived(page_type?.sections.find((s) => s.id === hovered_section_id))
 
 	let block_toolbar_element = $state()
@@ -162,13 +163,13 @@
 		drop_indicator_element.style.right = `${block_positions.right}px`
 
 		// surround placeholder palette
-		if (dragging.position === 'top' || !page_type?.sections.length) {
+		if (dragging.position === 'top' || !page_type?.sections().length) {
 			drop_indicator_element.style.top = `${block_positions.top}px`
 		} else {
 			drop_indicator_element.style.top = `initial`
 		}
 
-		if (dragging.position === 'bottom' || !page_type?.sections.length) {
+		if (dragging.position === 'bottom' || !page_type?.sections().length) {
 			drop_indicator_element.style.bottom = `${block_positions.bottom}px`
 		} else {
 			drop_indicator_element.style.bottom = `initial`
@@ -228,7 +229,7 @@
 			async onDrop({ source }) {
 				if (!page_type || dragging_over_section) return // prevent double-adding block
 				const block_being_dragged = source.data.block
-				page_type.sections.push({ symbol: block_being_dragged })
+				PageTypeSections.create({ page_type: page_type.id, symbol: block_being_dragged.id, index: 0 }) // TODO: Index
 				reset_drag()
 			}
 		})
@@ -274,7 +275,7 @@
 				const block_being_dragged = source.data.block
 				const section_dragged_over_index = page_type.sections.findIndex((s) => s.id === section_dragged_over.id)
 				const target_index = closestEdgeOfTarget === 'top' ? section_dragged_over_index : section_dragged_over_index + 1
-				page_type.sections = [...page_type.sections.slice(0, target_index), { symbol: block_being_dragged }, ...page_type.sections.slice(target_index)]
+				PageTypeSections.create({ page_type: page_type.id, symbol: block_being_dragged.id, index: 0 }) // TODO: Index
 			}
 		})
 	}
@@ -333,10 +334,10 @@
 		<BlockToolbar
 			bind:node={block_toolbar_element}
 			id={hovered_section_id}
-			i={page_type?.sections.findIndex((s) => s.id === hovered_section_id)}
+			i={page_type?.sections().findIndex((s) => s.id === hovered_section_id)}
 			on:delete={async () => {
-				if (!page_type) return
-				page_type.sections = page_type.sections.filter((s) => s.id !== hovered_section_id)
+				if (!hovered_section_id) return
+				PageTypeSections.delete(hovered_section_id)
 			}}
 			on:edit-code={() => edit_component('code')}
 			on:edit-content={() => edit_component('content')}
@@ -362,17 +363,18 @@
 
 <!-- Page Blocks -->
 <main id="#Page" data-test bind:this={page_el} class:fadein={page_mounted} lang={$locale} use:drag_fallback>
-	{#each page_type?.sections ?? [] as section (section.id)}
+	{#each page_type?.sections() ?? [] as section (section.id)}
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<!-- svelte-ignore a11y_mouse_events_have_key_events -->
 		{@const locked = undefined}
 		<!-- {@const in_current_tab = locked?.instance_key === instance_key} -->
 		{@const in_current_tab = false}
+		{@const symbol = SiteSymbols.one(section.symbol)}
 		<div
 			role="region"
 			use:drag_item={section}
 			data-section={section.id}
-			data-symbol={section.symbol.id}
+			data-symbol={symbol?.id}
 			id="section-{section.id}"
 			class:locked
 			onmousemove={() => {
@@ -402,7 +404,7 @@
 			{/if}
 			<ComponentNode
 				{section}
-				block={section.symbol}
+				block={symbol}
 				on:lock={() => lock_block(section.id)}
 				on:unlock={() => unlock_block()}
 				on:mount={() => sections_mounted++}
