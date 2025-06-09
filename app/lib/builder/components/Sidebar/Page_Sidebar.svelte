@@ -14,7 +14,7 @@
 	import * as Tabs from '$lib/components/ui/tabs'
 	import { Cuboid, SquarePen } from 'lucide-svelte'
 	import { page as pageState } from '$app/state'
-	import { Sites } from '$lib/pocketbase/collections'
+	import { PageTypes, Sites } from '$lib/pocketbase/collections'
 	import { SiteSymbols } from '$lib/pocketbase/collections'
 
 	let active_tab = $state((browser && localStorage.getItem('page-tab')) || 'BLOCKS')
@@ -23,7 +23,7 @@
 	const slug = $derived(pageState.params.page)
 	const site = $derived(Sites.one(site_id))
 	const page = $derived(site?.pages().find((page) => page.slug === slug) ?? site?.homepage())
-	const page_type = $derived(page?.page_type())
+	const page_type = $derived(page && PageTypes.one(page.page_type))
 
 	let page_type_symbols = $derived(page_type?.symbols())
 	let has_symbols = $derived(!!page_type_symbols?.length)
@@ -105,7 +105,7 @@
 			</Tabs.Content>
 			<Tabs.Content value="content">
 				<div class="page-type-fields">
-					<Content entity_id={page?.id} fields={page_type?.fields} />
+					<Content entity={page} fields={page_type?.fields} />
 				</div>
 				<!-- $userRole === 'DEV' -->
 				{#if true}
@@ -115,7 +115,7 @@
 		</Tabs.Root>
 	{:else}
 		<div class="p-4 page-type-fields">
-			<Content entity_id={page?.id} fields={page_type?.fields()} />
+			<Content entity={page} fields={page_type?.fields()} />
 		</div>
 		<!-- $userRole === 'DEV' -->
 		{#if true}

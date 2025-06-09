@@ -140,6 +140,10 @@ export const PageTypes = createCollectionMapping('page_types', PageType, {
 		},
 		sections() {
 			return PageTypeSections.from(this.collection.instance).list({ filter: `section = "${this.id}"` })
+		},
+		fields() {
+			// TODO: Implement
+			return []
 		}
 	}
 })

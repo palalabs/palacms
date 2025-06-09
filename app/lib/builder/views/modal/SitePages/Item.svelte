@@ -7,7 +7,7 @@
 	import PageForm from './PageForm.svelte'
 	import MenuPopup from '$lib/builder/ui/Dropdown.svelte'
 	import { page as pageState } from '$app/state'
-	import { Pages } from '$lib/pocketbase/collections'
+	import { Pages, PageTypes } from '$lib/pocketbase/collections'
 	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
 
 	let editing_page = $state(false)
@@ -17,7 +17,7 @@
 
 	const site_id = $derived(pageState.params.site)
 	const full_url = $derived(`/${site_id}/${page.slug}`)
-	const page_type = $derived(page.page_type())
+	const page_type = $derived(PageTypes.one(page.page_type))
 	const allPages = $derived(Pages.list())
 
 	let showing_children = $state(false)
