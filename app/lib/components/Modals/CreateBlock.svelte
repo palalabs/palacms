@@ -8,13 +8,11 @@
 	import * as Dialog from '$lib/components/ui/dialog'
 	import { static_iframe_srcdoc } from '$lib/builder/components/misc'
 	import { block_html } from '$lib/builder/code_generators.js'
-	import type { SiteSymbol } from '$lib/common/models/SiteSymbol'
-	import { get_content } from '$lib/builder/stores/helpers'
-	import type { LibrarySymbol } from '$lib/common/models/LibrarySymbol'
+	import type { Symbol } from '$lib/common/models/Symbol'
 
-	let { symbol = { name: '', code: { css: '', html: '', js: '' }, fields: [] }, head = '', append = '' }: { symbol: SiteSymbol | LibrarySymbol; head?: string; append?: string } = $props()
+	let { symbol = { name: '', css: '', html: '', js: '' }, head = '', append = '' }: { symbol: Omit<Symbol, 'id'>; head?: string; append?: string } = $props()
 
-	let component_data = $derived(get_content(symbol.id, symbol.fields)['en'])
+	let component_data = $derived({}) // TODO: Implement
 
 	let tab = $state('code')
 	function toggle_tab() {
@@ -36,6 +34,8 @@
 
 	let loading = $state(false)
 	async function onsave() {
+		const { css, html, js } = symbol
+		const code = { css, html, js }
 		const generate_code = await block_html({ code, data: component_data })
 		const preview = static_iframe_srcdoc(generate_code)
 	}
@@ -58,9 +58,9 @@
 	<PaneGroup direction="horizontal">
 		<Pane defaultSize={50}>
 			{#if tab === 'code'}
-				<FullCodeEditor bind:html={symbol.code.html} bind:css={symbol.code.css} bind:js={symbol.code.js} data={component_data} on:save={onsave} on:mod-e={toggle_tab} />
+				<FullCodeEditor bind:html={symbol.html} bind:css={symbol.css} bind:js={symbol.js} data={component_data} on:save={onsave} on:mod-e={toggle_tab} />
 			{:else if tab === 'content'}
-				<Fields entity_id={symbol.id} fields={symbol.fields} onkeydown={handle_hotkey} />
+				<Fields entity={symbol} fields={[]} onkeydown={handle_hotkey} />
 			{/if}
 		</Pane>
 		<PaneResizer class="PaneResizer" />
