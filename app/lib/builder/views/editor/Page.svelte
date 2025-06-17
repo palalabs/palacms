@@ -13,12 +13,12 @@
 	import { dropTargetForElements } from '$lib/builder/libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
 	import { attachClosestEdge, extractClosestEdge } from '$lib/builder/libraries/pragmatic-drag-and-drop-hitbox/closest-edge.js'
 	import { beforeNavigate } from '$app/navigation'
-	import { Pages } from '$lib/pocketbase/collections'
+	import { Pages, Sites, SiteSymbols } from '$lib/pocketbase/collections'
 	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
 
 	let { page }: { page: ObjectOf<typeof Pages> } = $props()
 
-	const site = $derived(page.site())
+	const site = $derived(Sites.one(page.site))
 	const sections = $derived(page.sections())
 
 	// Fade in page when all components mounted
@@ -401,7 +401,7 @@
 			<div data-section={section.id} data-type="palette" class:empty={palette_sections.length === 0}>
 				{#if palette_sections.length > 0}
 					{#each palette_sections as section (section.id)}
-						{@const block = section.symbol()}
+						{@const block = SiteSymbols.one(section.symbol)}
 						{@const locked = $locked_blocks.find((b) => b.block_id === section.id)}
 						{@const in_current_tab = false}
 						<div
@@ -457,7 +457,7 @@
 				{/if}
 			</div>
 		{:else if !is_palette}
-			{@const block = section.symbol()}
+			{@const block = SiteSymbols.one(section.symbol)}
 			{@const locked = $locked_blocks.find((b) => b.block_id === section.id)}
 			{@const in_current_tab = false}
 			<div
