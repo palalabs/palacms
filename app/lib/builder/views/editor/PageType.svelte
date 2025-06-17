@@ -38,7 +38,7 @@
 	}
 
 	let hovered_section_id: string | null = $state(null)
-	let hovered_section = $derived(page_type?.sections.find((s) => s.id === hovered_section_id))
+	let hovered_section = $derived(page_type?.sections().find((s) => s.id === hovered_section_id))
 
 	let block_toolbar_element = $state()
 	let page_el = $state()
