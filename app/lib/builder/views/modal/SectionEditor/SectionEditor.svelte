@@ -92,7 +92,7 @@
 					on:mod-r={() => $refresh_preview()}
 				/>
 			{:else if tab === 'content'}
-				<Fields id="section-{component.id}" entity_id={component.id} fields={symbol.fields} />
+				<Fields id="section-{component.id}" entity_id={component.id} fields={symbol.fields()} />
 			{/if}
 		</Pane>
 		<PaneResizer class="PaneResizer" />
