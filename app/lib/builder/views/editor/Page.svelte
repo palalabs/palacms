@@ -13,7 +13,7 @@
 	import { dropTargetForElements } from '$lib/builder/libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
 	import { attachClosestEdge, extractClosestEdge } from '$lib/builder/libraries/pragmatic-drag-and-drop-hitbox/closest-edge.js'
 	import { beforeNavigate } from '$app/navigation'
-	import { Pages, Sites, SiteSymbols } from '$lib/pocketbase/collections'
+	import { Pages, Sites, SiteSymbols, PageSections } from '$lib/pocketbase/collections'
 	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
 
 	let { page }: { page: ObjectOf<typeof Pages> } = $props()
@@ -38,6 +38,23 @@
 
 	function unlock_block() {
 		// TODO: Implement
+	}
+
+	async function add_section_to_palette({ symbol, position }) {
+		// Adjust indices of existing sections that come after the insertion position
+		const existing_palette_sections = palette_sections.filter((section) => section.index >= position)
+		for (const section of existing_palette_sections) {
+			await PageSections.update(section.id, { index: section.index + 1 })
+		}
+
+		// Create new section
+		const new_section = await PageSections.create({
+			page: page.id,
+			symbol: symbol.id,
+			index: position
+		})
+
+		return new_section.id
 	}
 
 	let page_el = $state()
@@ -200,7 +217,6 @@
 				if (dragging_over_section) return // prevent double-adding block
 				const block_being_dragged = source.data.block
 				const new_section_id = await add_section_to_palette({
-					palette_id: palette_section.id,
 					symbol: block_being_dragged,
 					position: palette_sections.length
 				})
