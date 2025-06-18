@@ -7,7 +7,7 @@
 	import CodeEditor from '$lib/builder/components/CodeEditor/CodeMirror.svelte'
 	import { setContext } from 'svelte'
 	import { page } from '$app/state'
-	import { Sites } from '$lib/pocketbase/collections'
+	import { Sites, SiteFields, SiteEntries } from '$lib/pocketbase/collections'
 
 	const site_id = page.params.site
 	const site = $derived(Sites.one(site_id))
@@ -19,6 +19,21 @@
 	async function saveComponent() {
 		// TODO: Implement
 		throw new Error('Not implemented')
+	}
+
+	async function create_field() {
+		const new_field = await SiteFields.create({
+			key: 'new_field',
+			label: 'New Field',
+			type: 'text',
+			config: null,
+			site: site_id
+		})
+		await SiteEntries.create({
+			field: new_field.id,
+			value: '',
+			locale: 'en'
+		})
 	}
 </script>
 
@@ -37,7 +52,13 @@
 		{#if true}
 			<PaneGroup direction="horizontal" style="display: flex;">
 				<Pane defaultSize={50}>
-					<Fields id="site-{site.id}" fields={site.site_fields()} />
+					<Fields
+						entity={site}
+						fields={site.fields()}
+						create_field={() => {
+							create_field()
+						}}
+					/>
 				</Pane>
 				<PaneResizer class="PaneResizer-primary">
 					<div class="icon primary">

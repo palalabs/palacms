@@ -76,10 +76,10 @@
 
 	let minimal = $derived(field.type === 'info')
 	let has_subfields = $derived(field.type === 'group' || field.type === 'repeater')
-	let has_condition = $derived(field.options.condition)
+	let has_condition = $derived(field.config?.condition)
 
 	// enable condition if field has previous siblings without their own condition
-	let condition_enabled = $derived(!field.parent && fields.filter((f) => f.parent === field.parent && f.id !== field.id && f.index < field.index && !f.options.condition).length > 0)
+	let condition_enabled = $derived(!field.parent && fields.filter((f) => f.parent === field.parent && f.id !== field.id && f.index < field.index && !f.config?.condition).length > 0)
 
 	let selected_field_type_id = $state('')
 	$effect.pre(() => {
@@ -125,7 +125,7 @@
 
 	let is_new_field = $state(field.key === '')
 
-	let hide_footer = $derived(!['select', 'image', ...dynamic_field_types].includes(field.type) && !field.options.condition)
+	let hide_footer = $derived(!['select', 'image', ...dynamic_field_types].includes(field.type) && !field.config?.condition)
 </script>
 
 <div class="top-container" class:top_level class:collapsed>
@@ -395,15 +395,15 @@
 		{#if field.type === 'page-list'}
 			<PageListField {field} oninput={(options) => dispatch_update({ options })} />
 		{/if}
-		{#if field.options.condition}
+		{#if field.config?.condition}
 			<Condition
 				{field}
-				field_to_compare={fields.find((f) => f.id === field.options.condition.field)}
+				field_to_compare={fields.find((f) => f.id === field.config?.condition.field)}
 				{comparable_fields}
 				{collapsed}
 				on:input={({ detail: condition }) => {
 					console.log({ condition })
-					dispatch_update({ options: { ...field.options, condition } })
+					dispatch_update({ config: { ...field.config, condition } })
 				}}
 			/>
 		{/if}
