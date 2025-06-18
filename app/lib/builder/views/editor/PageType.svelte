@@ -13,15 +13,14 @@
 	import { locale } from '../../stores/app/misc.js'
 	import { dropTargetForElements } from '../../libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
 	import { attachClosestEdge, extractClosestEdge } from '../../libraries/pragmatic-drag-and-drop-hitbox/closest-edge.js'
-	import { Sites, PageTypes, PageTypeSections, SiteSymbols } from '$lib/pocketbase/collections'
-	import { PageTypeSection } from '$lib/common/models/PageTypeSection.js'
+	import { PageTypes, PageTypeSections, SiteSymbols } from '$lib/pocketbase/collections'
 
 	import { page } from '$app/state'
 
 	const site_id = $derived(page.params.site)
 	const page_type_id = $derived(page.params.page_type)
-	const site = $derived(Sites.one(site_id))
 	const page_type = $derived(PageTypes.one(page_type_id) ?? null)
+	const page_type_sections = $derived(page_type?.sections() || [])
 
 	// Fade in page when all components mounted
 	let page_mounted = $state(true)
@@ -163,13 +162,13 @@
 		drop_indicator_element.style.right = `${block_positions.right}px`
 
 		// surround placeholder palette
-		if (dragging.position === 'top' || !page_type?.sections().length) {
+		if (dragging.position === 'top' || !page_type_sections.length) {
 			drop_indicator_element.style.top = `${block_positions.top}px`
 		} else {
 			drop_indicator_element.style.top = `initial`
 		}
 
-		if (dragging.position === 'bottom' || !page_type?.sections().length) {
+		if (dragging.position === 'bottom' || !page_type_sections.length) {
 			drop_indicator_element.style.bottom = `${block_positions.bottom}px`
 		} else {
 			drop_indicator_element.style.bottom = `initial`
@@ -226,10 +225,12 @@
 			onDragLeave() {
 				reset_drag()
 			},
-			async onDrop({ source }) {
+			async onDrop({ self, source }) {
 				if (!page_type || dragging_over_section) return // prevent double-adding block
 				const block_being_dragged = source.data.block
-				PageTypeSections.create({ page_type: page_type.id, symbol: block_being_dragged.id, index: 0 }) // TODO: Index
+				const closestEdgeOfTarget = extractClosestEdge(self.data)
+				const target_index = closestEdgeOfTarget === 'top' ? 0 : page_type_sections.length
+				PageTypeSections.create({ page_type: page_type.id, symbol: block_being_dragged.id, index: target_index }) // TODO: Index
 				reset_drag()
 			}
 		})
@@ -273,9 +274,9 @@
 				const closestEdgeOfTarget = extractClosestEdge(self.data)
 				const section_dragged_over = self.data.section
 				const block_being_dragged = source.data.block
-				const section_dragged_over_index = page_type.sections.findIndex((s) => s.id === section_dragged_over.id)
+				const section_dragged_over_index = page_type_sections.findIndex((s) => s.id === section_dragged_over.id)
 				const target_index = closestEdgeOfTarget === 'top' ? section_dragged_over_index : section_dragged_over_index + 1
-				PageTypeSections.create({ page_type: page_type.id, symbol: block_being_dragged.id, index: 0 }) // TODO: Index
+				PageTypeSections.create({ page_type: page_type.id, symbol: block_being_dragged.id, index: target_index }) // TODO: Index
 			}
 		})
 	}
