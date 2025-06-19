@@ -20,6 +20,7 @@
 
 	const site = $derived(Sites.one(page.site))
 	const sections = $derived(page.sections())
+	$inspect({ sections })
 
 	// Fade in page when all components mounted
 	let page_mounted = $state(false)
@@ -40,7 +41,7 @@
 		// TODO: Implement
 	}
 
-	async function add_section_to_palette({ symbol, position }) {
+	async function add_section_to_page({ symbol, position }) {
 		// Adjust indices of existing sections that come after the insertion position
 		const existing_palette_sections = palette_sections.filter((section) => section.index >= position)
 		for (const section of existing_palette_sections) {
@@ -55,6 +56,23 @@
 		})
 
 		return new_section.id
+	}
+
+	async function remove_section_from_page(section_id) {
+		console.log({ section_id })
+		const section_to_delete = sections.find((s) => s.id === section_id)
+		if (!section_to_delete) return
+
+		// Adjust indices of remaining sections that come after the deleted section
+		const sections_to_update = sections.filter((section) => section.index > section_to_delete.index)
+		console.log({ sections, section_to_delete, sections_to_update })
+		for (const section of sections_to_update) {
+			console.log(section.id, { index: section.index, newindex: section.index - 1 })
+			await PageSections.update(section.id, { index: section.index - 1 })
+		}
+
+		// Delete the section
+		await PageSections.delete(section_id)
 	}
 
 	let page_el = $state()
@@ -216,16 +234,16 @@
 			async onDrop({ source }) {
 				if (dragging_over_section) return // prevent double-adding block
 				const block_being_dragged = source.data.block
-				const new_section_id = await add_section_to_palette({
+				const new_section_id = await add_section_to_page({
 					symbol: block_being_dragged,
-					position: palette_sections.length
+					position: sections.length
 				})
-				const new_section_el = page_el.querySelector(`[data-section="${new_section_id}"]`)
-				new_section_el.scrollIntoView({
-					behavior: 'smooth',
-					block: 'center',
-					inline: 'center'
-				})
+				// const new_section_el = page_el.querySelector(`[data-section="${new_section_id}"]`)
+				// new_section_el.scrollIntoView({
+				// 	behavior: 'smooth',
+				// 	block: 'center',
+				// 	inline: 'center'
+				// })
 				reset_drag()
 			}
 		})
@@ -269,7 +287,7 @@
 				const block_being_dragged = source.data.block
 				const closestEdgeOfTarget = extractClosestEdge(self.data)
 				if (closestEdgeOfTarget === 'top') {
-					const new_section_id = await add_section_to_palette({
+					const new_section_id = await add_section_to_page({
 						palette_id: palette_section.id,
 						symbol: block_being_dragged,
 						position: is_first_pallete_section ? 0 : section_dragged_over_index
@@ -281,7 +299,7 @@
 						inline: 'center'
 					})
 				} else if (closestEdgeOfTarget === 'bottom') {
-					const new_section_id = await add_section_to_palette({
+					const new_section_id = await add_section_to_page({
 						palette_id: palette_section.id,
 						symbol: block_being_dragged,
 						position: is_first_pallete_section ? 0 : section_dragged_over_index + 1
@@ -317,7 +335,6 @@
 	// on drag, display palette drop zone
 	// only respond to hover within palette drop zone
 
-	let top_level_sections = $derived(sections.filter((s) => !s.palette))
 	let palette_sections = $derived(sections.filter((s) => s.palette))
 	let static_sections = $derived(sections.filter((s) => s.master?.symbol))
 
@@ -380,7 +397,7 @@
 			id={hovered_section_id}
 			on:delete={async () => {
 				hide_block_toolbar()
-				// delete_section_from_palette(hovered_section_id)
+				await remove_section_from_page(hovered_section_id)
 			}}
 			on:edit-code={() => edit_section('code')}
 			on:edit-content={() => edit_section('content')}

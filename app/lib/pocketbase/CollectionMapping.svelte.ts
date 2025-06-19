@@ -46,6 +46,19 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 		return Object.assign(object, links, { collection: collectionMapping })
 	}
 
+	const refreshLists = () => {
+		// Update existing lists that might be affected by the change
+		for (const [listId, ids] of lists) {
+			if (ids) {
+				// Re-fetch this specific list
+				const options = JSON.parse(listId)
+				collection.getFullList({ ...options, fields: 'id' }).then((records) => {
+					lists.set(listId, records.map(({ id }) => id))
+				})
+			}
+		}
+	}
+
 	const collectionMapping: CollectionMapping<T, Options> = {
 		one: (id) => {
 			$effect.pre(() => {
@@ -79,19 +92,20 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 			const record = await collection.create(values)
 			const object = mapObject(record)
 			objects.set(record.id, object)
-			lists.clear()
+			refreshLists()
 			return object
 		},
 		update: async (id, values) => {
 			const record = await collection.update(id, values)
 			const object = mapObject(record)
 			objects.set(id, object)
+			refreshLists()
 			return object
 		},
 		delete: async (id) => {
 			await collection.delete(id)
 			objects.delete(id)
-			lists.clear()
+			refreshLists()
 		},
 		authWithPassword: async (usernameOrEmail, password) => {
 			const response = await collection.authWithPassword(usernameOrEmail, password)
