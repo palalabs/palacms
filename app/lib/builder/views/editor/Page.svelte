@@ -54,18 +54,24 @@
 
 	async function add_section_to_page({ symbol, position }) {
 		console.log('add_section_to_page called', { position, sections_count: sections.length, palette_sections_count: palette_sections.length })
-		
+
 		// Check if indices need repair
 		const has_incorrect_indices = sections.some((section, i) => section.index !== i)
 		if (has_incorrect_indices) {
 			await repair_section_indices()
 		}
-		
+
 		// Adjust indices of existing sections that come after the insertion position
-		console.log('All sections before filtering:', sections.map(s => ({ id: s.id, index: s.index })))
+		console.log(
+			'All sections before filtering:',
+			sections.map((s) => ({ id: s.id, index: s.index }))
+		)
 		const existing_sections = sections.filter((section) => section.index >= position)
-		console.log('Sections to update:', existing_sections.map(s => ({ id: s.id, current_index: s.index, new_index: s.index + 1 })))
-		
+		console.log(
+			'Sections to update:',
+			existing_sections.map((s) => ({ id: s.id, current_index: s.index, new_index: s.index + 1 }))
+		)
+
 		for (const section of existing_sections) {
 			await PageSections.update(section.id, { index: section.index + 1 })
 		}
@@ -78,6 +84,15 @@
 		})
 
 		console.log('Created new section', { id: new_section.id, position })
+
+		// Add to newly added sections for animation
+		newly_added_sections.add(new_section.id)
+
+		// Remove from newly added set after animation completes
+		setTimeout(() => {
+			newly_added_sections.delete(new_section.id)
+		}, 500)
+
 		return new_section.id
 	}
 
@@ -118,7 +133,7 @@
 			clearTimeout(hide_toolbar_timeout)
 			hide_toolbar_timeout = null
 		}
-		
+
 		if (!showing_block_toolbar) {
 			showing_block_toolbar = true
 			await tick()
@@ -148,7 +163,7 @@
 	}
 
 	let hide_toolbar_timeout = null
-	
+
 	async function hide_block_toolbar() {
 		console.log('hide_block_toolbar called', { hovering_toolbar })
 		// Clear any existing timeout
@@ -185,19 +200,19 @@
 
 	async function position_drop_indicator() {
 		if (!hovered_block_el || !drop_indicator_element) return
-		
+
 		const { top, left, bottom, right } = hovered_block_el.getBoundingClientRect()
-		
+
 		// Position the line at the appropriate edge
 		drop_indicator_element.style.left = `${left}px`
 		drop_indicator_element.style.width = `${right - left}px`
-		
+
 		if (dragging.position === 'top') {
 			// Show line at the top edge of the section
 			drop_indicator_element.style.top = `${top - 2}px`
 			drop_indicator_element.style.bottom = 'initial'
 		} else if (dragging.position === 'bottom') {
-			// Show line at the bottom edge of the section  
+			// Show line at the bottom edge of the section
 			drop_indicator_element.style.top = `${bottom - 2}px`
 			drop_indicator_element.style.bottom = 'initial'
 		}
@@ -227,6 +242,7 @@
 	}
 
 	let moving = $state(false) // workaround to prevent block toolbar from showing when moving blocks
+	let newly_added_sections = $state(new Set()) // track newly added sections for animation
 
 	let dragging = {
 		id: null,
@@ -298,7 +314,7 @@
 				console.log('Fallback onDrop', { dragging_over_section })
 				// Immediately hide drop indicator
 				hide_drop_indicator()
-				
+
 				// Clear any pending drag leave timeout
 				if (drag_leave_timeout) {
 					clearTimeout(drag_leave_timeout)
@@ -379,7 +395,7 @@
 				console.log('drag_item onDrop called', { section_id: self.data.section.id, dragging_over_section })
 				// Immediately hide drop indicator
 				hide_drop_indicator()
-				
+
 				// Clear any pending drag leave timeout
 				if (drag_leave_timeout) {
 					clearTimeout(drag_leave_timeout)
@@ -390,7 +406,7 @@
 				const block_being_dragged = source.data.block
 				const closestEdgeOfTarget = extractClosestEdge(self.data)
 				console.log('drag_item onDrop details', { section_dragged_over_index, closestEdgeOfTarget })
-				
+
 				if (closestEdgeOfTarget === 'top') {
 					console.log('Inserting BEFORE section at index', section_dragged_over_index)
 					const new_section_id = await add_section_to_page({
@@ -535,10 +551,12 @@
 		{@const locked = $locked_blocks.find((b) => b.block_id === section.id)}
 		{@const in_current_tab = false}
 		{@const show_block_toolbar_on_hover = page_mounted && !moving}
+		{@const is_newly_added = newly_added_sections.has(section.id)}
 		<div
 			role="presentation"
 			data-section={section.id}
 			data-symbol={block?.id}
+			class:fade-in={is_newly_added}
 			onmousemove={(e) => {
 				if (show_block_toolbar_on_hover && hovered_section_id === section.id) {
 					show_block_toolbar()
@@ -601,6 +619,19 @@
 		position: relative;
 		min-height: 3rem;
 		line-height: 0;
+	}
+
+	.fade-in {
+		animation: fadeIn 0.2s ease-out;
+	}
+
+	@keyframes fadeIn {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
 	}
 	[data-type='palette'] {
 		.empty-state {
