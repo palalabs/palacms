@@ -280,6 +280,7 @@
 				)
 			},
 			async onDrag({ self, source }) {
+				console.log('Fallback onDrag triggered', { dragging_over_section, sections_count: sections.length })
 				// Clear any pending drag leave timeout since we're still dragging
 				if (drag_leave_timeout) {
 					clearTimeout(drag_leave_timeout)
@@ -287,6 +288,27 @@
 				}
 
 				if (dragging_over_section) return // prevent double-adding block
+				
+				// When page is empty, use the empty state div as the drop target
+				if (sections.length === 0) {
+					const empty_state_el = page_el.querySelector('.empty-state')
+					if (empty_state_el) {
+						hovered_block_el = empty_state_el
+					} else {
+						hovered_block_el = page_el
+					}
+					
+					if (!showing_drop_indicator) {
+						await show_drop_indicator()
+					}
+					position_drop_indicator()
+					dragging = {
+						id: 'empty-page',
+						position: 'bottom'
+					}
+					return
+				}
+				
 				const last_section_id = palette_sections[palette_sections.length - 1]?.id
 				if (!last_section_id) return
 				hovered_block_el = page_el.querySelector(`[data-section="${last_section_id}"]`)
