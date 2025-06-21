@@ -6,14 +6,12 @@
 
 <style>
 	.DropIndicator {
-		border: 0.25rem solid var(--weave-primary-color);
-		/* box-shadow: inset 0 0 0 calc(4px) var(--color-gray-8); */
 		z-index: 999999;
 		position: fixed;
 		pointer-events: none;
-		display: flex;
-		justify-content: space-between;
-		flex-direction: column;
-		font-size: 0.875rem;
+		height: 4px;
+		background: var(--weave-primary-color);
+		border-radius: 2px;
+		box-shadow: 0 0 8px rgba(248, 68, 73, 0.4);
 	}
 </style>

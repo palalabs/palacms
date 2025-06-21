@@ -175,43 +175,44 @@
 		if (!showing_drop_indicator) {
 			showing_drop_indicator = true
 			await tick()
+			// Reset display style when showing
+			if (drop_indicator_element) {
+				drop_indicator_element.style.display = ''
+			}
 			page_el.addEventListener('scroll', position_drop_indicator)
 		}
 	}
 
 	async function position_drop_indicator() {
 		if (!hovered_block_el || !drop_indicator_element) return
-		// await tick()
-		hovered_block_el.appendChild(drop_indicator_element)
+		
 		const { top, left, bottom, right } = hovered_block_el.getBoundingClientRect()
-		const block_positions = {
-			top: (top <= 41 ? 41 : top) + window.scrollY,
-			bottom: bottom >= window.innerHeight ? 0 : window.innerHeight - bottom,
-			left,
-			right: window.innerWidth - right - window.scrollX
-		}
-		drop_indicator_element.style.left = `${block_positions.left}px`
-		drop_indicator_element.style.right = `${block_positions.right}px`
-
-		// surround placeholder palette
-
-		if (dragging.position === 'top' || palette_sections.length === 0) {
-			drop_indicator_element.style.top = `${block_positions.top}px`
-		} else {
-			drop_indicator_element.style.top = `initial`
-		}
-
-		if (dragging.position === 'bottom' || palette_sections.length === 0) {
-			drop_indicator_element.style.bottom = `${block_positions.bottom}px`
-		} else {
-			drop_indicator_element.style.bottom = `initial`
+		
+		// Position the line at the appropriate edge
+		drop_indicator_element.style.left = `${left}px`
+		drop_indicator_element.style.width = `${right - left}px`
+		
+		if (dragging.position === 'top') {
+			// Show line at the top edge of the section
+			drop_indicator_element.style.top = `${top - 2}px`
+			drop_indicator_element.style.bottom = 'initial'
+		} else if (dragging.position === 'bottom') {
+			// Show line at the bottom edge of the section  
+			drop_indicator_element.style.top = `${bottom - 2}px`
+			drop_indicator_element.style.bottom = 'initial'
 		}
 	}
 
 	function hide_drop_indicator() {
-		console.log('hide_drop_indicator called', { showing_drop_indicator })
+		console.log('hide_drop_indicator called', { showing_drop_indicator, drop_indicator_element: !!drop_indicator_element })
 		showing_drop_indicator = false
-		page_el.removeEventListener('scroll', position_drop_indicator)
+		if (page_el) {
+			page_el.removeEventListener('scroll', position_drop_indicator)
+		}
+		// Force hide the element immediately
+		if (drop_indicator_element) {
+			drop_indicator_element.style.display = 'none'
+		}
 	}
 
 	////////////////////////////
