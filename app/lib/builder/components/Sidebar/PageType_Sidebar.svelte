@@ -137,7 +137,7 @@
 
 <Dialog.Root bind:open={editing_page}>
 	<Dialog.Content class="z-[999] max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4">
-		<PageEditor />
+		<PageEditor onClose={() => (editing_page = false)} />
 	</Dialog.Content>
 </Dialog.Root>
 
@@ -234,7 +234,7 @@
 						<span>Edit Page Type</span>
 					</button>
 				{/if}
-				<Content minimal={true} />
+				<Content entity={page_type} fields={page_type?.fields() || []} />
 			</div>
 		</Tabs.Content>
 	</Tabs.Root>

@@ -8,6 +8,8 @@
 	import { page } from '$app/state'
 	import { Sites, PageTypes } from '$lib/pocketbase/collections'
 
+	let { onClose }: { onClose?: () => void } = $props()
+
 	const site_id = page.params.site
 	const page_type_id = page.params.page_type
 	const site = $derived(Sites.one(site_id))
@@ -16,8 +18,16 @@
 	let disableSave = false
 
 	async function saveComponent() {
-		// TODO: Implement
-		throw new Error('Not implemented')
+		disableSave = true
+		try {
+			await PageTypes.update(page_type.id, {
+				head: page_type.head,
+				foot: page_type.foot
+			})
+			if (onClose) onClose()
+		} finally {
+			disableSave = false
+		}
 	}
 </script>
 
@@ -35,7 +45,7 @@
 	<main class="SiteEditor">
 		<PaneGroup direction="horizontal" style="display: flex;">
 			<Pane defaultSize={50}>
-				<Fields id="page-type-{page_type.id}" entity_id={page_type.id} fields={page_type.fields} />
+				<Fields id="page-type-{page_type.id}" entity_id={page_type.id} fields={page_type.fields()} />
 			</Pane>
 			<PaneResizer class="PaneResizer-primary">
 				<div class="icon primary">
@@ -47,7 +57,7 @@
 					<Pane>
 						<div class="container" style="margin-bottom: 1rem">
 							<span class="primo--field-label">Head</span>
-							<CodeEditor mode="html" bind:value={page_type.code.head} on:save={saveComponent} />
+							<CodeEditor mode="html" bind:value={page_type.head} on:save={saveComponent} />
 						</div>
 					</Pane>
 					<PaneResizer class="PaneResizer-secondary">
@@ -58,7 +68,7 @@
 					<Pane>
 						<div class="container">
 							<span class="primo--field-label">Foot</span>
-							<CodeEditor mode="html" bind:value={page_type.code.foot} on:save={saveComponent} />
+							<CodeEditor mode="html" bind:value={page_type.foot} on:save={saveComponent} />
 						</div>
 					</Pane>
 				</PaneGroup>

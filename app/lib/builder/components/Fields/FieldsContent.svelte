@@ -10,6 +10,8 @@
 
 	let { entity, fields, create_field }: { entity: Entity; fields: Field[]; create_field: () => void } = $props()
 
+	$inspect({ entity, fields })
+
 	function get_component(field: Field) {
 		const fieldType = $fieldTypes.find((ft) => ft.id === field.type)
 		if (fieldType) {
@@ -49,7 +51,7 @@
 	}
 
 	// TABS
-	const selected_tabs = $state(Object.fromEntries(fields.filter((f) => !f.parent).map((f) => [f.id, 'entry'])))
+	const selected_tabs = $state(Object.fromEntries((fields || []).filter((f) => !f.parent).map((f) => [f.id, 'entry'])))
 	function add_tab(field_id) {
 		selected_tabs[field_id] = 'field'
 	}
@@ -73,7 +75,7 @@
 </script>
 
 <div class="Fields">
-	{#each fields as field (field.id)}
+	{#each fields || [] as field (field.id)}
 		{@const Field_Component = get_component(field)}
 		<!-- TODO: $userRole === 'DEV' -->
 		{@const active_tab = selected_tabs[field.id]}
