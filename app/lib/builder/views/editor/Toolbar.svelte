@@ -48,7 +48,7 @@
 
 <Dialog.Root bind:open={editing_site}>
 	<Dialog.Content class="z-[999] max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4">
-		<SiteEditor />
+		<SiteEditor onClose={() => editing_site = false} />
 	</Dialog.Content>
 </Dialog.Root>
 

@@ -9,6 +9,8 @@
 	import { page } from '$app/state'
 	import { Sites, SiteFields, SiteEntries } from '$lib/pocketbase/collections'
 
+	let { onClose } = $props()
+
 	const site_id = page.params.site
 	const site = $derived(Sites.one(site_id))
 
@@ -17,8 +19,21 @@
 	let disableSave = false
 
 	async function saveComponent() {
-		// TODO: Implement
-		throw new Error('Not implemented')
+		disableSave = true
+		try {
+			await Sites.update(site_id, {
+				head: site.head,
+				foot: site.foot
+			})
+			console.log('Site head and foot saved successfully')
+			// Close the modal after successful save
+			if (onClose) onClose()
+		} catch (error) {
+			console.error('Error saving site:', error)
+			throw error
+		} finally {
+			disableSave = false
+		}
 	}
 
 	async function create_field() {

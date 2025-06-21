@@ -288,7 +288,7 @@
 				}
 
 				if (dragging_over_section) return // prevent double-adding block
-				
+
 				// When page is empty, use the empty state div as the drop target
 				if (sections.length === 0) {
 					const empty_state_el = page_el.querySelector('.empty-state')
@@ -297,7 +297,7 @@
 					} else {
 						hovered_block_el = page_el
 					}
-					
+
 					if (!showing_drop_indicator) {
 						await show_drop_indicator()
 					}
@@ -308,7 +308,7 @@
 					}
 					return
 				}
-				
+
 				const last_section_id = palette_sections[palette_sections.length - 1]?.id
 				if (!last_section_id) return
 				hovered_block_el = page_el.querySelector(`[data-section="${last_section_id}"]`)
@@ -633,6 +633,12 @@
 			<span>Drag blocks here to add them to the page</span>
 		</div>
 	{/if}
+
+	{#if site?.foot}
+		<div class="site-foot">
+			{@html site.foot}
+		</div>
+	{/if}
 </main>
 
 <style lang="postcss">
@@ -716,5 +722,8 @@
 		font-size: 0.875rem;
 		text-decoration: none;
 		color: var(--color-gray-7);
+	}
+	.site-foot {
+		color: black;
 	}
 </style>
