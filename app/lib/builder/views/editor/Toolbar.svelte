@@ -19,13 +19,13 @@
 	import PageTypeModal from '$lib/builder/views/modal/PageTypeModal/PageTypeModal.svelte'
 	import Collaboration from '$lib/builder/views/modal/Collaboration.svelte'
 
-	let { children } = $props()
+	let { children, currentPage } = $props()
 
 	const site_id = $derived(pageState.params.site)
 	const page_slug = $derived(pageState.params.page || '')
 	const page_type_id = $derived(pageState.params.page_type)
 	const site = $derived(Sites.one(site_id))
-	const page = $derived(site?.pages().find((p) => p.slug === page_slug))
+	const page = $derived(currentPage || site?.pages().find((p) => p.slug === page_slug))
 	const page_type = $derived(page_type_id && PageTypes.one(page_type_id))
 	const page_page_type = $derived(page && PageTypes.one(page.page_type))
 
@@ -110,26 +110,31 @@
 			</div>
 		</div>
 		<div class="site-name">
-			<span class="site">{site?.name} /</span>
+			<span class="site">{site?.name}</span>
 			{#if page_type}
+				<span class="separator">/</span>
 				<div class="page-type" style:background={page_type.color}>
 					<Icon icon={page_type.icon} />
 					<span>{page_type.name}</span>
 				</div>
-			{:else if page && page_page_type}
+			{:else if page}
+				<span class="separator">/</span>
 				<span class="page">{page.name}</span>
-				<!-- $userRole === 'DEV' -->
-				{#if true}
-					<a class="page-type-badge" style="background-color: {page_page_type.color};" href="/{site?.id}/page-type--{page_page_type.id}">
-						<Icon icon={page_page_type.icon} />
-					</a>
-				{:else}
-					<span class="page-type-badge" style="background-color: {page_page_type.color};">
-						<Icon icon={page_page_type.icon} />
-					</span>
+				{#if page_page_type}
+					<!-- $userRole === 'DEV' -->
+					{#if true}
+						<a class="page-type-badge" style="background-color: {page_page_type.color};" href="/{site?.id}/page-type--{page_page_type.id}">
+							<Icon icon={page_page_type.icon} />
+						</a>
+					{:else}
+						<span class="page-type-badge" style="background-color: {page_page_type.color};">
+							<Icon icon={page_page_type.icon} />
+						</span>
+					{/if}
 				{/if}
-			{:else}
-				<span class="page">{page?.name}</span>
+			{:else if page_slug}
+				<span class="separator">/</span>
+				<span class="page">{page_slug}</span>
 			{/if}
 		</div>
 		<div class="right">
@@ -191,7 +196,6 @@
 		font-size: 0.75rem;
 		display: flex;
 		align-items: center;
-		gap: 0.25rem;
 		place-content: center;
 
 		.site {
@@ -199,6 +203,10 @@
 			white-space: nowrap;
 			overflow: hidden;
 			text-overflow: ellipsis;
+		}
+		.separator {
+			color: #b6b6b6;
+			margin: 0 0.25rem;
 		}
 		.page {
 			color: white;
@@ -213,7 +221,6 @@
 			color: white;
 			border-radius: 1rem;
 			padding: 2px 6px;
-			margin-left: 3px;
 		}
 		.page-type-badge {
 			padding: 5px;
@@ -224,7 +231,7 @@
 			justify-content: center;
 			align-items: center;
 			color: white;
-			margin-left: 3px;
+			margin-left: 0.25rem;
 		}
 
 		@media (max-width: 670px) {
