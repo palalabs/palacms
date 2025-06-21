@@ -41,10 +41,32 @@
 		// TODO: Implement
 	}
 
+	async function repair_section_indices() {
+		console.log('Repairing section indices...')
+		// Just use the current order of sections and assign consecutive indices
+		for (let i = 0; i < sections.length; i++) {
+			if (sections[i].index !== i) {
+				console.log(`Updating section ${sections[i].id} index from ${sections[i].index} to ${i}`)
+				await PageSections.update(sections[i].id, { index: i })
+			}
+		}
+	}
+
 	async function add_section_to_page({ symbol, position }) {
+		console.log('add_section_to_page called', { position, sections_count: sections.length, palette_sections_count: palette_sections.length })
+		
+		// Check if indices need repair
+		const has_incorrect_indices = sections.some((section, i) => section.index !== i)
+		if (has_incorrect_indices) {
+			await repair_section_indices()
+		}
+		
 		// Adjust indices of existing sections that come after the insertion position
-		const existing_palette_sections = palette_sections.filter((section) => section.index >= position)
-		for (const section of existing_palette_sections) {
+		console.log('All sections before filtering:', sections.map(s => ({ id: s.id, index: s.index })))
+		const existing_sections = sections.filter((section) => section.index >= position)
+		console.log('Sections to update:', existing_sections.map(s => ({ id: s.id, current_index: s.index, new_index: s.index + 1 })))
+		
+		for (const section of existing_sections) {
 			await PageSections.update(section.id, { index: section.index + 1 })
 		}
 
@@ -55,6 +77,7 @@
 			index: position
 		})
 
+		console.log('Created new section', { id: new_section.id, position })
 		return new_section.id
 	}
 
@@ -89,11 +112,21 @@
 	let hovering_toolbar = $state(false)
 
 	async function show_block_toolbar() {
+		console.log('show_block_toolbar called', { showing_block_toolbar, hovered_section_id, hovered_block_el: !!hovered_block_el })
+		// Clear any pending hide timeout
+		if (hide_toolbar_timeout) {
+			clearTimeout(hide_toolbar_timeout)
+			hide_toolbar_timeout = null
+		}
+		
 		if (!showing_block_toolbar) {
 			showing_block_toolbar = true
 			await tick()
 			position_block_toolbar()
-			page_el.addEventListener('scroll', hide_block_toolbar)
+			page_el.addEventListener('scroll', position_block_toolbar)
+		} else {
+			// Already showing, just reposition
+			position_block_toolbar()
 		}
 	}
 
@@ -114,11 +147,21 @@
 		block_toolbar_element.style.right = `${window.innerWidth - right}px`
 	}
 
+	let hide_toolbar_timeout = null
+	
 	async function hide_block_toolbar() {
-		if (!hovering_toolbar) {
-			showing_block_toolbar = false
-			window.removeEventListener('scroll', hide_block_toolbar)
+		console.log('hide_block_toolbar called', { hovering_toolbar })
+		// Clear any existing timeout
+		if (hide_toolbar_timeout) {
+			clearTimeout(hide_toolbar_timeout)
 		}
+		// Add a small delay to prevent hiding when quickly moving between sections
+		hide_toolbar_timeout = setTimeout(() => {
+			if (!hovering_toolbar) {
+				showing_block_toolbar = false
+				page_el.removeEventListener('scroll', position_block_toolbar)
+			}
+		}, 100)
 	}
 
 	////////////////////////////
@@ -166,6 +209,7 @@
 	}
 
 	function hide_drop_indicator() {
+		console.log('hide_drop_indicator called', { showing_drop_indicator })
 		showing_drop_indicator = false
 		page_el.removeEventListener('scroll', position_drop_indicator)
 	}
@@ -188,6 +232,12 @@
 		position: null
 	}
 	function reset_drag() {
+		// Clear any pending drag leave timeout
+		if (drag_leave_timeout) {
+			clearTimeout(drag_leave_timeout)
+			drag_leave_timeout = null
+		}
+
 		dragging = {
 			id: null,
 			position: null
@@ -197,6 +247,7 @@
 	}
 
 	let dragging_over_section = $state(false)
+	let drag_leave_timeout = null
 
 	function drag_fallback(element) {
 		dropTargetForElements({
@@ -212,6 +263,12 @@
 				)
 			},
 			async onDrag({ self, source }) {
+				// Clear any pending drag leave timeout since we're still dragging
+				if (drag_leave_timeout) {
+					clearTimeout(drag_leave_timeout)
+					drag_leave_timeout = null
+				}
+
 				if (dragging_over_section) return // prevent double-adding block
 				const last_section_id = palette_sections[palette_sections.length - 1]?.id
 				if (!last_section_id) return
@@ -228,11 +285,29 @@
 					}
 				}
 			},
-			onDragLeave() {
-				reset_drag()
+			onDragLeave({ source }) {
+				console.log('Fallback onDragLeave')
+				// Use a timeout to avoid hiding the indicator when briefly leaving the area
+				// but still dragging over a valid drop target
+				drag_leave_timeout = setTimeout(() => {
+					reset_drag()
+				}, 100)
 			},
 			async onDrop({ source }) {
-				if (dragging_over_section) return // prevent double-adding block
+				console.log('Fallback onDrop', { dragging_over_section })
+				// Immediately hide drop indicator
+				hide_drop_indicator()
+				
+				// Clear any pending drag leave timeout
+				if (drag_leave_timeout) {
+					clearTimeout(drag_leave_timeout)
+					drag_leave_timeout = null
+				}
+
+				if (dragging_over_section) {
+					console.log('Fallback onDrop early return due to dragging_over_section')
+					return // prevent double-adding block
+				}
 				const block_being_dragged = source.data.block
 				const new_section_id = await add_section_to_page({
 					symbol: block_being_dragged,
@@ -263,6 +338,12 @@
 				)
 			},
 			async onDrag({ self, source }) {
+				// Clear any pending drag leave timeout since we're still dragging
+				if (drag_leave_timeout) {
+					clearTimeout(drag_leave_timeout)
+					drag_leave_timeout = null
+				}
+
 				hovered_block_el = self.element
 				if (!showing_drop_indicator) {
 					await show_drop_indicator()
@@ -276,40 +357,63 @@
 				}
 			},
 			onDragEnter() {
+				console.log('Section onDragEnter')
+				// Clear any pending drag leave timeout since we're entering a valid drop target
+				if (drag_leave_timeout) {
+					clearTimeout(drag_leave_timeout)
+					drag_leave_timeout = null
+				}
 				dragging_over_section = true
 			},
 			onDragLeave() {
-				reset_drag()
+				console.log('drag_item onDragLeave')
+				dragging_over_section = false
+				// Use a timeout to avoid hiding the indicator when briefly leaving the area
+				// but still dragging over a valid drop target
+				drag_leave_timeout = setTimeout(() => {
+					reset_drag()
+				}, 100)
 			},
 			async onDrop({ self, source }) {
-				const is_first_pallete_section = palette_sections.length === 0
+				console.log('drag_item onDrop called', { section_id: self.data.section.id, dragging_over_section })
+				// Immediately hide drop indicator
+				hide_drop_indicator()
+				
+				// Clear any pending drag leave timeout
+				if (drag_leave_timeout) {
+					clearTimeout(drag_leave_timeout)
+					drag_leave_timeout = null
+				}
+
 				const section_dragged_over_index = sections.find((s) => s.id === self.data.section.id).index
 				const block_being_dragged = source.data.block
 				const closestEdgeOfTarget = extractClosestEdge(self.data)
+				console.log('drag_item onDrop details', { section_dragged_over_index, closestEdgeOfTarget })
+				
 				if (closestEdgeOfTarget === 'top') {
+					console.log('Inserting BEFORE section at index', section_dragged_over_index)
 					const new_section_id = await add_section_to_page({
-						palette_id: palette_section.id,
 						symbol: block_being_dragged,
-						position: is_first_pallete_section ? 0 : section_dragged_over_index
+						position: section_dragged_over_index
 					})
-					const new_section_el = page_el.querySelector(`[data-section="${new_section_id}"]`)
-					new_section_el.scrollIntoView({
-						behavior: 'smooth',
-						block: 'center',
-						inline: 'center'
-					})
+					// const new_section_el = page_el.querySelector(`[data-section="${new_section_id}"]`)
+					// new_section_el.scrollIntoView({
+					// 	behavior: 'smooth',
+					// 	block: 'center',
+					// 	inline: 'center'
+					// })
 				} else if (closestEdgeOfTarget === 'bottom') {
+					console.log('Inserting AFTER section at index', section_dragged_over_index)
 					const new_section_id = await add_section_to_page({
-						palette_id: palette_section.id,
 						symbol: block_being_dragged,
-						position: is_first_pallete_section ? 0 : section_dragged_over_index + 1
+						position: section_dragged_over_index + 1
 					})
-					const new_section_el = page_el.querySelector(`[data-section="${new_section_id}"]`)
-					new_section_el.scrollIntoView({
-						behavior: 'smooth',
-						block: 'center',
-						inline: 'center'
-					})
+					// const new_section_el = page_el.querySelector(`[data-section="${new_section_id}"]`)
+					// new_section_el.scrollIntoView({
+					// 	behavior: 'smooth',
+					// 	block: 'center',
+					// 	inline: 'center'
+					// })
 				}
 				reset_drag()
 				$dragging_symbol = false
@@ -317,26 +421,20 @@
 		})
 	}
 
-	let page_is_empty = $derived(sections.length === 1) // just has palette
-	let non_palette_sections = $derived(sections.filter((s) => s.palette || s.master?.symbol))
+	let page_is_empty = $derived(sections.length === 0)
 	$effect(() => {
-		if (sections_mounted === non_palette_sections.length && sections_mounted !== 0) {
+		if (sections_mounted === sections.length && sections_mounted !== 0) {
 			page_mounted = true
 		} else if (page_is_empty) {
 			page_mounted = true
 		}
 	})
-	let palette_section = $derived(sections.find((s) => !s.symbol && !s.master?.symbol))
 	let block_toolbar_on_locked_block = $derived($locked_blocks.find((b) => b.block_id === hovered_section?.id))
 	$effect(() => {
 		if (block_toolbar_on_locked_block) hide_block_toolbar()
 	})
-	// get position of palette from page.page_type.sections
-	// on drag, display palette drop zone
-	// only respond to hover within palette drop zone
 
 	let palette_sections = $derived(sections.filter((s) => s.palette))
-	let static_sections = $derived(sections.filter((s) => s.master?.symbol))
 
 	let hovered_section_id: string | null = $state(null)
 	let hovered_section = $derived(page?.sections().find((s) => s.id === hovered_section_id))
@@ -396,8 +494,14 @@
 			bind:node={block_toolbar_element}
 			id={hovered_section_id}
 			on:delete={async () => {
-				hide_block_toolbar()
-				await remove_section_from_page(hovered_section_id)
+				// Get the section ID before clearing state
+				const section_id_to_delete = hovered_section_id
+				// Force hide the toolbar immediately
+				showing_block_toolbar = false
+				hovered_section_id = null
+				hovered_block_el = null
+				page_el.removeEventListener('scroll', position_block_toolbar)
+				await remove_section_from_page(section_id_to_delete)
 			}}
 			on:edit-code={() => edit_section('code')}
 			on:edit-content={() => edit_section('content')}
@@ -426,113 +530,68 @@
 	{#each sections as section (section.id)}
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<!-- svelte-ignore a11y_mouse_events_have_key_events -->
-		{@const is_palette = !section.symbol && !section.master?.symbol}
-		{@const show_block_toolbar_on_hover = $page_loaded && page_mounted && !moving && !(is_palette && palette_sections.length === 0)}
-		{@const has_page_type_symbols = false}
-		{@const should_show_palette = has_page_type_symbols || palette_sections.length > 0}
-		{#if is_palette && should_show_palette}
-			<div data-section={section.id} data-type="palette" class:empty={palette_sections.length === 0}>
-				{#if palette_sections.length > 0}
-					{#each palette_sections as section (section.id)}
-						{@const block = SiteSymbols.one(section.symbol)}
-						{@const locked = $locked_blocks.find((b) => b.block_id === section.id)}
-						{@const in_current_tab = false}
-						<div
-							role="presentation"
-							data-section={section.id}
-							data-symbol={block.id}
-							onmousemove={show_block_toolbar}
-							onmouseenter={async ({ target }) => {
-								hovered_section_id = section.id
-								// hovered_section = {
-								// 	...section,
-								// 	is_last: section.index === palette_sections.length - 1
-								// }
-								// hovered_block_el = target
-								if (show_block_toolbar_on_hover) show_block_toolbar()
-							}}
-							onmouseleave={hide_block_toolbar}
-							animate:flip={{ duration: 100 }}
-							use:drag_item={section}
-						>
-							{#if locked && !in_current_tab}
-								<LockedOverlay {locked} />
-							{/if}
-							<ComponentNode
-								{block}
-								{section}
-								on:lock={() => lock_block(section.id)}
-								on:unlock={() => unlock_block()}
-								on:mount={() => sections_mounted++}
-								on:resize={() => {
-									if (showing_block_toolbar) {
-										position_block_toolbar()
-									}
-								}}
-							/>
-						</div>
-					{/each}
-				{:else}
-					<div
-						role="presentation"
-						class="empty-state"
-						class:page_is_empty
-						use:drag_item={section}
-						onmouseenter={async ({ target }) => {
-							hovered_block_el = target
-						}}
-						onmouseleave={() => {
-							hovered_block_el = null
-						}}
-					>
-						Drag blocks here to add them to the page
-					</div>
-				{/if}
-			</div>
-		{:else if !is_palette}
-			{@const block = SiteSymbols.one(section.symbol)}
-			{@const locked = $locked_blocks.find((b) => b.block_id === section.id)}
-			{@const in_current_tab = false}
-			<div
-				role="presentation"
-				data-section={section.id}
-				data-type="static"
-				onmousemove={show_block_toolbar}
-				onmouseenter={async ({ target }) => {
-					hovered_section_id = section.id
-					// hovered_section = {
-					// 	...section,
-					// 	is_last: section.index === top_level_sections.length - 1
-					// }
-					hovered_block_el = target
+		{@const block = SiteSymbols.one(section.symbol)}
+		{@const locked = $locked_blocks.find((b) => b.block_id === section.id)}
+		{@const in_current_tab = false}
+		{@const show_block_toolbar_on_hover = page_mounted && !moving}
+		<div
+			role="presentation"
+			data-section={section.id}
+			data-symbol={block?.id}
+			onmousemove={(e) => {
+				if (show_block_toolbar_on_hover && hovered_section_id === section.id) {
 					show_block_toolbar()
+				}
+			}}
+			onmouseenter={async (e) => {
+				console.log('Section mouseenter', section.id, { show_block_toolbar_on_hover, page_loaded: $page_loaded, page_mounted, moving })
+				hovered_section_id = section.id
+				hovered_block_el = e.currentTarget
+				if (show_block_toolbar_on_hover) {
+					show_block_toolbar()
+				} else {
+					console.log('Not showing toolbar due to conditions')
+				}
+			}}
+			onmouseleave={(e) => {
+				console.log('Section mouseleave', section.id)
+				hide_block_toolbar()
+			}}
+			animate:flip={{ duration: 100 }}
+			use:drag_item={section}
+		>
+			{#if locked && !in_current_tab}
+				<LockedOverlay {locked} />
+			{/if}
+			<ComponentNode
+				{block}
+				{section}
+				on:lock={() => lock_block(section.id)}
+				on:unlock={() => unlock_block()}
+				on:mount={() => sections_mounted++}
+				on:resize={() => {
+					if (showing_block_toolbar) {
+						position_block_toolbar()
+					}
 				}}
-				onmouseleave={hide_block_toolbar}
-			>
-				{#if locked && !in_current_tab}
-					<LockedOverlay {locked} />
-				{/if}
-				<ComponentNode
-					{block}
-					{section}
-					on:lock={() => lock_block(section.id)}
-					on:unlock={() => unlock_block()}
-					on:mount={() => sections_mounted++}
-					on:resize={() => {
-						if (showing_block_toolbar) {
-							position_block_toolbar()
-						}
-					}}
-				/>
-			</div>
-		{:else if is_palette && !should_show_palette && static_sections.length === 0}
-			<div class="empty-state" style="height: 100%">
-				<span>Add Blocks to the Page Type to make them available on this page.</span>
-				<br />
-				<a class="button" href="{site?.id}/page-type--{page.page_type.id}">Edit Page Type</a>
-			</div>
-		{/if}
+			/>
+		</div>
 	{/each}
+
+	{#if sections.length === 0}
+		<div
+			class="empty-state"
+			style="height: 100%"
+			onmouseenter={({ target }) => {
+				hovered_block_el = target
+			}}
+			onmouseleave={() => {
+				hovered_block_el = null
+			}}
+		>
+			<span>Drag blocks here to add them to the page</span>
+		</div>
+	{/if}
 </main>
 
 <style lang="postcss">
