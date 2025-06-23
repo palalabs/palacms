@@ -24,12 +24,11 @@
 
 	// Provide simple empty object for component props
 	let component_data = $derived({})
-	
 	// Create code object for ComponentPreview (matching SectionEditor pattern)
 	let code = $derived({
-		html: symbol.html || '<!-- Add your HTML here -->',
-		css: symbol.css || '/* Add your CSS here */',
-		js: symbol.js || ''
+		html: symbol?.html || '<!-- Add your HTML here -->',
+		css: symbol?.css || '/* Add your CSS here */',
+		js: symbol?.js || ''
 	})
 
 	let tab = $state('code')
@@ -54,13 +53,25 @@
 	async function onsave() {
 		loading = true
 		try {
-			const { css, html, js, name } = symbol
-			const code = { css, html, js }
-			const generate_code = await block_html({ code, data: component_data })
-			const preview = static_iframe_srcdoc(generate_code)
+			if (!symbol) {
+				console.error('Symbol is null or undefined')
+				return
+			}
+
+			const { css = '', html = '', js = '', name = '' } = symbol
+
+			// Create preview using the raw symbol data
+			const preview = static_iframe_srcdoc({
+				head: head || '',
+				html: html,
+				css: css,
+				foot: ''
+			})
 
 			// Call the onsubmit function with the symbol data and preview
 			onsubmit({ name: name || 'Untitled Block', css, html, js, preview })
+		} catch (error) {
+			console.error('Error in onsave:', error)
 		} finally {
 			loading = false
 		}

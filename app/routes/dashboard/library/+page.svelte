@@ -26,7 +26,7 @@
 	const active_symbol_group_id = $derived(page.url.searchParams.get('group') as string)
 	const active_symbol_group = $derived(active_symbol_group_id ? LibrarySymbolGroups.one(active_symbol_group_id) : undefined)
 	const symbol_groups = $derived(LibrarySymbolGroups.list())
-	
+
 	// Get symbols for the active group using direct query instead of relationship method
 	const group_symbols = $derived(active_symbol_group_id ? LibrarySymbols.list({ filter: `group = "${active_symbol_group_id}"` }) : [])
 
@@ -35,6 +35,15 @@
 	let editing_head = $state(false)
 	let editing_design = $state(false)
 	let creating_block = $state(false)
+
+	// Create a fresh symbol object for new blocks
+	let new_symbol = $state({ name: '', css: '', html: '', js: '' })
+
+	function open_create_block() {
+		// Reset to fresh symbol data
+		new_symbol = { name: '', css: '', html: '', js: '' }
+		creating_block = true
+	}
 
 	async function upload_block_file(event) {
 		const file = event.target.files[0]
@@ -165,7 +174,10 @@
 		// preview = data.preview
 		LibrarySymbols.update(symbol_being_edited.id, data)
 		is_symbol_editor_open = false
-		symbol_being_edited = null
+		// Give the modal time to close before nullifying the symbol
+		setTimeout(() => {
+			symbol_being_edited = null
+		}, 200)
 	}
 
 	async function create_symbol(data) {
@@ -176,7 +188,7 @@
 			// Generate unique name if default is used
 			const timestamp = Date.now()
 			const defaultName = `Untitled Block ${timestamp}`
-			
+
 			// Try creating with minimal required fields only
 			const createData = {
 				name: defaultName,
@@ -188,6 +200,10 @@
 			console.log('Creating symbol with data:', createData)
 			await LibrarySymbols.create(createData)
 			creating_block = false
+			// Reset the new_symbol after modal closes
+			setTimeout(() => {
+				new_symbol = { name: '', css: '', html: '', js: '' }
+			}, 100)
 		} catch (error) {
 			console.error('Failed to create symbol:', error)
 			console.error('Error details:', error.response?.data || error.data)
@@ -263,7 +279,7 @@
 		</DropdownMenu.Root>
 	</div>
 	<div class="ml-auto mr-4">
-		<Button size="sm" variant="outline" onclick={() => (creating_block = true)}>
+		<Button size="sm" variant="outline" onclick={open_create_block}>
 			<CirclePlus class="h-4 w-4" />
 			Create Block
 		</Button>
@@ -335,7 +351,7 @@
 
 <Dialog.Root bind:open={creating_block}>
 	<Dialog.Content escapeKeydownBehavior="ignore" class="max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4 gap-0">
-		<CreateBlock head={generated_head_code + design_variables_css} onsubmit={create_symbol} />
+		<CreateBlock bind:symbol={new_symbol} head={generated_head_code + design_variables_css} onsubmit={create_symbol} />
 	</Dialog.Content>
 </Dialog.Root>
 

@@ -85,6 +85,8 @@
 				}
 			})
 
+			console.log({ compiled_head })
+
 			if (!compiled_head.error) {
 				component_head_html = compiled_head.head
 			}
@@ -93,7 +95,7 @@
 
 	let componentApp = $state(null)
 	async function compile_component_code() {
-		if (!code.html) return
+		if (!code || !code.html) return
 		// disable_save = true
 		loading = true
 
@@ -107,9 +109,9 @@
 			const { js, error } = await processCode({
 				component: {
 					// head: code.head,
-					html: code.html,
-					css: code.css,
-					js: code.js,
+					html: code.html || '',
+					css: code.css || '',
+					js: code.js || '',
 					data
 				},
 				buildStatic: false
