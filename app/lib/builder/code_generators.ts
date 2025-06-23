@@ -45,15 +45,7 @@ export async function page_html({ site, page, locale = 'en', no_js = false }: { 
 					data
 				}
 			]
-		}),
-		(async () => {
-			return {
-				html: site.foot,
-				css: ``,
-				js: ``,
-				data: site_data
-			}
-		})()
+		})
 	])
 
 	const res = await processors.html({
@@ -78,6 +70,7 @@ export async function page_html({ site, page, locale = 'en', no_js = false }: { 
    <body id="page">
      ${res.html}
      ${no_js ? `` : `<script type="module">${fetch_modules(symbol_ids)}</script>`}
+     ${site.foot}
    </body>
  </html>
  `

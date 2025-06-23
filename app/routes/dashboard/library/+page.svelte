@@ -20,11 +20,15 @@
 	import { goto } from '$app/navigation'
 	import { useSidebar } from '$lib/components/ui/sidebar'
 	import { LibrarySymbolGroups, LibrarySymbols } from '$lib/pocketbase/collections'
+	import { user } from '$lib/pocketbase/PocketBase'
 	import type { LibrarySymbol } from '$lib/common/models/LibrarySymbol'
 
 	const active_symbol_group_id = $derived(page.url.searchParams.get('group') as string)
 	const active_symbol_group = $derived(active_symbol_group_id ? LibrarySymbolGroups.one(active_symbol_group_id) : undefined)
 	const symbol_groups = $derived(LibrarySymbolGroups.list())
+	
+	// Get symbols for the active group using direct query instead of relationship method
+	const group_symbols = $derived(active_symbol_group_id ? LibrarySymbols.list({ filter: `group = "${active_symbol_group_id}"` }) : [])
 
 	const sidebar = useSidebar()
 
@@ -39,7 +43,7 @@
 		throw new Error('Not implemented')
 	}
 
-	let design_variables_css = $state(undefined)
+	let design_variables_css = $state('')
 	function update_design_value(token, value) {
 		// TODO: Remove
 	}
@@ -163,6 +167,32 @@
 		is_symbol_editor_open = false
 		symbol_being_edited = null
 	}
+
+	async function create_symbol(data) {
+		if (!active_symbol_group_id) return
+		try {
+			// Remove id for creation and ensure required fields
+			const { id, preview, ...symbolData } = data
+			// Generate unique name if default is used
+			const timestamp = Date.now()
+			const defaultName = `Untitled Block ${timestamp}`
+			
+			// Try creating with minimal required fields only
+			const createData = {
+				name: defaultName,
+				html: symbolData.html || '',
+				css: symbolData.css || '',
+				js: symbolData.js || '',
+				group: active_symbol_group_id
+			}
+			console.log('Creating symbol with data:', createData)
+			await LibrarySymbols.create(createData)
+			creating_block = false
+		} catch (error) {
+			console.error('Failed to create symbol:', error)
+			console.error('Error details:', error.response?.data || error.data)
+		}
+	}
 </script>
 
 <!-- Symbol Group Dialogs -->
@@ -232,15 +262,21 @@
 			</DropdownMenu.Content>
 		</DropdownMenu.Root>
 	</div>
+	<div class="ml-auto mr-4">
+		<Button size="sm" variant="outline" onclick={() => (creating_block = true)}>
+			<CirclePlus class="h-4 w-4" />
+			Create Block
+		</Button>
+	</div>
 </header>
 
 <div class="flex flex-1 flex-col gap-4 px-4 pb-4">
-	{#if active_symbol_group?.symbols.length}
+	{#if group_symbols.length}
 		<div class="masonry">
 			<ul>
-				{#each active_symbol_group.symbols() as symbol (symbol.id)}
+				{#each group_symbols as symbol (symbol.id)}
 					<li>
-						<SymbolButton {symbol} head={generated_head_code + design_variables_css}>
+						<SymbolButton symbol_id={symbol.id} head={generated_head_code + design_variables_css} onclick={() => begin_symbol_edit(symbol)}>
 							<DropdownMenu.Root>
 								<DropdownMenu.Trigger>
 									<EllipsisVertical size={14} />
@@ -294,6 +330,12 @@
 				<Button onclick={move_symbol}>Move</Button>
 			</div>
 		</div>
+	</Dialog.Content>
+</Dialog.Root>
+
+<Dialog.Root bind:open={creating_block}>
+	<Dialog.Content escapeKeydownBehavior="ignore" class="max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4 gap-0">
+		<CreateBlock head={generated_head_code + design_variables_css} onsubmit={create_symbol} />
 	</Dialog.Content>
 </Dialog.Root>
 

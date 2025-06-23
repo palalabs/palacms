@@ -10,9 +10,27 @@
 	import { block_html } from '$lib/builder/code_generators.js'
 	import type { Symbol } from '$lib/common/models/Symbol'
 
-	let { symbol = { name: '', css: '', html: '', js: '' }, head = '', append = '' }: { symbol: Omit<Symbol, 'id'>; head?: string; append?: string } = $props()
+	let {
+		symbol = $bindable({ name: '', css: '', html: '', js: '' }),
+		head = '',
+		append = '',
+		onsubmit
+	}: {
+		symbol?: Omit<Symbol, 'id'>
+		head?: string
+		append?: string
+		onsubmit: (data: any) => void
+	} = $props()
 
-	let component_data = $derived({}) // TODO: Implement
+	// Provide simple empty object for component props
+	let component_data = $derived({})
+	
+	// Create code object for ComponentPreview (matching SectionEditor pattern)
+	let code = $derived({
+		html: symbol.html || '<!-- Add your HTML here -->',
+		css: symbol.css || '/* Add your CSS here */',
+		js: symbol.js || ''
+	})
 
 	let tab = $state('code')
 	function toggle_tab() {
@@ -34,10 +52,18 @@
 
 	let loading = $state(false)
 	async function onsave() {
-		const { css, html, js } = symbol
-		const code = { css, html, js }
-		const generate_code = await block_html({ code, data: component_data })
-		const preview = static_iframe_srcdoc(generate_code)
+		loading = true
+		try {
+			const { css, html, js, name } = symbol
+			const code = { css, html, js }
+			const generate_code = await block_html({ code, data: component_data })
+			const preview = static_iframe_srcdoc(generate_code)
+
+			// Call the onsubmit function with the symbol data and preview
+			onsubmit({ name: name || 'Untitled Block', css, html, js, preview })
+		} finally {
+			loading = false
+		}
 	}
 </script>
 
@@ -48,7 +74,7 @@
 		label: 'Done',
 		onclick: onsave,
 		loading,
-		disabled: $has_error
+		disabled: false
 	}}
 >
 	<LargeSwitch bind:active_tab_id={tab} />
@@ -65,7 +91,9 @@
 		</Pane>
 		<PaneResizer class="PaneResizer" />
 		<Pane defaultSize={50}>
-			<ComponentPreview view="small" {loading} {head} {append} data={component_data} />
+			<div class="preview-wrapper">
+				<ComponentPreview {code} data={component_data} view="small" {loading} {head} />
+			</div>
 		</Pane>
 	</PaneGroup>
 </div>

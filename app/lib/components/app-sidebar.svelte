@@ -263,7 +263,7 @@
 			<Sidebar.Content class="p-2">
 				<Sidebar.Menu>
 					{#each LibrarySymbolGroups.list() as group}
-						{@const url = `/dashboard/library/blocks?group=${group.id}`}
+						{@const url = `/dashboard/library?group=${group.id}`}
 						<Sidebar.MenuItem>
 							<Sidebar.MenuButton isActive={$page.url.pathname + $page.url.search === url}>
 								{#snippet child({ props })}
