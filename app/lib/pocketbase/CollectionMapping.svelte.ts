@@ -31,6 +31,7 @@ export type CollectionMapping<T extends ObjectWithId, Options extends Collection
 	update: (id: string, values: Partial<T>) => MappedObject<T, Options>
 	delete: (id: string) => void
 	commit: () => Promise<void>
+	refresh: () => void
 	authWithPassword: (usernameOrEmail: string, password: string) => Promise<RecordAuthResponse<MappedObject<T, Options>>>
 	requestPasswordReset: (email: string) => Promise<void>
 	confirmPasswordReset: (passwordResetToken: string, password: string, passwordConfirm: string) => Promise<void>
@@ -159,6 +160,10 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 			await Promise.all(promises)
 			staged.clear()
 			lists.clear()
+		},
+		refresh: () => {
+			// Force refresh lists without clearing objects immediately
+			refreshLists()
 		},
 		authWithPassword: async (usernameOrEmail, password) => {
 			const response = await collection.authWithPassword(usernameOrEmail, password)

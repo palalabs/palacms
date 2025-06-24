@@ -188,7 +188,7 @@
 		<div style="border-left: 0.5rem solid #111;">
 			<PageForm
 				parent={page}
-				on:create={({ detail: new_page }) => {
+				on:create={async ({ detail: new_page }) => {
 					creating_page = false
 					showing_children = true
 					const url_taken = allPages.some((page) => page?.slug === new_page.slug)
