@@ -624,6 +624,7 @@
 	{#if sections.length === 0}
 		<div
 			class="empty-state"
+			class:dragging-over={hovered_block_el && dragging}
 			style="height: 100%"
 			onmouseenter={({ target }) => {
 				hovered_block_el = target
@@ -663,6 +664,38 @@
 			opacity: 1;
 		}
 	}
+	.empty-state {
+		background: var(--color-gray-1);
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		padding-block: 5rem;
+		border: 2px dashed var(--color-gray-5);
+		border-radius: 8px;
+		margin: 2rem;
+		min-height: 300px;
+		color: var(--color-gray-7);
+		font-size: 1.1rem;
+		transition: all 0.2s ease;
+		
+		&:hover {
+			border-color: var(--weave-primary-color);
+			background: var(--color-gray-2);
+			color: var(--weave-primary-color);
+		}
+		
+		&.dragging-over {
+			border-color: var(--weave-primary-color);
+			background: rgba(248, 68, 73, 0.1);
+			color: var(--weave-primary-color);
+			transform: scale(1.02);
+		}
+		
+		span {
+			pointer-events: none;
+		}
+	}
+	
 	[data-type='palette'] {
 		.empty-state {
 			background: var(--color-gray-1);

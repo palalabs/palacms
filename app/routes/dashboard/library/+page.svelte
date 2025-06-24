@@ -190,13 +190,10 @@
 		try {
 			// Remove id for creation and ensure required fields
 			const { id, preview, ...symbolData } = data
-			// Generate unique name if default is used
-			const timestamp = Date.now()
-			const defaultName = `Untitled Block ${timestamp}`
 
 			// Try creating with minimal required fields only
 			const createData = {
-				name: defaultName,
+				name: symbolData.name || 'Untitled Block',
 				html: symbolData.html || '',
 				css: symbolData.css || '',
 				js: symbolData.js || '',
