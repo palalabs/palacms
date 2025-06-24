@@ -11,16 +11,17 @@
 	const site_id = $derived(page.params.site)
 	const site = $derived(Sites.one(site_id))
 
-	async function create_page_type(new_page_type: PageType) {
+	async function create_page_type(new_page_type) {
 		if (!site) return
 
-		PageTypes.create(new_page_type)
-		PageTypes.commit()
-		// TODO: test & configure navigate to
+		// Add the site ID to the page type
+		const page_type_data = {
+			...new_page_type,
+			site: site_id
+		}
 
-		// site.data.page_types.push(new_page_type)
-		// const [created_page_type] = site.data.page_types.slice(-1)
-		// goto(`/${site.id}/page-type--${created_page_type.id}`)
+		PageTypes.create(page_type_data)
+		PageTypes.commit()
 	}
 
 	let creating_page_type = $state(false)
@@ -28,24 +29,22 @@
 
 <Dialog.Header title="Page Types" />
 <main class="grid gap-2 p-2 bg-[var(--primo-color-black)]">
-	{#if site?.page_types().length}
-		<ul class="grid gap-2">
-			{#each site.page_types() as page_type}
-				<li>
-					<Item {page_type} active={false} />
-				</li>
-			{/each}
-			{#if creating_page_type}
-				<li style="background: #1a1a1a;">
-					<PageForm
-						on:create={({ detail: new_page_type }) => {
-							creating_page_type = false
-							create_page_type(new_page_type)
-						}}
-					/>
-				</li>
-			{/if}
-		</ul>
-	{/if}
+	<ul class="grid gap-2">
+		{#each site?.page_types() || [] as page_type}
+			<li>
+				<Item {page_type} active={false} />
+			</li>
+		{/each}
+		{#if creating_page_type}
+			<li style="background: #1a1a1a;">
+				<PageForm
+					on:create={({ detail: new_page_type }) => {
+						creating_page_type = false
+						create_page_type(new_page_type)
+					}}
+				/>
+			</li>
+		{/if}
+	</ul>
 	<Button variants="secondary fullwidth" disabled={creating_page_type === true} onclick={() => (creating_page_type = true)} label="Create Page Type" icon="akar-icons:plus" />
 </main>

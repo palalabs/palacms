@@ -21,17 +21,12 @@
 	let { new_page_name = $bindable(''), new_color = $bindable('#2B407D'), new_icon = $bindable('iconoir:page') } = $props()
 	let page_creation_disabled = $derived(!new_page_name)
 
-	let new_page_details: PageType = $derived({
+	let new_page_details = $derived({
 		name: new_page_name,
 		color: new_color,
 		icon: new_icon,
-		code: {
-			foot: '',
-			head: ''
-		},
-		fields: [],
-		sections: [],
-		symbols: []
+		head: '',
+		foot: ''
 	})
 
 	const [popperRef, popperContent] = createPopperActions({
