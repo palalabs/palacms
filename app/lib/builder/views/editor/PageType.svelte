@@ -11,8 +11,8 @@
 	import DropIndicator from './Layout/DropIndicator.svelte'
 	import LockedOverlay from './Layout/LockedOverlay.svelte'
 	import { locale } from '../../stores/app/misc.js'
-	import { dropTargetForElements } from '../../libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
-	import { attachClosestEdge, extractClosestEdge } from '../../libraries/pragmatic-drag-and-drop-hitbox/closest-edge.js'
+	import { dropTargetForElements } from '$lib/builder/libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
+	import { attachClosestEdge, extractClosestEdge } from '$lib/builder/libraries/pragmatic-drag-and-drop-hitbox/closest-edge.js'
 	import { PageTypes, PageTypeSections, SiteSymbols } from '$lib/pocketbase/collections'
 
 	import { page } from '$app/state'
@@ -21,6 +21,14 @@
 	const page_type_id = $derived(page.params.page_type)
 	const page_type = $derived(PageTypes.one(page_type_id) ?? null)
 	const page_type_sections = $derived(page_type?.sections() || [])
+	
+	// Group sections by zone
+	const header_sections = $derived(page_type_sections.filter(s => s.zone === 'header'))
+	const body_sections = $derived(page_type_sections.filter(s => s.zone === 'body' || !s.zone)) // default to body for existing sections
+	const footer_sections = $derived(page_type_sections.filter(s => s.zone === 'footer'))
+	
+	// Check if page type is static (no symbols toggled)
+	const is_static_page_type = $derived((page_type?.symbols() || []).length === 0)
 
 	// Fade in page when all components mounted
 	let page_mounted = $state(true)
@@ -149,8 +157,13 @@
 	}
 
 	function position_drop_indicator() {
-		if (!hovered_block_el) return // hovering over page (i.e. below sections)
-		hovered_block_el.appendChild(drop_indicator_element)
+		if (!hovered_block_el || !drop_indicator_element) return // hovering over page (i.e. below sections)
+		
+		// Only append if not already a child to avoid errors
+		if (drop_indicator_element.parentNode !== hovered_block_el) {
+			hovered_block_el.appendChild(drop_indicator_element)
+		}
+		
 		const { top, left, bottom, right } = hovered_block_el.getBoundingClientRect()
 		const block_positions = {
 			top: (top <= 56 ? 56 : top) + window.scrollY,
@@ -190,11 +203,43 @@
 			position: null
 		}
 		hide_drop_indicator()
+		drop_handled = false // Reset the drop flag when drag ends
+		active_drop_zone = null // Reset active drop zone
 	}
 
 	let dragging_over_section = false
+	let drop_handled = false
+	let active_drop_zone = null // Track which zone should handle the drop
 
-	// detect drags over the page
+	// detect drags over zones
+	function drag_zone(element, zone) {
+		dropTargetForElements({
+			element,
+			getData() {
+				return { zone }
+			},
+			onDrag({ source }) {
+				if (dragging_over_section) return // Don't interfere with section drops
+			},
+			onDrop({ source }) {
+				if (dragging_over_section || !page_type || !source.data.block) return
+				
+				const block_being_dragged = source.data.block
+				const zone_sections = page_type_sections.filter(s => (s.zone || 'body') === zone)
+				const zone_target_index = zone_sections.length // Add to end of zone
+				
+				PageTypeSections.create({ 
+					page_type: page_type.id, 
+					symbol: block_being_dragged.id, 
+					index: zone_target_index,
+					zone: zone
+				})
+				PageTypeSections.commit()
+			}
+		})
+	}
+
+	// detect drags over the page (fallback)
 	function drag_fallback(element) {
 		dropTargetForElements({
 			element,
@@ -209,8 +254,11 @@
 				)
 			},
 			async onDrag({ self, source }) {
-				if (dragging_over_section) return // prevent double-adding block
+				console.log('FALLBACK DRAG EVENT:', { dragging_over_section, active_drop_zone, source: source.data })
+				if (dragging_over_section || active_drop_zone) return // Don't interfere with zone or section drops
 
+				active_drop_zone = 'fallback'
+				
 				if (!showing_drop_indicator) {
 					await show_drop_indicator()
 				}
@@ -226,18 +274,35 @@
 				reset_drag()
 			},
 			async onDrop({ self, source }) {
-				if (!page_type || dragging_over_section) return // prevent double-adding block
+				console.log('FALLBACK DROP:', { dragging_over_section, drop_handled, active_drop_zone, block: source.data.block?.name })
+				if (!page_type || dragging_over_section || drop_handled || active_drop_zone !== 'fallback') return // prevent double-adding block
+				drop_handled = true
+				
 				const block_being_dragged = source.data.block
 				const closestEdgeOfTarget = extractClosestEdge(self.data)
-				const target_index = closestEdgeOfTarget === 'top' ? 0 : page_type_sections.length
-				PageTypeSections.create({ page_type: page_type.id, symbol: block_being_dragged.id, index: target_index }) // TODO: Index
+				
+				// Default to body zone with zone-relative index
+				const body_target_index = closestEdgeOfTarget === 'top' ? 0 : body_sections.length
+				
+				console.log(`FALLBACK DROP CREATING: zone=body, index=${body_target_index}`)
+				PageTypeSections.create({ 
+					page_type: page_type.id, 
+					symbol: block_being_dragged.id, 
+					index: body_target_index,
+					zone: 'body'
+				})
 				PageTypeSections.commit()
 				reset_drag()
+				active_drop_zone = null
+				
+				// Don't reset drop_handled for fallback drops - let section drops take priority
 			}
 		})
 	}
 
 	function drag_item(element, section) {
+		if (!element) return
+		
 		dropTargetForElements({
 			element,
 			getData({ input, element }) {
@@ -250,12 +315,8 @@
 					}
 				)
 			},
-			async onDrag({ self }) {
+			onDrag({ self, source }) {
 				hovered_block_el = self.element
-				if (!showing_drop_indicator) {
-					await show_drop_indicator()
-				}
-				position_drop_indicator()
 				if (dragging.id !== self.data.section.id || dragging.position !== extractClosestEdge(self.data)) {
 					dragging = {
 						id: self.data.section.id,
@@ -267,17 +328,27 @@
 				dragging_over_section = true
 			},
 			onDragLeave() {
-				reset_drag()
 				dragging_over_section = false
 			},
 			onDrop({ self, source }) {
-				if (!page_type) return
-				const closestEdgeOfTarget = extractClosestEdge(self.data)
-				const section_dragged_over = self.data.section
+				if (!page_type || !source.data.block) return
+				
 				const block_being_dragged = source.data.block
-				const section_dragged_over_index = page_type_sections.findIndex((s) => s.id === section_dragged_over.id)
-				const target_index = closestEdgeOfTarget === 'top' ? section_dragged_over_index : section_dragged_over_index + 1
-				PageTypeSections.create({ page_type: page_type.id, symbol: block_being_dragged.id, index: target_index }) // TODO: Index
+				const section_dragged_over = self.data.section
+				const closestEdgeOfTarget = extractClosestEdge(self.data)
+				const section_zone = section_dragged_over.zone || 'body'
+				
+				// Find zone-relative index within the same zone
+				const zone_sections = page_type_sections.filter(s => (s.zone || 'body') === section_zone)
+				const section_dragged_over_zone_index = zone_sections.findIndex((s) => s.id === section_dragged_over.id)
+				const target_index = closestEdgeOfTarget === 'top' ? section_dragged_over_zone_index : section_dragged_over_zone_index + 1
+				
+				PageTypeSections.create({ 
+					page_type: page_type.id, 
+					symbol: block_being_dragged.id, 
+					index: target_index,
+					zone: section_zone
+				})
 				PageTypeSections.commit()
 			}
 		})
@@ -287,6 +358,8 @@
 			page_mounted = true
 		}
 	})
+
+
 
 	let editing_section = $state(false)
 </script>
@@ -341,85 +414,254 @@
 			on:delete={async () => {
 				if (!hovered_section_id) return
 				PageTypeSections.delete(hovered_section_id)
-				await PageTypeSections.commit()
+				PageTypeSections.commit()
 			}}
 			on:edit-code={() => edit_component('code')}
 			on:edit-content={() => edit_component('content')}
 			on:moveUp={async () => {
+				if (!hovered_section_id) return
 				moving = true
 				hide_block_toolbar()
-				// TODO
-				// setTimeout(() => {
-				// 	moving = false
-				// }, 300)
+				
+				const section = page_type_sections.find(s => s.id === hovered_section_id)
+				if (!section) return
+				
+				const section_zone = section.zone || 'body'
+				const zone_sections = page_type_sections.filter(s => (s.zone || 'body') === section_zone)
+				const current_index = zone_sections.findIndex(s => s.id === section.id)
+				
+				if (current_index > 0) {
+					// Swap with the section above
+					const section_above = zone_sections[current_index - 1]
+					PageTypeSections.update(section.id, { index: current_index - 1 })
+					PageTypeSections.update(section_above.id, { index: current_index })
+					await PageTypeSections.commit()
+				}
+				
+				setTimeout(() => {
+					moving = false
+				}, 300)
 			}}
 			on:moveDown={async () => {
+				if (!hovered_section_id) return
 				moving = true
 				hide_block_toolbar()
-				// TODO
-				// setTimeout(() => {
-				// 	moving = false
-				// }, 300)
+				
+				const section = page_type_sections.find(s => s.id === hovered_section_id)
+				if (!section) return
+				
+				const section_zone = section.zone || 'body'
+				const zone_sections = page_type_sections.filter(s => (s.zone || 'body') === section_zone)
+				const current_index = zone_sections.findIndex(s => s.id === section.id)
+				
+				if (current_index < zone_sections.length - 1) {
+					// Swap with the section below
+					const section_below = zone_sections[current_index + 1]
+					PageTypeSections.update(section.id, { index: current_index + 1 })
+					PageTypeSections.update(section_below.id, { index: current_index })
+					await PageTypeSections.commit()
+				}
+				
+				setTimeout(() => {
+					moving = false
+				}, 300)
 			}}
 		/>
 	</div>
 {/if}
 
-<!-- Page Blocks -->
-<main id="#Page" data-test bind:this={page_el} class:fadein={page_mounted} lang={$locale} use:drag_fallback>
-	{#each page_type?.sections() ?? [] as section (section.id)}
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<!-- svelte-ignore a11y_mouse_events_have_key_events -->
-		{@const locked = undefined}
-		<!-- {@const in_current_tab = locked?.instance_key === instance_key} -->
-		{@const in_current_tab = false}
-		{@const symbol = SiteSymbols.one(section.symbol)}
-		<div
-			role="region"
-			use:drag_item={section}
-			data-section={section.id}
-			data-symbol={symbol?.id}
-			id="section-{section.id}"
-			class:locked
-			onmousemove={() => {
-				if (!moving && !showing_block_toolbar) {
-					show_block_toolbar()
-				}
-			}}
-			onmouseenter={async ({ target }) => {
-				hovered_section_id = section.id
-				hovered_block_el = target
-				if (!moving) {
-					show_block_toolbar()
-				}
-			}}
-			onmouseleave={() => {
-				setTimeout(() => {
-					hide_block_toolbar()
-				}, 50)
-			}}
-			in:fade={{ duration: 100 }}
-			animate:flip={{ duration: 100 }}
-			data-test-id="page-type-section-{section.id}"
-			style="min-height: 3rem;overflow:hidden;position: relative;"
-		>
-			{#if locked && !in_current_tab}
-				<LockedOverlay {locked} />
-			{/if}
-			<ComponentNode
-				{section}
-				block={symbol}
-				on:lock={() => lock_block(section.id)}
-				on:unlock={() => unlock_block()}
-				on:mount={() => sections_mounted++}
-				on:resize={() => {
-					if (showing_block_toolbar) {
-						position_block_toolbar()
+<!-- Page Type Layout -->
+<main id="#Page" data-test bind:this={page_el} class:fadein={page_mounted} lang={$locale}>
+	<!-- Header Zone -->
+	<section class="page-zone header-zone" data-zone="header" use:drag_zone={'header'}>
+		<div class="zone-label">Header</div>
+		{#each header_sections as section (section.id)}
+			{@const locked = undefined}
+			{@const in_current_tab = false}
+			{@const symbol = SiteSymbols.one(section.symbol)}
+			<div
+				role="region"
+				use:drag_item={section}
+				data-section={section.id}
+				data-symbol={symbol?.id}
+				id="section-{section.id}"
+				class:locked
+				onmousemove={() => {
+					if (!moving && !showing_block_toolbar) {
+						show_block_toolbar()
 					}
 				}}
-			/>
+				onmouseenter={async ({ target }) => {
+					hovered_section_id = section.id
+					hovered_block_el = target
+					if (!moving) {
+						show_block_toolbar()
+					}
+				}}
+				onmouseleave={() => {
+					setTimeout(() => {
+						hide_block_toolbar()
+					}, 50)
+				}}
+				in:fade={{ duration: 100 }}
+				animate:flip={{ duration: 100 }}
+				data-test-id="page-type-section-{section.id}"
+				style="min-height: 3rem;overflow:hidden;position: relative;"
+			>
+				{#if locked && !in_current_tab}
+					<LockedOverlay {locked} />
+				{/if}
+				<ComponentNode
+					{section}
+					block={symbol}
+					on:lock={() => lock_block(section.id)}
+					on:unlock={() => unlock_block()}
+					on:mount={() => sections_mounted++}
+					on:resize={() => {
+						if (showing_block_toolbar) {
+							position_block_toolbar()
+						}
+					}}
+				/>
+			</div>
+		{/each}
+		{#if header_sections.length === 0}
+			<div class="empty-zone">
+				<span>Drag blocks here for the header</span>
+			</div>
+		{/if}
+	</section>
+
+	<!-- Body Zone -->
+	<section class="page-zone body-zone" data-zone="body" use:drag_zone={'body'}>
+		<div class="zone-label">
+			Body 
+			{#if is_static_page_type}
+				<span class="zone-mode">(Static)</span>
+			{:else}
+				<span class="zone-mode">(Dynamic)</span>
+			{/if}
 		</div>
-	{/each}
+		{#each body_sections as section (section.id)}
+			{@const locked = undefined}
+			{@const in_current_tab = false}
+			{@const symbol = SiteSymbols.one(section.symbol)}
+			<div
+				role="region"
+				use:drag_item={section}
+				data-section={section.id}
+				data-symbol={symbol?.id}
+				id="section-{section.id}"
+				class:locked
+				onmousemove={() => {
+					if (!moving && !showing_block_toolbar) {
+						show_block_toolbar()
+					}
+				}}
+				onmouseenter={async ({ target }) => {
+					hovered_section_id = section.id
+					hovered_block_el = target
+					if (!moving) {
+						show_block_toolbar()
+					}
+				}}
+				onmouseleave={() => {
+					setTimeout(() => {
+						hide_block_toolbar()
+					}, 50)
+				}}
+				in:fade={{ duration: 100 }}
+				animate:flip={{ duration: 100 }}
+				data-test-id="page-type-section-{section.id}"
+				style="min-height: 3rem;overflow:hidden;position: relative;"
+			>
+				{#if locked && !in_current_tab}
+					<LockedOverlay {locked} />
+				{/if}
+				<ComponentNode
+					{section}
+					block={symbol}
+					on:lock={() => lock_block(section.id)}
+					on:unlock={() => unlock_block()}
+					on:mount={() => sections_mounted++}
+					on:resize={() => {
+						if (showing_block_toolbar) {
+							position_block_toolbar()
+						}
+					}}
+				/>
+			</div>
+		{/each}
+		{#if body_sections.length === 0}
+			<div class="empty-zone main-body">
+				{#if is_static_page_type}
+					<span>Drag blocks here for static body content</span>
+				{:else}
+					<span>Drag blocks here for default body content (users can modify)</span>
+				{/if}
+			</div>
+		{/if}
+	</section>
+
+	<!-- Footer Zone -->
+	<section class="page-zone footer-zone" data-zone="footer" use:drag_zone={'footer'}>
+		<div class="zone-label">Footer</div>
+		{#each footer_sections as section (section.id)}
+			{@const locked = undefined}
+			{@const in_current_tab = false}
+			{@const symbol = SiteSymbols.one(section.symbol)}
+			<div
+				role="region"
+				use:drag_item={section}
+				data-section={section.id}
+				data-symbol={symbol?.id}
+				id="section-{section.id}"
+				class:locked
+				onmousemove={() => {
+					if (!moving && !showing_block_toolbar) {
+						show_block_toolbar()
+					}
+				}}
+				onmouseenter={async ({ target }) => {
+					hovered_section_id = section.id
+					hovered_block_el = target
+					if (!moving) {
+						show_block_toolbar()
+					}
+				}}
+				onmouseleave={() => {
+					setTimeout(() => {
+						hide_block_toolbar()
+					}, 50)
+				}}
+				in:fade={{ duration: 100 }}
+				animate:flip={{ duration: 100 }}
+				data-test-id="page-type-section-{section.id}"
+				style="min-height: 3rem;overflow:hidden;position: relative;"
+			>
+				{#if locked && !in_current_tab}
+					<LockedOverlay {locked} />
+				{/if}
+				<ComponentNode
+					{section}
+					block={symbol}
+					on:lock={() => lock_block(section.id)}
+					on:unlock={() => unlock_block()}
+					on:mount={() => sections_mounted++}
+					on:resize={() => {
+						if (showing_block_toolbar) {
+							position_block_toolbar()
+						}
+					}}
+				/>
+			</div>
+		{/each}
+		{#if footer_sections.length === 0}
+			<div class="empty-zone">
+				<span>Drag blocks here for the footer</span>
+			</div>
+		{/if}
+	</section>
 </main>
 
 <!-- {@html html_below || ''} -->
@@ -448,8 +690,92 @@
 		overflow: auto;
 		box-sizing: border-box;
 		overflow: auto;
+		display: flex;
+		flex-direction: column;
 	}
 	main.fadein {
 		opacity: 1;
+	}
+
+	.page-zone {
+		position: relative;
+		border: 2px dashed transparent;
+		transition: border-color 0.2s ease;
+		overflow-y: auto;
+		max-height: 40vh; /* Limit each zone to 40% of viewport height */
+	}
+
+	.page-zone.header-zone {
+		background: rgba(59, 130, 246, 0.05);
+		border-color: rgba(59, 130, 246, 0.2);
+	}
+
+	.page-zone.body-zone {
+		flex: 1;
+		background: rgba(16, 185, 129, 0.05);
+		border-color: rgba(16, 185, 129, 0.2);
+		min-height: 200px;
+		max-height: none; /* Override the general max-height for body zone */
+		overflow-y: visible; /* Let body zone expand naturally */
+	}
+
+	.page-zone.footer-zone {
+		background: rgba(245, 101, 101, 0.05);
+		border-color: rgba(245, 101, 101, 0.2);
+	}
+
+	.zone-label {
+		position: absolute;
+		top: 8px;
+		left: 8px;
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: rgba(255, 255, 255, 0.7);
+		background: rgba(0, 0, 0, 0.5);
+		padding: 4px 8px;
+		border-radius: 4px;
+		z-index: 10;
+		user-select: none;
+		pointer-events: none;
+	}
+
+	.zone-mode {
+		font-weight: 400;
+		color: rgba(255, 255, 255, 0.5);
+		font-size: 0.65rem;
+		user-select: none;
+	}
+
+	.empty-zone {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		height: 100%;
+		min-height: 80px;
+		color: rgba(107, 114, 128, 0.8);
+		font-size: 0.875rem;
+		font-style: italic;
+		border: 1px dashed rgba(107, 114, 128, 0.3);
+		margin: 8px;
+		border-radius: 4px;
+		user-select: none;
+	}
+
+	.empty-zone.main-body {
+		min-height: 120px;
+		font-size: 1rem;
+	}
+
+	/* Make sections proper drop targets */
+	[data-section] {
+		overflow: hidden;
+		position: relative;
+		min-height: 3rem;
+		border: 1px solid transparent;
+		transition: border-color 0.2s ease;
+	}
+
+	[data-section]:hover {
+		border-color: rgba(255, 255, 255, 0.1);
 	}
 </style>

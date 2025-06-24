@@ -13,14 +13,24 @@
 	import { dropTargetForElements } from '$lib/builder/libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
 	import { attachClosestEdge, extractClosestEdge } from '$lib/builder/libraries/pragmatic-drag-and-drop-hitbox/closest-edge.js'
 	import { beforeNavigate } from '$app/navigation'
-	import { Pages, Sites, SiteSymbols, PageSections } from '$lib/pocketbase/collections'
+	import { Pages, Sites, SiteSymbols, PageSections, PageTypes, PageTypeSections } from '$lib/pocketbase/collections'
 	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
 
 	let { page }: { page: ObjectOf<typeof Pages> } = $props()
 
 	const site = $derived(Sites.one(page.site))
+	const page_type = $derived(page.page_type ? PageTypes.one(page.page_type) : null)
+	const page_type_sections = $derived(page_type?.sections() || [])
+
+	// Group page type sections by zone
+	const header_sections = $derived(page_type_sections.filter((s) => s.zone === 'header'))
+	const footer_sections = $derived(page_type_sections.filter((s) => s.zone === 'footer'))
+	const page_type_body_sections = $derived(page_type_sections.filter((s) => s.zone === 'body' || !s.zone))
+
+	// Check if page type is static (no symbols toggled)
+	const is_static_page_type = $derived(page_type ? (page_type.symbols() || []).length === 0 : false)
+
 	const sections = $derived(page.sections())
-	$inspect({ sections })
 
 	// Fade in page when all components mounted
 	let page_mounted = $state(false)
@@ -542,22 +552,86 @@
 				hovered_section_id = null
 				hovered_block_el = null
 				page_el.removeEventListener('scroll', position_block_toolbar)
-				await remove_section_from_page(section_id_to_delete)
+				
+				// Check if this is a page type section or regular page section
+				const is_page_type_section = page_type_body_sections.some(s => s.id === section_id_to_delete)
+				
+				if (is_page_type_section) {
+					// Delete from page type (affects all pages of this type)
+					await PageTypeSections.delete(section_id_to_delete)
+				} else {
+					// Delete from this specific page
+					await remove_section_from_page(section_id_to_delete)
+				}
 			}}
 			on:edit-code={() => edit_section('code')}
 			on:edit-content={() => edit_section('content')}
 			on:moveUp={async () => {
+				if (!hovered_section_id) return
 				moving = true
 				hide_block_toolbar()
-				// await move_section(hovered_section, hovered_section.index - 1)
+				
+				// Check if this is a page type section or regular page section
+				const is_page_type_section = page_type_body_sections.some(s => s.id === hovered_section_id)
+				
+				if (is_page_type_section) {
+					// Move page type section
+					const section = page_type_body_sections.find(s => s.id === hovered_section_id)
+					if (!section) return
+					
+					const current_index = page_type_body_sections.findIndex(s => s.id === section.id)
+					if (current_index > 0) {
+						const section_above = page_type_body_sections[current_index - 1]
+						await PageTypeSections.update(section.id, { index: current_index - 1 })
+						await PageTypeSections.update(section_above.id, { index: current_index })
+					}
+				} else {
+					// Move regular page section
+					const section = sections.find(s => s.id === hovered_section_id)
+					if (!section || section.index === 0) return
+					
+					const section_above = sections.find(s => s.index === section.index - 1)
+					if (!section_above) return
+					
+					await PageSections.update(section.id, { index: section.index - 1 })
+					await PageSections.update(section_above.id, { index: section.index })
+				}
+				
 				setTimeout(() => {
 					moving = false
 				}, 300)
 			}}
 			on:moveDown={async () => {
+				if (!hovered_section_id) return
 				moving = true
 				hide_block_toolbar()
-				// await move_section(hovered_section, hovered_section.index + 1)
+				
+				// Check if this is a page type section or regular page section
+				const is_page_type_section = page_type_body_sections.some(s => s.id === hovered_section_id)
+				
+				if (is_page_type_section) {
+					// Move page type section
+					const section = page_type_body_sections.find(s => s.id === hovered_section_id)
+					if (!section) return
+					
+					const current_index = page_type_body_sections.findIndex(s => s.id === section.id)
+					if (current_index < page_type_body_sections.length - 1) {
+						const section_below = page_type_body_sections[current_index + 1]
+						await PageTypeSections.update(section.id, { index: current_index + 1 })
+						await PageTypeSections.update(section_below.id, { index: current_index })
+					}
+				} else {
+					// Move regular page section
+					const section = sections.find(s => s.id === hovered_section_id)
+					if (!section || section.index === sections.length - 1) return
+					
+					const section_below = sections.find(s => s.index === section.index + 1)
+					if (!section_below) return
+					
+					await PageSections.update(section.id, { index: section.index + 1 })
+					await PageSections.update(section_below.id, { index: section.index })
+				}
+				
 				setTimeout(() => {
 					moving = false
 				}, 300)
@@ -566,75 +640,152 @@
 	</div>
 {/if}
 
-<!-- Page Blocks -->
-<main id="Page" bind:this={page_el} class:fadein={true} class:dragging={$dragging_symbol} lang={$locale} use:drag_fallback>
-	{#each sections as section (section.id)}
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<!-- svelte-ignore a11y_mouse_events_have_key_events -->
-		{@const block = SiteSymbols.one(section.symbol)}
-		{@const locked = $locked_blocks.find((b) => b.block_id === section.id)}
-		{@const in_current_tab = false}
-		{@const show_block_toolbar_on_hover = page_mounted && !moving}
-		{@const is_newly_added = newly_added_sections.has(section.id)}
-		<div
-			role="presentation"
-			data-section={section.id}
-			data-symbol={block?.id}
-			class:fade-in={is_newly_added}
-			onmousemove={(e) => {
-				if (show_block_toolbar_on_hover && hovered_section_id === section.id) {
-					show_block_toolbar()
-				}
-			}}
-			onmouseenter={async (e) => {
-				console.log('Section mouseenter', section.id, { show_block_toolbar_on_hover, page_loaded: $page_loaded, page_mounted, moving })
-				hovered_section_id = section.id
-				hovered_block_el = e.currentTarget
-				if (show_block_toolbar_on_hover) {
-					show_block_toolbar()
-				} else {
-					console.log('Not showing toolbar due to conditions')
-				}
-			}}
-			onmouseleave={(e) => {
-				console.log('Section mouseleave', section.id)
-				hide_block_toolbar()
-			}}
-			animate:flip={{ duration: 100 }}
-			use:drag_item={section}
-		>
-			{#if locked && !in_current_tab}
-				<LockedOverlay {locked} />
-			{/if}
-			<ComponentNode
-				{block}
-				{section}
-				on:lock={() => lock_block(section.id)}
-				on:unlock={() => unlock_block()}
-				on:mount={() => sections_mounted++}
-				on:resize={() => {
-					if (showing_block_toolbar) {
-						position_block_toolbar()
+<!-- Page with Zone-Based Layout -->
+<main id="Page" bind:this={page_el} class:fadein={true} class:dragging={$dragging_symbol} lang={$locale} use:drag_fallback style="display: flex; flex-direction: column; height: 100%;">
+	<!-- Page Type Header Sections -->
+	{#if header_sections.length > 0}
+		<header class="page-header-zone">
+			{#each header_sections as page_type_section (page_type_section.id)}
+				{@const block = SiteSymbols.one(page_type_section.symbol)}
+				<div role="presentation" data-section={page_type_section.id} data-symbol={block?.id} class="page-type-section header-section">
+					<ComponentNode {block} section={page_type_section} on:lock={() => {}} on:unlock={() => {}} on:mount={() => sections_mounted++} on:resize={() => {}} />
+				</div>
+			{/each}
+		</header>
+	{/if}
+
+	<!-- Page Content Area -->
+	<section class="page-content-zone flex-1 flex flex-col">
+		<!-- Page Type Body Sections (Static Page Type) -->
+		{#if is_static_page_type && page_type_body_sections.length > 0}
+			{#each page_type_body_sections as page_type_section (page_type_section.id)}
+				{@const block = SiteSymbols.one(page_type_section.symbol)}
+				<div role="presentation" data-section={page_type_section.id} data-symbol={block?.id} class="page-type-section static-content-section">
+					<ComponentNode {block} section={page_type_section} on:lock={() => {}} on:unlock={() => {}} on:mount={() => sections_mounted++} on:resize={() => {}} />
+				</div>
+			{/each}
+		{/if}
+
+		<!-- Page Type Body Sections (Dynamic Page Type - Default Content) -->
+		{#if !is_static_page_type && page_type_body_sections.length > 0}
+			{#each page_type_body_sections as page_type_section (page_type_section.id)}
+				{@const block = SiteSymbols.one(page_type_section.symbol)}
+				{@const locked = $locked_blocks.find((b) => b.block_id === page_type_section.id)}
+				{@const show_block_toolbar_on_hover = page_mounted && !moving}
+				<div
+					role="presentation"
+					data-section={page_type_section.id}
+					data-symbol={block?.id}
+					class="page-type-section default-content-section"
+					onmouseenter={async (e) => {
+						hovered_section_id = page_type_section.id
+						hovered_block_el = e.currentTarget
+						if (show_block_toolbar_on_hover) {
+							show_block_toolbar()
+						}
+					}}
+					onmouseleave={() => {
+						hide_block_toolbar()
+					}}
+					use:drag_item={page_type_section}
+				>
+					{#if locked}
+						<LockedOverlay {locked} />
+					{/if}
+					<ComponentNode
+						{block}
+						section={page_type_section}
+						on:lock={() => lock_block(page_type_section.id)}
+						on:unlock={() => unlock_block()}
+						on:mount={() => sections_mounted++}
+						on:resize={() => {
+							if (showing_block_toolbar) {
+								position_block_toolbar()
+							}
+						}}
+					/>
+				</div>
+			{/each}
+		{/if}
+
+		<!-- Page's Own Sections -->
+		{#each sections as section (section.id)}
+			{@const block = SiteSymbols.one(section.symbol)}
+			{@const locked = $locked_blocks.find((b) => b.block_id === section.id)}
+			{@const in_current_tab = false}
+			{@const show_block_toolbar_on_hover = page_mounted && !moving}
+			{@const is_newly_added = newly_added_sections.has(section.id)}
+			<div
+				role="presentation"
+				data-section={section.id}
+				data-symbol={block?.id}
+				class:fade-in={is_newly_added}
+				onmousemove={(e) => {
+					if (show_block_toolbar_on_hover && hovered_section_id === section.id) {
+						show_block_toolbar()
 					}
 				}}
-			/>
-		</div>
-	{/each}
+				onmouseenter={async (e) => {
+					hovered_section_id = section.id
+					hovered_block_el = e.currentTarget
+					if (show_block_toolbar_on_hover) {
+						show_block_toolbar()
+					}
+				}}
+				onmouseleave={(e) => {
+					hide_block_toolbar()
+				}}
+				animate:flip={{ duration: 100 }}
+				use:drag_item={section}
+			>
+				{#if locked && !in_current_tab}
+					<LockedOverlay {locked} />
+				{/if}
+				<ComponentNode
+					{block}
+					{section}
+					on:lock={() => lock_block(section.id)}
+					on:unlock={() => unlock_block()}
+					on:mount={() => sections_mounted++}
+					on:resize={() => {
+						if (showing_block_toolbar) {
+							position_block_toolbar()
+						}
+					}}
+				/>
+			</div>
+		{/each}
 
-	{#if sections.length === 0}
-		<div
-			class="empty-state"
-			class:dragging-over={hovered_block_el && dragging}
-			style="height: 100%"
-			onmouseenter={({ target }) => {
-				hovered_block_el = target
-			}}
-			onmouseleave={() => {
-				hovered_block_el = null
-			}}
-		>
-			<span>Drag blocks here to add them to the page</span>
-		</div>
+		<!-- Empty State (only show if no content at all) -->
+		{#if sections.length === 0 && (!page_type_body_sections.length || !is_static_page_type)}
+			<div
+				class="empty-state"
+				class:dragging-over={hovered_block_el && dragging}
+				style="height: 100%"
+				onmouseenter={({ target }) => {
+					hovered_block_el = target
+				}}
+				onmouseleave={() => {
+					hovered_block_el = null
+				}}
+			>
+				<div class="_container">
+					<span>Drag blocks here to add them to the page</span>
+				</div>
+			</div>
+		{/if}
+	</section>
+
+	<!-- Page Type Footer Sections -->
+	{#if footer_sections.length > 0}
+		<footer class="page-footer-zone">
+			{#each footer_sections as page_type_section (page_type_section.id)}
+				{@const block = SiteSymbols.one(page_type_section.symbol)}
+				<div role="presentation" data-section={page_type_section.id} data-symbol={block?.id} class="page-type-section footer-section">
+					<ComponentNode {block} section={page_type_section} on:lock={() => {}} on:unlock={() => {}} on:mount={() => sections_mounted++} on:resize={() => {}} />
+				</div>
+			{/each}
+		</footer>
 	{/if}
 
 	{#if site?.foot}
@@ -648,7 +799,7 @@
 	[data-section] {
 		overflow: hidden;
 		position: relative;
-		min-height: 3rem;
+		min-height: 2rem;
 		line-height: 0;
 	}
 
@@ -666,36 +817,41 @@
 	}
 	.empty-state {
 		background: var(--color-gray-1);
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		padding-block: 5rem;
-		border: 2px dashed var(--color-gray-5);
-		border-radius: 8px;
-		margin: 2rem;
-		min-height: 300px;
-		color: var(--color-gray-7);
-		font-size: 1.1rem;
-		transition: all 0.2s ease;
-		
-		&:hover {
+		padding: 1rem;
+
+		&:hover ._container {
 			border-color: var(--weave-primary-color);
 			background: var(--color-gray-2);
 			color: var(--weave-primary-color);
 		}
-		
-		&.dragging-over {
+
+		&.dragging-over ._container {
 			border-color: var(--weave-primary-color);
 			background: rgba(248, 68, 73, 0.1);
 			color: var(--weave-primary-color);
 			transform: scale(1.02);
 		}
-		
+
+		._container {
+			height: 100%;
+			width: 100%;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			padding-block: 2rem;
+			border: 2px dashed var(--color-gray-5);
+			border-radius: 8px;
+			min-height: 300px;
+			color: var(--color-gray-7);
+			font-size: 1.1rem;
+			transition: all 0.1s ease;
+		}
+
 		span {
 			pointer-events: none;
 		}
 	}
-	
+
 	[data-type='palette'] {
 		.empty-state {
 			background: var(--color-gray-1);

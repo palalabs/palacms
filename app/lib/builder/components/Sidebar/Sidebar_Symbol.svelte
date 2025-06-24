@@ -7,7 +7,7 @@
 	import { Input } from '$lib/components/ui/input'
 	import MenuPopup from '../../ui/Dropdown.svelte'
 	import { locale } from '../../stores/app/misc'
-	import { draggable } from '../../libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
+	import { draggable } from '$lib/builder/libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
 	import IFrame from '../../components/IFrame.svelte'
 	import { getContent } from '$lib/pocketbase/content'
 	import { createEventDispatcher, onMount } from 'svelte'
@@ -68,10 +68,12 @@
 
 	let element = $state()
 	$effect(() => {
-		draggable({
-			element,
-			getInitialData: () => ({ block: symbol })
-		})
+		if (element) {
+			draggable({
+				element,
+				getInitialData: () => ({ block: symbol })
+			})
+		}
 	})
 	// move cursor to end of name
 	$effect(() => {
