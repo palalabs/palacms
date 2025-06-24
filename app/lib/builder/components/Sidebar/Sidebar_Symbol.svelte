@@ -13,7 +13,7 @@
 	import { createEventDispatcher, onMount } from 'svelte'
 	import { block_html } from '$lib/builder/code_generators'
 	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
-	import type { SiteSymbols } from '$lib/pocketbase/collections'
+	import { SiteSymbols } from '$lib/pocketbase/collections'
 
 	const dispatch = createEventDispatcher()
 
@@ -33,14 +33,18 @@
 	async function toggle_name_input() {
 		renaming = !renaming
 		// workaround for inability to see cursor when div empty
-		if (symbol.name === '') {
-			symbol.name = 'Block'
+		if (new_name === '') {
+			new_name = 'Block'
 		}
 	}
 
+	$effect(() => {
+		SiteSymbols.update(symbol.id, { name: new_name })
+	})
+
 	function save_rename() {
-		symbol.name = new_name
 		renaming = false
+		SiteSymbols.commit()
 	}
 
 	let height = $state(0)
@@ -53,7 +57,7 @@
 			css: symbol.css,
 			js: symbol.js
 		}
-		const data = getContent(symbol, symbol.fields())[$locale] ?? {}
+		const data = getContent(symbol, symbol.fields(), symbol.entries())[$locale] ?? {}
 		block_html({
 			code,
 			data

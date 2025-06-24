@@ -1,24 +1,12 @@
-<script>
+<script lang="ts">
 	import autosize from 'autosize'
 	import { onMount } from 'svelte'
-	import { createEventDispatcher } from 'svelte'
 	import TextInput from '../ui/TextInput.svelte'
+	import type { Entity } from '$lib/pocketbase/content'
+	import type { Field } from '$lib/common/models/Field'
+	import type { Entry } from '$lib/common/models/Entry'
 
-	const dispatch = createEventDispatcher()
-
-	/**
-	 * @typedef {Object} Props
-	 * @property {any} field
-	 * @property {any} value
-	 * @property {boolean} [disabled]
-	 * @property {any} [title]
-	 * @property {boolean} [autofocus]
-	 * @property {() => void} [onkeydown]?
-	 * @property {() => void} [oninput]?
-	 */
-
-	/** @type {Props} */
-	let { field, value, disabled = false, title = null, autofocus = false, onkeydown, oninput } = $props()
+	let { field, entry, onchange }: { entity: Omit<Entity, 'id'>; field: Omit<Field, 'id'>; entry?: Omit<Entry, 'id'>; onchange: (value: string) => void } = $props()
 
 	let element
 	onMount(() => {
@@ -26,7 +14,7 @@
 	})
 </script>
 
-<TextInput {...field} {value} {disabled} {title} grow={true} {autofocus} {onkeydown} oninput={(text) => oninput({ value: text })} />
+<TextInput label={field.label} value={entry?.value} grow={true} oninput={onchange} />
 
 <style lang="postcss">
 </style>

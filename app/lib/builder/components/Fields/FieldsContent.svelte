@@ -7,8 +7,23 @@
 	import { mod_key_held } from '../../stores/app/misc.js'
 	import type { Field } from '$lib/common/models/Field'
 	import { getDirectEntries, getResolvedEntries, type Entity } from '$lib/pocketbase/content'
+	import type { Entry } from '$lib/common/models/Entry'
 
-	let { entity, fields, create_field }: { entity: Entity; fields: Field[]; create_field: () => void } = $props()
+	let {
+		entity,
+		fields,
+		entries,
+		create_field,
+		oninput,
+		onchange
+	}: {
+		entity: Entity
+		fields: Field[]
+		entries: Entry[]
+		create_field: () => void
+		oninput: (values: Record<string, unknown>) => void
+		onchange: (details: { id: string; data: Partial<Field> }) => void
+	} = $props()
 
 	$inspect({ entity, fields })
 
@@ -51,10 +66,10 @@
 	}
 
 	// TABS
-	const selected_tabs = $state(Object.fromEntries((fields || []).filter((f) => !f.parent).map((f) => [f.id, 'entry'])))
-	function add_tab(field_id) {
-		selected_tabs[field_id] = 'field'
-	}
+	let selected_tabs = $state<Record<string, 'field' | 'entry'>>({})
+	$effect.pre(() => {
+		selected_tabs = Object.fromEntries(fields.map((f) => [f.id, f.key === 'new_field' ? 'field' : 'entry']))
+	})
 	function select_tab(field_id, tab) {
 		selected_tabs[field_id] = tab
 	}
@@ -125,42 +140,34 @@
 			<div class="container">
 				{#if active_tab === 'field'}
 					<div class="FieldItem">
-						<FieldItem {field} />
+						<FieldItem {field} onchange={(data) => onchange({ id: field.id, data })} />
 					</div>
 				{:else if active_tab === 'entry'}
 					{#if is_visible}
 						{#if field.type === 'site-field' || field.type === 'page-field'}
-							{@const source_entry = getResolvedEntries(entity, field)[0]}
-							{#if source_entry}
-								{@const title = ['repeater', 'group'].includes(field.type) ? field.label : null}
-								{@const icon = undefined}
-								<div class="dynamic-header">
-									{#if field.type === 'site-field'}
-										<Icon icon="gg:website" />
-										<span>Site Content</span>
-									{:else if field.type === 'page-field'}
-										{@const content_entry = getDirectEntries(entity, field)[0]}
-										<Icon icon={content_entry?.value.page.page_type.icon} />
-										<span>Page Content</span>
-									{/if}
-								</div>
-								<Card {title} {icon}>
-									<Field_Component {entity} {field} />
-								</Card>
-							{:else}
-								<span>Field {field.id} is corrupted, should be deleted.</span>
-							{/if}
+							{@const source_entry = getResolvedEntries(entity, field, entries)[0]}
+							{@const title = ['repeater', 'group'].includes(field.type) ? field.label : null}
+							{@const icon = undefined}
+							<div class="dynamic-header">
+								{#if field.type === 'site-field'}
+									<Icon icon="gg:website" />
+									<span>Site Content</span>
+								{:else if field.type === 'page-field'}
+									{@const content_entry = getDirectEntries(entity, field, entries)[0]}
+									<Icon icon={content_entry?.value.page.page_type.icon} />
+									<span>Page Content</span>
+								{/if}
+							</div>
+							<Card {title} {icon}>
+								<Field_Component {entity} {field} entry={source_entry} onchange={(value) => oninput({ [field.key]: value })} />
+							</Card>
 						{:else}
-							{@const content_entry = getDirectEntries(entity, field)[0]}
-							{#if content_entry}
-								{@const title = ['repeater', 'group'].includes(field.type) ? field.label : null}
-								{@const icon = undefined}
-								<Card {title} {icon}>
-									<Field_Component {entity} {field} />
-								</Card>
-							{:else}
-								<span>Field {field.id} is corrupted, should be deleted.</span>
-							{/if}
+							{@const content_entry = getDirectEntries(entity, field, entries)[0]}
+							{@const title = ['repeater', 'group'].includes(field.type) ? field.label : null}
+							{@const icon = undefined}
+							<Card {title} {icon}>
+								<Field_Component {entity} {field} entry={content_entry} onchange={(value) => oninput({ [field.key]: value })} />
+							</Card>
 						{/if}
 						<!-- TODO: $userRole === 'DEV' -->
 					{:else if !is_visible}

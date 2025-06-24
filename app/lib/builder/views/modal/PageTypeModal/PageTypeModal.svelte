@@ -15,6 +15,7 @@
 		if (!site) return
 
 		PageTypes.create(new_page_type)
+		PageTypes.commit()
 		// TODO: test & configure navigate to
 
 		// site.data.page_types.push(new_page_type)

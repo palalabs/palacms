@@ -1,5 +1,3 @@
-import type { locales } from '$lib/common'
-import type { Entry } from '$lib/common/models/Entry'
 import { LibrarySymbol } from '$lib/common/models/LibrarySymbol'
 import { LibrarySymbolEntry } from '$lib/common/models/LibrarySymbolEntry'
 import { LibrarySymbolField } from '$lib/common/models/LibrarySymbolField'
@@ -20,7 +18,6 @@ import { SiteSymbolEntry } from '$lib/common/models/SiteSymbolEntry'
 import { SiteSymbolField } from '$lib/common/models/SiteSymbolField'
 import { User } from '$lib/common/models/User'
 import { createCollectionMapping } from './CollectionMapping.svelte'
-import { getContent } from './content'
 
 export const Users = createCollectionMapping('users', User, {
 	links: {

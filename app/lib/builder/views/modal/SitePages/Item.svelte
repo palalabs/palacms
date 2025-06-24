@@ -166,6 +166,7 @@
 									icon: 'ic:outline-delete',
 									on_click: () => {
 										Pages.delete(page.id)
+										Pages.commit()
 									}
 								}
 							]
@@ -195,6 +196,7 @@
 						alert(`That URL is already in use`)
 					} else {
 						Pages.create({ ...new_page, parent: page.id, site: site_id })
+						Pages.commit()
 					}
 				}}
 			/>

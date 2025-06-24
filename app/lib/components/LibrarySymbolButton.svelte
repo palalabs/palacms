@@ -48,6 +48,7 @@
 	async function save_symbol(data) {
 		preview = data.preview
 		LibrarySymbols.update(symbol_id, data)
+		LibrarySymbols.commit()
 		is_editor_open = false
 	}
 
@@ -62,6 +63,7 @@
 		if (!symbol || !original_group_id) return
 		is_move_open = false
 		LibrarySymbols.update(symbol_id, { group: selected_group_id })
+		LibrarySymbols.commit()
 	}
 
 	let deleting = $state(false)
@@ -69,6 +71,7 @@
 		if (!symbol_id) return
 		is_delete_open = false
 		LibrarySymbols.delete(symbol_id)
+		LibrarySymbols.commit()
 	}
 </script>
 

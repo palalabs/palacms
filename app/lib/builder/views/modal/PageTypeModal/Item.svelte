@@ -88,6 +88,7 @@
 				if (!site) return
 				creating_page = false
 				PageTypes.create(page)
+				PageTypes.commit()
 				// TODO: test & configure navigating to new page type
 				// site.data.page_types.push(page)
 				// const [created_page_type] = site.data.page_types.slice(-1)

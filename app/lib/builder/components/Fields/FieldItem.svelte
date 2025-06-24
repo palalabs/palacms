@@ -1,6 +1,6 @@
-<script>
+<script lang="ts">
 	import FieldItem from './FieldItem.svelte'
-	import _, { cloneDeep, chain as _chain } from 'lodash-es'
+	import { cloneDeep } from 'lodash-es'
 	import autosize from 'autosize'
 	import { mod_key_held } from '../../stores/app/misc'
 	import UI from '../../ui/index.js'
@@ -16,37 +16,40 @@
 	import { dynamic_field_types } from '$lib/builder/field-types'
 	import { pluralize } from '../../field-types/RepeaterField.svelte'
 	import { getContext } from 'svelte'
-	import { get_empty_value } from '$lib/builder/utils'
+	import type { Field } from '$lib/common/models/Field'
 
-	import { createEventDispatcher } from 'svelte'
-	const dispatch = createEventDispatcher()
-
-	/**
-	 * @typedef {Object} Props
-	 * @property {any} field
-	 * @property {any} fields
-	 * @property {number} [level]
-	 * @property {boolean} [top_level]
-	 */
-
-	/** @type {Props} */
-	let { field = $bindable(), fields, level = 0, top_level = true } = $props()
+	let {
+		field,
+		fields,
+		level = 0,
+		top_level = true,
+		onchange,
+		onduplicate,
+		ondelete,
+		onmove
+	}: {
+		field: Field
+		fields: Field[]
+		level?: number
+		top_level?: boolean
+		onchange: (values: Partial<Field>) => void
+		onduplicate: () => void
+		ondelete: () => void
+		onmove: (direction: 'up' | 'down') => void
+	} = $props()
 
 	const visible_field_types = getContext('hide_dynamic_field_types') ? $fieldTypes.filter((ft) => !dynamic_field_types.includes(ft.id)) : $fieldTypes
 
 	let comparable_fields = $derived(
-		fields
-			.filter((f) => {
-				const is_valid_type = ['text', 'number', 'switch', 'url', 'select'].includes(f.type)
-				const is_previous_sibling = f.parent === field.parent && f.index < field.index
-				return is_valid_type && is_previous_sibling
-			})
-			.sort((a, b) => a.index - b.index)
+		[]
+		// fields
+		// 	.filter((f) => {
+		// 		const is_valid_type = ['text', 'number', 'switch', 'url', 'select'].includes(f.type)
+		// 		const is_previous_sibling = f.parent === field.parent && f.index < field.index
+		// 		return is_valid_type && is_previous_sibling
+		// 	})
+		// 	.sort((a, b) => a.index - b.index)
 	)
-
-	function dispatch_update(data) {
-		dispatch('input', { id: field.id, data })
-	}
 
 	function validate_field_key(key) {
 		// replace dash and space with underscore
@@ -64,10 +67,12 @@
 		}
 	})
 
-	let width = $state()
+	let width = $state<number>()
 	let collapsed = $state(false)
 	$effect(() => {
-		if (width < 400 && !collapsed) {
+		if (!width) {
+			return
+		} else if (width < 400 && !collapsed) {
 			collapsed = true
 		} else if (width > 500 && collapsed) {
 			collapsed = false
@@ -76,12 +81,15 @@
 
 	let minimal = $derived(field.type === 'info')
 	let has_subfields = $derived(field.type === 'group' || field.type === 'repeater')
-	let has_condition = $derived(field.config?.condition)
+	let has_condition = $derived(false) // TODO
 
 	// enable condition if field has previous siblings without their own condition
-	let condition_enabled = $derived(!field.parent && fields.filter((f) => f.parent === field.parent && f.id !== field.id && f.index < field.index && !f.config?.condition).length > 0)
+	let condition_enabled = $derived(
+		false
+		// !field.parent && fields.filter((f) => f.parent === field.parent && f.id !== field.id && f.index < field.index && !f.config?.condition).length > 0
+	)
 
-	let selected_field_type_id = $state('')
+	let selected_field_type_id = $state<string>()
 	$effect.pre(() => {
 		selected_field_type_id = visible_field_types.find((ft) => ft.id === field.type)?.id
 	})
@@ -109,23 +117,20 @@
 
 	function add_condition() {
 		const default_field = comparable_fields[0]
-		dispatch_update({
-			options: {
-				...field.options,
-				condition: {
-					field: default_field.id,
-					comparison: '=',
-					value: get_empty_value(default_field)
-				}
-			}
-		})
+		// dispatch_update({
+		// 	condition: {
+		// 		field: default_field.id,
+		// 		comparison: '=',
+		// 		value: get_empty_value(default_field)
+		// 	}
+		// })
 	}
 
 	let child_fields = $derived(fields.filter((f) => f.parent === field.id))
 
 	let is_new_field = $state(field.key === '')
 
-	let hide_footer = $derived(!['select', 'image', ...dynamic_field_types].includes(field.type) && !field.config?.condition)
+	let hide_footer = $derived(!['select', 'image', ...dynamic_field_types].includes(field.type) /*&& !field.condition*/)
 </script>
 
 <div class="top-container" class:top_level class:collapsed>
@@ -141,12 +146,9 @@
 				}))}
 				dividers={[1, 8, 10, 12]}
 				on:input={({ detail: field_type_id }) => {
-					console.log({ field_type_id })
 					field_type_changed = true
 					selected_field_type_id = field_type_id
-					dispatch_update({
-						type: field_type_id
-					})
+					onchange({ type: field_type_id, config: null })
 				}}
 				placement="bottom-start"
 			/>
@@ -156,10 +158,10 @@
 						<button onclick={add_condition}>
 							<Icon icon="mdi:show" />
 						</button>
-						<button onclick={() => dispatch('duplicate', field)}>
+						<button onclick={onduplicate}>
 							<Icon icon="bxs:duplicate" />
 						</button>
-						<button class="delete" onclick={() => dispatch('delete', field)}>
+						<button class="delete" onclick={ondelete}>
 							<Icon icon="ic:outline-delete" />
 						</button>
 					{:else}
@@ -169,12 +171,12 @@
 								{
 									label: 'Move up',
 									icon: 'material-symbols:arrow-circle-up-outline',
-									on_click: () => dispatch('move', { direction: 'up', field })
+									on_click: () => onmove('up')
 								},
 								{
 									label: 'Move down',
 									icon: 'material-symbols:arrow-circle-down-outline',
-									on_click: () => dispatch('move', { direction: 'down', field })
+									on_click: () => onmove('down')
 								},
 								...(has_condition
 									? []
@@ -191,13 +193,13 @@
 								{
 									label: 'Duplicate',
 									icon: 'bxs:duplicate',
-									on_click: () => dispatch('duplicate', field)
+									on_click: () => onduplicate()
 								},
 								{
 									label: 'Delete',
 									icon: 'ic:outline-delete',
 									is_danger: true,
-									on_click: () => dispatch('delete', field)
+									on_click: () => ondelete()
 								}
 							]}
 							placement="bottom-end"
@@ -211,13 +213,13 @@
 			<div class="main column-container">
 				<UI.TextInput
 					label="Information"
-					value={field.options.info || ''}
+					value={field.config.info || ''}
 					autogrow={true}
 					placeholder="Something important about the following fields..."
 					oninput={(text) => {
-						dispatch_update({
-							options: {
-								...field.options,
+						onchange({
+							config: {
+								...field.config,
 								info: text
 							}
 						})
@@ -229,10 +231,10 @@
 							<button onclick={add_condition}>
 								<Icon icon="mdi:show" />
 							</button>
-							<button onclick={() => dispatch('duplicate', field)}>
+							<button onclick={onduplicate}>
 								<Icon icon="bxs:duplicate" />
 							</button>
-							<button class="delete" onclick={() => dispatch('delete', field)}>
+							<button class="delete" onclick={ondelete}>
 								<Icon icon="ic:outline-delete" />
 							</button>
 						{:else}
@@ -242,12 +244,12 @@
 									{
 										label: 'Move up',
 										icon: 'material-symbols:arrow-circle-up-outline',
-										on_click: () => dispatch('move', { direction: 'up', field })
+										on_click: () => onmove('up')
 									},
 									{
 										label: 'Move down',
 										icon: 'material-symbols:arrow-circle-down-outline',
-										on_click: () => dispatch('move', { direction: 'down', field })
+										on_click: () => onmove('down')
 									},
 									...(has_condition
 										? []
@@ -263,13 +265,13 @@
 									{
 										label: 'Duplicate',
 										icon: 'bxs:duplicate',
-										on_click: () => dispatch('duplicate', field)
+										on_click: () => onduplicate()
 									},
 									{
 										label: 'Delete',
 										icon: 'ic:outline-delete',
 										is_danger: true,
-										on_click: () => dispatch('delete', field)
+										on_click: () => ondelete()
 									}
 								]}
 								placement="bottom-end"
@@ -289,7 +291,7 @@
 					on:keydown
 					oninput={(text) => {
 						// only auto-set key and type on new fields
-						dispatch_update({
+						onchange({
 							label: text,
 							key: key_edited || !is_new_field ? field.key : validate_field_key(text),
 							type: field_type_changed || !is_new_field ? field.type : update_field_type(text)
@@ -307,7 +309,7 @@
 					on:keydown
 					oninput={(text) => {
 						key_edited = true
-						dispatch_update({
+						onchange({
 							key: validate_field_key(text)
 						})
 					}}
@@ -318,10 +320,10 @@
 							<button onclick={add_condition}>
 								<Icon icon="mdi:show" />
 							</button>
-							<button onclick={() => dispatch('duplicate', field)}>
+							<button onclick={onduplicate}>
 								<Icon icon="bxs:duplicate" />
 							</button>
-							<button class="delete" onclick={() => dispatch('delete', field)}>
+							<button class="delete" onclick={ondelete}>
 								<Icon icon="ic:outline-delete" />
 							</button>
 						{:else}
@@ -331,12 +333,12 @@
 									{
 										label: 'Move up',
 										icon: 'material-symbols:arrow-circle-up-outline',
-										on_click: () => dispatch('move', { direction: 'up', field })
+										on_click: () => onmove('up')
 									},
 									{
 										label: 'Move down',
 										icon: 'material-symbols:arrow-circle-down-outline',
-										on_click: () => dispatch('move', { direction: 'down', field })
+										on_click: () => onmove('down')
 									},
 									...(has_condition
 										? []
@@ -352,13 +354,13 @@
 									{
 										label: 'Duplicate',
 										icon: 'bxs:duplicate',
-										on_click: () => dispatch('duplicate', field)
+										on_click: () => onduplicate()
 									},
 									{
 										label: 'Delete',
 										icon: 'ic:outline-delete',
 										is_danger: true,
-										on_click: () => dispatch('delete', field)
+										on_click: () => ondelete()
 									}
 								]}
 								placement="bottom-end"
@@ -375,25 +377,24 @@
 				{field}
 				{level}
 				on:input={({ detail: updated_field }) => {
-					console.log({ updated_field })
-					dispatch_update(updated_field)
+					onchange(updated_field)
 				}}
 			/>
 		{/if}
 		{#if field.type === 'image'}
-			<ImageFieldOptions {field} on:input={({ detail }) => dispatch_update({ options: detail.options })} />
+			<ImageFieldOptions {field} on:input={onchange} />
 		{/if}
 		{#if field.type === 'page-field'}
-			<PageFieldField {field} on:input={({ detail }) => dispatch_update({ source: detail })} />
+			<PageFieldField {field} on:input={onchange} />
 		{/if}
 		{#if field.type === 'site-field'}
-			<SiteFieldField {field} oninput={(detail) => dispatch_update({ source: detail })} />
+			<SiteFieldField {field} oninput={onchange} />
 		{/if}
 		{#if field.type === 'page'}
-			<PageField {field} on:input={({ detail }) => dispatch_update({ options: detail })} />
+			<PageField {field} on:input={onchange} />
 		{/if}
 		{#if field.type === 'page-list'}
-			<PageListField {field} oninput={(options) => dispatch_update({ options })} />
+			<PageListField {field} oninput={onchange} />
 		{/if}
 		{#if field.config?.condition}
 			<Condition
@@ -402,8 +403,7 @@
 				{comparable_fields}
 				{collapsed}
 				on:input={({ detail: condition }) => {
-					console.log({ condition })
-					dispatch_update({ config: { ...field.config, condition } })
+					// onchange({ config: { ...field.config, condition } })
 				}}
 			/>
 		{/if}
@@ -412,10 +412,16 @@
 	{#if has_subfields}
 		<div class="children-container" style:padding-left="{level + 1}rem">
 			{#each child_fields.sort((a, b) => a.index - b.index) as subfield (subfield.id)}
-				<FieldItem field={cloneDeep(subfield)} {fields} top_level={false} level={level + 1} on:duplicate on:delete on:move on:createsubfield on:keydown on:input />
+				<FieldItem field={cloneDeep(subfield)} {fields} top_level={false} level={level + 1} {onduplicate} {ondelete} {onmove} {onchange} />
 			{/each}
 			{#if field.type === 'repeater' || field.type === 'group'}
-				<button class="subfield-button" data-level={level} onclick={() => dispatch('createsubfield', field)}>
+				<button
+					class="subfield-button"
+					data-level={level}
+					onclick={() => {
+						// TODO: Implement
+					}}
+				>
 					<Icon icon="fa-solid:plus" />
 					<span>Create {field.label} Subfield</span>
 				</button>

@@ -7,14 +7,13 @@
 	import * as Dialog from '$lib/components/ui/dialog'
 	import { PaneGroup, Pane, PaneResizer } from 'paneforge'
 	import LargeSwitch from '../../../ui/LargeSwitch.svelte'
-	import * as _ from 'lodash-es'
 	import FullCodeEditor from './FullCodeEditor.svelte'
 	import ComponentPreview, { refresh_preview, has_error } from '$lib/builder/components/ComponentPreview.svelte'
 	import Fields from '../../../components/Fields/FieldsContent.svelte'
 	import { locale } from '../../../stores/app/misc.js'
 	import hotkey_events from '../../../stores/app/hotkey_events.js'
 	import { getContent } from '$lib/pocketbase/content'
-	import { PageSections, SiteSymbols } from '$lib/pocketbase/collections'
+	import { PageSectionEntries, PageSections, PageTypeSectionEntries, SiteSymbolFields, SiteSymbols } from '$lib/pocketbase/collections'
 	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
 	import type { PageTypeSection } from '$lib/common/models/PageTypeSection'
 
@@ -35,19 +34,11 @@
 	}: { component: ObjectOf<typeof PageTypeSection> | ObjectOf<typeof PageSections>; tab: string; header?: any } = $props()
 
 	const symbol = $derived(SiteSymbols.one(component.symbol))
+	const fields = $derived(symbol?.fields() ?? [])
+	const entries = $derived(component.entries())
+	const component_data = $derived(getContent(component, fields, entries)[$locale] ?? {})
 
 	let loading = false
-
-	let component_data = $state({})
-	function update_component_data() {
-		if (!symbol) {
-			return
-		}
-		component_data = getContent(component, symbol.fields())[$locale]
-	}
-	$effect.pre(() => {
-		update_component_data()
-	})
 
 	hotkey_events.on('e', toggle_tab)
 
@@ -64,6 +55,22 @@
 			header.button.onclick()
 		}
 	}
+
+	let html = $state('')
+	let css = $state('')
+	let js = $state('')
+	$effect.pre(() => {
+		if (symbol) {
+			html = symbol.html
+			css = symbol.css
+			js = symbol.js
+		}
+	})
+	$effect(() => {
+		if (symbol) {
+			SiteSymbols.update(symbol.id, { html, css, js })
+		}
+	})
 </script>
 
 <Dialog.Header
@@ -82,28 +89,63 @@
 	<PaneGroup direction={$orientation} class="flex gap-1">
 		<Pane defaultSize={50} class="flex flex-col">
 			{#if tab === 'code'}
-				<FullCodeEditor
-					bind:html={symbol.html}
-					bind:css={symbol.css}
-					bind:js={symbol.js}
-					data={_.cloneDeep(component_data)}
-					on:save={save_component}
-					on:mod-e={toggle_tab}
-					on:mod-r={() => $refresh_preview()}
-				/>
+				<FullCodeEditor bind:html bind:css bind:js data={component_data} on:save={save_component} on:mod-e={toggle_tab} on:mod-r={() => $refresh_preview()} />
 			{:else if tab === 'content'}
-				<Fields id="section-{component.id}" entity_id={component.id} fields={symbol.fields()} />
+				<Fields
+					id="section-{component.id}"
+					entity={component}
+					{fields}
+					{entries}
+					create_field={() => {
+						if (!symbol) {
+							return
+						}
+						SiteSymbolFields.create({
+							type: 'text',
+							key: 'new_field',
+							label: 'New Field',
+							config: null,
+							symbol: symbol.id
+						})
+					}}
+					oninput={(values) => {
+						for (const [key, value] of Object.entries(values)) {
+							const field = fields.find((field) => field.key === key)
+							if (!field) {
+								continue
+							}
+
+							const entry = entries.find((entry) => entry.field === field?.id)
+							if ('page_type' in component) {
+								if (entry) {
+									PageTypeSectionEntries.update(entry.id, { value })
+								} else {
+									PageTypeSectionEntries.create({ field: field.id, locale: 'en', value, section: component.id })
+								}
+							} else if ('page' in component) {
+								if (entry) {
+									PageSectionEntries.update(entry.id, { value })
+								} else {
+									PageSectionEntries.create({ field: field.id, locale: 'en', value, section: component.id })
+								}
+							}
+						}
+					}}
+					onchange={({ id, data }) => {
+						SiteSymbolFields.update(id, data)
+					}}
+				/>
 			{/if}
 		</Pane>
 		<PaneResizer class="PaneResizer" />
 		<Pane defaultSize={50}>
 			<ComponentPreview
 				code={{
-					html: symbol.html,
-					css: symbol.css,
-					js: symbol.js
+					html,
+					css,
+					js
 				}}
-				data={_.cloneDeep(component_data)}
+				data={component_data}
 				bind:orientation={$orientation}
 				view="small"
 				{loading}

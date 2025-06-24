@@ -24,14 +24,14 @@ export const ENTRY_MODELS = {
 } as const
 
 export type EntryOf<Collection extends keyof typeof ENTRY_MODELS> = z.TypeOf<(typeof ENTRY_MODELS)[Collection]>
-export type EntityOf<Collection extends keyof typeof ENTRY_MODELS> = z.TypeOf<(typeof models)[Collection]> & { entries: () => EntryOf<Collection>[] }
+export type EntityOf<Collection extends keyof typeof ENTRY_MODELS> = z.TypeOf<(typeof models)[Collection]>
 export type Entity = EntityOf<keyof typeof ENTRY_MODELS>
 
-export const getContent = <Collection extends keyof typeof ENTRY_MODELS>(entity: EntityOf<Collection>, fields: Field[]) => {
+export const getContent = <Collection extends keyof typeof ENTRY_MODELS>(entity: EntityOf<Collection>, fields: Field[], entries: EntryOf<Collection>[]) => {
 	const content: { [K in (typeof locales)[number]]?: Record<string, unknown[]> } = {}
 	for (const field of fields) {
-		const entries = getResolvedEntries(entity, field)
-		for (const entry of entries) {
+		const fieldEntries = getResolvedEntries(entity, field, entries)
+		for (const entry of fieldEntries) {
 			if (!content[entry.locale]) content[entry.locale] = {}
 			if (!content[entry.locale]![field.key]) content[entry.locale]![field.key] = []
 			content[entry.locale]![field.key].push(entry.value)
@@ -40,38 +40,38 @@ export const getContent = <Collection extends keyof typeof ENTRY_MODELS>(entity:
 	return content
 }
 
-export const getDirectEntries = <Collection extends keyof typeof ENTRY_MODELS>(entity: EntityOf<Collection>, field: Field): EntryOf<Collection>[] => {
-	return entity.entries().filter((entry) => entry.field === field.id)
+export const getDirectEntries = <Collection extends keyof typeof ENTRY_MODELS>(entity: EntityOf<Collection>, field: Field, entries: EntryOf<Collection>[]): EntryOf<Collection>[] => {
+	return entries.filter((entry) => entry.field === field.id)
 }
 
-export const getResolvedEntries = <Collection extends keyof typeof ENTRY_MODELS>(entity: EntityOf<Collection>, field: Field): Entry[] => {
-	const entries = getDirectEntries(entity, field)
+export const getResolvedEntries = <Collection extends keyof typeof ENTRY_MODELS>(entity: EntityOf<Collection>, field: Field, entries: EntryOf<Collection>[]): Entry[] => {
+	const fieldEntries = getDirectEntries(entity, field, entries)
 	if (field.type === 'page-field') {
 		throw new Error('Not implemented')
-		// return entries.flatMap((entry) => {
+		// return fieldEntries.flatMap((entry) => {
 		// 	const page = Pages.one(entry.value.page)
 		// 	const field = SiteSymbolFields.one(entry.value.field)
 		// 	if (!page || !field) return []
 		// 	return get_resolved_entries(page, field)
 		// })
 	} else if (field.type === 'site-field') {
-		return entries.flatMap((entry) => {
+		return fieldEntries.flatMap((entry) => {
 			const field = SiteFields.one(entry.value)
 			if (!field) return []
 			const site = Sites.one(field.site)
 			if (!site) return []
-			return getResolvedEntries(site, field)
+			return getResolvedEntries(site, field, site.entries())
 		})
 	} else if (field.type === 'page') {
 		throw new Error('Not implemented')
-		// return entries.flatMap((entry) => {
+		// return fieldEntries.flatMap((entry) => {
 		// 	const page = Pages.one(entry.value)
 		// 	if (!page) return []
 		// 	return page.fields().flatMap((field) => get_resolved_entries(page, field))
 		// })
 	} else if (field.type === 'page-list') {
 		throw new Error('Not implemented')
-		// return entries.flatMap((entry) =>
+		// return fieldEntries.flatMap((entry) =>
 		// 	entry.value.flatMap((page_id: string) => {
 		// 		const page = Pages.one(page_id)
 		// 		if (!page) return []
@@ -85,7 +85,7 @@ export const getResolvedEntries = <Collection extends keyof typeof ENTRY_MODELS>
 		// 	})
 		// )
 	} else {
-		return entries
+		return fieldEntries
 	}
 }
 

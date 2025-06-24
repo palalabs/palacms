@@ -108,26 +108,26 @@
 		if (!selected_starter_id || !active_site_group) return
 		loading = true
 		if (selected_starter_id === 'blank') {
-			const site = await Sites.create({
+			const site = Sites.create({
 				...blank_site,
 				name: site_name,
 				description: '',
 				group: active_site_group.id,
 				index: 0
 			})
-			const page_type = await PageTypes.create({
+			const page_type = PageTypes.create({
 				...blank_site_home_page_type,
 				name: 'Default',
 				site: site.id
 			})
-			const page = await Pages.create({
+			const page = Pages.create({
 				...black_site_home_page,
 				page_type: page_type.id,
 				site: site.id
 			})
 
 			// Create a default "Welcome" symbol for the homepage
-			const welcome_symbol = await SiteSymbols.create({
+			const welcome_symbol = SiteSymbols.create({
 				name: 'Welcome',
 				html: '<div class="welcome"><h1>Welcome to Pala</h1><p>Start building your site by editing this content.</p></div>',
 				css: '.welcome { padding: 2rem; text-align: center; }\n.welcome h1 { margin-bottom: 1rem; }',
@@ -136,17 +136,24 @@
 			})
 
 			// Create a section on the homepage using the welcome symbol
-			await PageSections.create({
+			PageSections.create({
 				page: page.id,
 				symbol: welcome_symbol.id,
 				index: 0
 			})
 
-			await PageTypeSections.create({
+			PageTypeSections.create({
 				symbol: welcome_symbol.id,
 				index: 0,
 				page_type: page_type.id
 			})
+
+			await Sites.commit()
+			await PageTypes.commit()
+			await Pages.commit()
+			await SiteSymbols.commit()
+			await PageSections.commit()
+			await PageTypeSections.commit()
 		}
 
 		onclose()

@@ -7,15 +7,15 @@
 	import * as Dialog from '$lib/components/ui/dialog'
 	import LargeSwitch from '$lib/builder/ui/LargeSwitch.svelte'
 	import { PaneGroup, Pane, PaneResizer } from 'paneforge'
-	import * as _ from 'lodash-es'
 	import FullCodeEditor from './SectionEditor/FullCodeEditor.svelte'
 	import ComponentPreview, { has_error } from '$lib/builder/components/ComponentPreview.svelte'
 	import Fields from '$lib/builder/components/Fields/FieldsContent.svelte'
 	import { locale } from '$lib/builder/stores/app/misc.js'
 	import hotkey_events from '$lib/builder/stores/app/hotkey_events.js'
-	import { Symbol } from '$lib/common/models/Symbol'
 	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
-	import type { SiteSymbols } from '$lib/pocketbase/collections'
+	import { SiteSymbolEntries, SiteSymbolFields, SiteSymbols } from '$lib/pocketbase/collections'
+	import { page } from '$app/state'
+	import { getContent } from '$lib/pocketbase/content'
 
 	let {
 		block: existing_block,
@@ -33,11 +33,14 @@
 		}
 	}: { block?: ObjectOf<typeof SiteSymbols>; tab?: string; header?: any } = $props()
 
-	let block = $state<Omit<Symbol, 'id'>>(_.cloneDeep(existing_block) || { css: '', html: '', js: '', name: 'New Block' })
+	const site_id = $derived(page.params.site)
+	const new_block = () => SiteSymbols.create({ css: '', html: '', js: '', name: 'New Block', site: site_id })
+	const block = $state(existing_block ?? new_block())
+	const fields = $derived(block.fields())
+	const entries = $derived(block.entries())
+	let component_data = $derived(getContent(block, fields, entries)[$locale] ?? {})
 
 	let loading = false
-
-	let component_data = $derived({}) // TODO
 
 	hotkey_events.on('e', toggle_tab)
 
@@ -60,9 +63,24 @@
 
 	async function save_component() {
 		if (!$has_error) {
-			header.button.onclick(_.cloneDeep(block))
+			await SiteSymbols.commit()
+			await SiteSymbolFields.commit()
+			await SiteSymbolEntries.commit()
+			header.button.onclick(block)
 		}
 	}
+
+	let html = $state('')
+	let css = $state('')
+	let js = $state('')
+	$effect.pre(() => {
+		html = block.html
+		css = block.css
+		js = block.js
+	})
+	$effect(() => {
+		SiteSymbols.update(block.id, { html, css, js })
+	})
 </script>
 
 <Dialog.Header
@@ -81,14 +99,45 @@
 	<PaneGroup direction={$orientation} class="flex">
 		<Pane defaultSize={50}>
 			{#if tab === 'code'}
-				<FullCodeEditor bind:html={block.html} bind:css={block.css} bind:js={block.js} data={component_data} on:save={save_component} on:mod-e={toggle_tab} />
+				<FullCodeEditor bind:html bind:css bind:js data={component_data} on:save={save_component} on:mod-e={toggle_tab} />
 			{:else if tab === 'content'}
-				<Fields entity={existing_block} fields={existing_block?.fields() ?? []} />
+				<Fields
+					entity={block}
+					{fields}
+					{entries}
+					create_field={() => {
+						SiteSymbolFields.create({
+							type: 'text',
+							key: 'new_field',
+							label: 'New Field',
+							config: null,
+							symbol: block.id
+						})
+					}}
+					oninput={(values) => {
+						for (const [key, value] of Object.entries(values)) {
+							const field = fields.find((field) => field.key === key)
+							if (!field) {
+								continue
+							}
+
+							const entry = entries.find((entry) => entry.field === field?.id)
+							if (entry) {
+								SiteSymbolEntries.update(entry.id, { value })
+							} else {
+								SiteSymbolEntries.create({ field: field.id, locale: 'en', value })
+							}
+						}
+					}}
+					onchange={({ id, data }) => {
+						SiteSymbolFields.update(id, data)
+					}}
+				/>
 			{/if}
 		</Pane>
 		<PaneResizer class="PaneResizer" />
 		<Pane defaultSize={50}>
-			<ComponentPreview bind:orientation={$orientation} view="small" {loading} code={{ html: block.html, css: block.css, js: block.js }} data={component_data} />
+			<ComponentPreview bind:orientation={$orientation} view="small" {loading} code={{ html, css, js }} data={component_data} />
 		</Pane>
 	</PaneGroup>
 </main>

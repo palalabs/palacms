@@ -2,6 +2,7 @@ import type { default as PocketBase, RecordAuthResponse } from 'pocketbase'
 import type { z } from 'zod'
 import { self } from './PocketBase'
 import { SvelteMap } from 'svelte/reactivity'
+import { customAlphabet } from 'nanoid'
 
 export type ListOptions = {
 	sort?: string
@@ -21,12 +22,15 @@ export type MappedObject<T extends ObjectWithId, Options extends CollectionMappi
 
 export type MappedObjectList<T extends ObjectWithId, Options extends CollectionMappingOptions<T>> = MappedObject<T, Options>[]
 
+export type StagedOperation<T extends ObjectWithId> = { operation: 'create'; data: Omit<T, 'id'> } | { operation: 'update'; data: Partial<T> } | { operation: 'delete' }
+
 export type CollectionMapping<T extends ObjectWithId, Options extends CollectionMappingOptions<T>> = {
 	one: (id: string) => MappedObject<T, Options> | undefined
 	list: (options?: ListOptions) => MappedObjectList<T, Options>
-	create: (values: Omit<T, 'id'> & { id?: string }) => Promise<MappedObject<T, Options>>
-	update: (id: string, values: Partial<T>) => Promise<MappedObject<T, Options>>
-	delete: (id: string) => Promise<void>
+	create: (values: Omit<T, 'id'> & { id?: string }) => MappedObject<T, Options>
+	update: (id: string, values: Partial<T>) => MappedObject<T, Options>
+	delete: (id: string) => void
+	commit: () => Promise<void>
 	authWithPassword: (usernameOrEmail: string, password: string) => Promise<RecordAuthResponse<MappedObject<T, Options>>>
 	requestPasswordReset: (email: string) => Promise<void>
 	confirmPasswordReset: (passwordResetToken: string, password: string, passwordConfirm: string) => Promise<void>
@@ -34,11 +38,14 @@ export type CollectionMapping<T extends ObjectWithId, Options extends Collection
 	instance: PocketBase
 }
 
+const generateId = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789', 15)
+
 export const createCollectionMapping = <T extends ObjectWithId, Options extends CollectionMappingOptions<T>>(name: string, model: z.ZodType<T>, options?: Options): CollectionMapping<T, Options> => {
 	const instance = options?.instance ?? self
 	const instanceCache = new Map<PocketBase, CollectionMapping<T, Options>>()
 	const collection = instance.collection(name)
-	const objects = new SvelteMap<string, MappedObject<T, Options> | undefined>()
+	const staged = new SvelteMap<string, StagedOperation<T>>()
+	const records = new SvelteMap<string, T | undefined>()
 	const lists = new SvelteMap<string, string[] | undefined>()
 	const mapObject = (record: unknown): MappedObject<T, Options> => {
 		const object = model.parse(record)
@@ -46,34 +53,30 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 		return Object.assign(object, links, { collection: collectionMapping })
 	}
 
-	const refreshLists = () => {
-		// Update existing lists that might be affected by the change
-		for (const [listId, ids] of lists) {
-			if (ids) {
-				// Re-fetch this specific list
-				const options = JSON.parse(listId)
-				collection.getFullList({ ...options, fields: 'id' }).then((records) => {
-					lists.set(listId, records.map(({ id }) => id))
-				})
-			}
-		}
-	}
-
 	const collectionMapping: CollectionMapping<T, Options> = {
 		one: (id) => {
 			$effect.pre(() => {
-				if (!objects.has(id)) {
-					objects.set(id, undefined)
+				if (!records.has(id) && !staged.has(id)) {
+					records.set(id, undefined)
 					collection.getOne(id).then((record) => {
-						objects.set(id, mapObject(record))
+						records.set(id, record as unknown as T)
 					})
 				}
 			})
 
-			return objects.get(id)
+			let data = records.get(id)
+			const operation = staged.get(id)
+			if (operation?.operation === 'delete') {
+				return undefined
+			} else if (operation) {
+				data = Object.assign({}, data, operation.data)
+			} else if (!data) {
+				return undefined
+			}
+			return mapObject(data)
 		},
 		list: (options) => {
-			const listId = $derived(JSON.stringify(options ?? {}))
+			const listId = JSON.stringify(options ?? {})
 			$effect.pre(() => {
 				if (!lists.has(listId)) {
 					lists.set(listId, undefined)
@@ -86,32 +89,81 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 				}
 			})
 
-			return (lists.get(listId) ?? []).map((id) => collectionMapping.one(id)).filter((object) => object !== undefined)
+			const list = lists.get(listId) ?? []
+			for (const [id] of staged) {
+				if (!list.includes(id)) {
+					list.push(id)
+				}
+			}
+
+			return list.map((id) => collectionMapping.one(id)).filter((object) => object !== undefined)
 		},
-		create: async (values) => {
-			const record = await collection.create(values)
-			const object = mapObject(record)
-			objects.set(record.id, object)
-			refreshLists()
-			return object
+		create: (values) => {
+			const id = generateId()
+			const data = { ...values, id }
+			staged.set(id, { operation: 'create', data })
+			return mapObject(data)
 		},
-		update: async (id, values) => {
-			const record = await collection.update(id, values)
-			const object = mapObject(record)
-			objects.set(id, object)
-			refreshLists()
-			return object
+		update: (id, values) => {
+			let operation = staged.get(id)
+			if (operation && operation.operation !== 'delete') {
+				Object.assign(operation.data, values)
+				staged.set(id, operation)
+			} else {
+				operation = { operation: 'update', data: values }
+				staged.set(id, operation)
+			}
+
+			let data = records.get(id)
+			data = Object.assign({}, data, operation.data)
+			return mapObject(data)
 		},
-		delete: async (id) => {
-			await collection.delete(id)
-			objects.delete(id)
-			refreshLists()
+		delete: (id) => {
+			const operation = staged.get(id)
+			if (operation?.operation === 'create') {
+				staged.delete(id)
+			} else {
+				staged.set(id, { operation: 'delete' })
+			}
+		},
+		commit: async () => {
+			const promises: Promise<void>[] = []
+			for (const [id, operation] of staged) {
+				switch (operation.operation) {
+					case 'create':
+						promises.push(
+							collection.create(operation.data).then((record) => {
+								records.set(id, record as unknown as T)
+							})
+						)
+						break
+
+					case 'update':
+						promises.push(
+							collection.update(id, operation.data).then((record) => {
+								records.set(id, record as unknown as T)
+							})
+						)
+						break
+
+					case 'delete':
+						promises.push(
+							collection.delete(id).then(() => {
+								records.delete(id)
+							})
+						)
+						break
+				}
+			}
+
+			await Promise.all(promises)
+			staged.clear()
+			lists.clear()
 		},
 		authWithPassword: async (usernameOrEmail, password) => {
 			const response = await collection.authWithPassword(usernameOrEmail, password)
-			const object = mapObject(response.record)
-			objects.set(response.record.id, object)
-			return { ...response, record: object }
+			records.set(response.record.id, response.record as unknown as T)
+			return { ...response, record: mapObject(response.record) }
 		},
 		requestPasswordReset: async (email) => {
 			await collection.requestPasswordReset(email)

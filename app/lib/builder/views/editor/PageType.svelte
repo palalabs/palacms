@@ -231,6 +231,7 @@
 				const closestEdgeOfTarget = extractClosestEdge(self.data)
 				const target_index = closestEdgeOfTarget === 'top' ? 0 : page_type_sections.length
 				PageTypeSections.create({ page_type: page_type.id, symbol: block_being_dragged.id, index: target_index }) // TODO: Index
+				PageTypeSections.commit()
 				reset_drag()
 			}
 		})
@@ -277,6 +278,7 @@
 				const section_dragged_over_index = page_type_sections.findIndex((s) => s.id === section_dragged_over.id)
 				const target_index = closestEdgeOfTarget === 'top' ? section_dragged_over_index : section_dragged_over_index + 1
 				PageTypeSections.create({ page_type: page_type.id, symbol: block_being_dragged.id, index: target_index }) // TODO: Index
+				PageTypeSections.commit()
 			}
 		})
 	}
@@ -339,6 +341,7 @@
 			on:delete={async () => {
 				if (!hovered_section_id) return
 				PageTypeSections.delete(hovered_section_id)
+				await PageTypeSections.commit()
 			}}
 			on:edit-code={() => edit_component('code')}
 			on:edit-content={() => edit_component('content')}

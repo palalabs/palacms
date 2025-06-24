@@ -43,7 +43,7 @@
 
 	let node = $state()
 
-	let component_data = $derived(getContent(section, block?.fields() || [])[$locale] ?? {})
+	let component_data = $derived(getContent(section, block.fields(), block.entries())[$locale] ?? {})
 
 	let floating_menu = $state()
 	let bubble_menu = $state()

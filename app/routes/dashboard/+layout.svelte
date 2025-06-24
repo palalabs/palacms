@@ -3,10 +3,9 @@
 	import AppSidebar from '$lib/components/app-sidebar.svelte'
 	import { Globe, LayoutTemplate, Store, Library, Cuboid } from 'lucide-svelte'
 	import { page } from '$app/state'
-	import { marketplace, self } from '$lib/pocketbase/PocketBase'
+	import { self } from '$lib/pocketbase/PocketBase'
 	import { onMount } from 'svelte'
 	import { goto } from '$app/navigation'
-	import { LibrarySymbolGroups, SiteGroups } from '$lib/pocketbase/collections'
 
 	onMount(async () => {
 		if (!self.authStore.isValid) {

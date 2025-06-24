@@ -23,12 +23,12 @@
 	import { user } from '$lib/pocketbase/PocketBase'
 	import type { LibrarySymbol } from '$lib/common/models/LibrarySymbol'
 
-	const active_symbol_group_id = $derived(page.url.searchParams.get('group') as string)
+	const active_symbol_group_id = $derived(page.url.searchParams.get('group'))
 	const active_symbol_group = $derived(active_symbol_group_id ? LibrarySymbolGroups.one(active_symbol_group_id) : undefined)
 	const symbol_groups = $derived(LibrarySymbolGroups.list())
 
 	// Get symbols for the active group using direct query instead of relationship method
-	const group_symbols = $derived(active_symbol_group_id ? LibrarySymbols.list({ filter: `group = "${active_symbol_group_id}"` }) : [])
+	const group_symbols = $derived(active_symbol_group?.symbols() ?? [])
 
 	const sidebar = useSidebar()
 
@@ -91,8 +91,9 @@
 	})
 	async function handle_rename(e) {
 		e.preventDefault()
-		if (!active_symbol_group) return
+		if (!active_symbol_group_id) return
 		LibrarySymbolGroups.update(active_symbol_group_id, { name: new_name })
+		LibrarySymbolGroups.commit()
 		is_rename_open = false
 	}
 
@@ -100,10 +101,12 @@
 	let deleting = $state(false)
 	async function handle_delete() {
 		deleting = true
-		await goto('/dashboard/library/starters')
-		if (!active_symbol_group) return
+		if (!active_symbol_group_id) return
 		LibrarySymbolGroups.delete(active_symbol_group_id)
+		await LibrarySymbolGroups.commit()
+		await goto('/dashboard/library')
 		deleting = false
+		is_delete_open = false
 	}
 
 	let symbol_being_edited: LibrarySymbol | null = $state(null)
@@ -164,6 +167,7 @@
 		if (!symbol_being_deleted) return
 		deleting = true
 		LibrarySymbols.delete(symbol_being_deleted.id)
+		await LibrarySymbols.commit()
 		is_delete_symbol_open = false
 		symbol_being_deleted = null
 		deleting = false
@@ -173,6 +177,7 @@
 		if (!symbol_being_edited) return
 		// preview = data.preview
 		LibrarySymbols.update(symbol_being_edited.id, data)
+		LibrarySymbols.commit()
 		is_symbol_editor_open = false
 		// Give the modal time to close before nullifying the symbol
 		setTimeout(() => {
@@ -198,7 +203,8 @@
 				group: active_symbol_group_id
 			}
 			console.log('Creating symbol with data:', createData)
-			await LibrarySymbols.create(createData)
+			LibrarySymbols.create(createData)
+			await LibrarySymbols.commit()
 			creating_block = false
 			// Reset the new_symbol after modal closes
 			setTimeout(() => {

@@ -77,11 +77,12 @@
 		}
 
 		// Create new section
-		const new_section = await PageSections.create({
+		const new_section = PageSections.create({
 			page: page.id,
 			symbol: symbol.id,
 			index: position
 		})
+		await PageSections.commit()
 
 		console.log('Created new section', { id: new_section.id, position })
 
@@ -110,7 +111,8 @@
 		}
 
 		// Delete the section
-		await PageSections.delete(section_id)
+		PageSections.delete(section_id)
+		await PageSections.commit()
 	}
 
 	let page_el = $state()

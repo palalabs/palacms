@@ -13,18 +13,34 @@
 
 	const site_id = page.params.site
 	const site = $derived(Sites.one(site_id))
+	const fields = $derived(site?.fields())
+	const entries = $derived(site?.entries())
 
 	setContext('hide_dynamic_field_types', true)
 
-	let disableSave = false
+	let head = $state('')
+	let foot = $state('')
+	$effect.pre(() => {
+		if (site) {
+			head = site.head
+			foot = site.foot
+		}
+	})
+	$effect(() => {
+		Sites.update(site_id, {
+			head,
+			foot
+		})
+	})
+
+	let disableSave = $state(false)
 
 	async function saveComponent() {
 		disableSave = true
 		try {
-			await Sites.update(site_id, {
-				head: site.head,
-				foot: site.foot
-			})
+			await Sites.commit()
+			await SiteFields.commit()
+			await SiteEntries.commit()
 			console.log('Site head and foot saved successfully')
 			// Close the modal after successful save
 			if (onClose) onClose()
@@ -34,21 +50,6 @@
 		} finally {
 			disableSave = false
 		}
-	}
-
-	async function create_field() {
-		const new_field = await SiteFields.create({
-			key: 'new_field',
-			label: 'New Field',
-			type: 'text',
-			config: null,
-			site: site_id
-		})
-		await SiteEntries.create({
-			field: new_field.id,
-			value: '',
-			locale: 'en'
-		})
 	}
 </script>
 
@@ -69,9 +70,34 @@
 				<Pane defaultSize={50}>
 					<Fields
 						entity={site}
-						fields={site.fields()}
+						{fields}
+						{entries}
 						create_field={() => {
-							create_field()
+							SiteFields.create({
+								type: 'text',
+								key: 'new_field',
+								label: 'New Field',
+								config: null,
+								site: site_id
+							})
+						}}
+						oninput={(values) => {
+							for (const [key, value] of Object.entries(values)) {
+								const field = fields?.find((field) => field.key === key)
+								if (!field) {
+									continue
+								}
+
+								const entry = entries?.find((entry) => entry.field === field?.id)
+								if (entry) {
+									SiteEntries.update(entry.id, { value })
+								} else {
+									SiteEntries.create({ field: field.id, locale: 'en', value })
+								}
+							}
+						}}
+						onchange={({ id, data }) => {
+							SiteFields.update(id, data)
 						}}
 					/>
 				</Pane>
@@ -85,7 +111,7 @@
 						<Pane>
 							<div class="container" style="margin-bottom: 1rem">
 								<span class="primo--field-label">Head</span>
-								<CodeEditor mode="html" bind:value={site.head} on:save={saveComponent} />
+								<CodeEditor mode="html" bind:value={head} on:save={saveComponent} />
 							</div>
 						</Pane>
 						<PaneResizer class="PaneResizer-secondary">
@@ -96,7 +122,7 @@
 						<Pane>
 							<div class="container">
 								<span class="primo--field-label">Foot</span>
-								<CodeEditor mode="html" bind:value={site.foot} on:save={saveComponent} />
+								<CodeEditor mode="html" bind:value={foot} on:save={saveComponent} />
 							</div>
 						</Pane>
 					</PaneGroup>

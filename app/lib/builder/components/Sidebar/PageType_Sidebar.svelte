@@ -94,9 +94,7 @@
 				title: `Edit ${active_block?.title || 'Block'}`,
 				button: {
 					label: 'Save',
-					onclick: (updated_data: Omit<Symbol, 'id'>) => {
-						if (!active_block_id) return
-						SiteSymbols.update(active_block_id, updated_data)
+					onclick: () => {
 						editing_block = false
 						active_block_id = null
 					}
@@ -112,8 +110,7 @@
 			header={{
 				button: {
 					label: 'Create Block',
-					onclick: (new_block: Symbol) => {
-						SiteSymbols.create({ ...new_block, id: undefined, site: site_id })
+					onclick: () => {
 						creating_block = false
 					}
 				}
@@ -188,13 +185,16 @@
 										if (!page_type || detail === toggled) return // dispatches on creation for some reason
 										if (toggled) {
 											PageTypeSymbols.delete(relation.id)
+											PageTypeSymbols.commit()
 										} else {
 											PageTypeSymbols.create({ page_type: page_type.id, symbol: symbol.id })
+											PageTypeSymbols.commit()
 										}
 									}}
 									on:edit={() => edit_block(symbol, symbol.id)}
 									on:delete={() => {
 										SiteSymbols.delete(symbol.id)
+										SiteSymbols.commit()
 									}}
 								/>
 							</div>
