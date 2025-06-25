@@ -52,6 +52,8 @@
 	let componentCode = $state()
 	let component_error = $state()
 	onMount(() => {
+		if (!symbol) return
+		
 		const code = {
 			html: symbol.html,
 			css: symbol.css,

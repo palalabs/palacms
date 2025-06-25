@@ -36,8 +36,8 @@
 	const site_id = $derived(page.params.site)
 	const new_block = () => SiteSymbols.create({ css: '', html: '', js: '', name: 'New Block', site: site_id })
 	const block = $state(existing_block ?? new_block())
-	const fields = $derived(block.fields())
-	const entries = $derived(block.entries())
+	const fields = $derived(block?.fields() ?? [])
+	const entries = $derived(block?.entries() ?? [])
 	let component_data = $derived(getContent(block, fields, entries)[$locale] ?? {})
 
 	let loading = false

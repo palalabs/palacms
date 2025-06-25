@@ -43,7 +43,7 @@
 
 	let node = $state()
 
-	let component_data = $derived(getContent(section, block.fields(), block.entries())[$locale] ?? {})
+	let component_data = $derived(getContent(section, block?.fields() ?? [], block?.entries() ?? [])[$locale] ?? {})
 
 	let floating_menu = $state()
 	let bubble_menu = $state()
@@ -106,7 +106,7 @@
 		const assigned_entry_ids = new Set() // elements that have been matched to a field ID
 
 		const static_field_types = ['text', 'link', 'image', 'markdown']
-		const static_fields = block.fields().filter((f) => static_field_types.includes(f.type))
+		const static_fields = block?.fields()?.filter((f) => static_field_types.includes(f.type)) ?? []
 
 		for (const field of static_fields) {
 			const relevant_entries = section.entries.filter((e) => e.field === field.id)
