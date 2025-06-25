@@ -102,8 +102,8 @@
 						}
 						SiteSymbolFields.create({
 							type: 'text',
-							key: 'new_field',
-							label: 'New Field',
+							key: '',
+							label: '',
 							config: null,
 							symbol: symbol.id
 						})
