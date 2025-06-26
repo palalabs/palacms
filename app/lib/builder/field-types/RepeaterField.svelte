@@ -27,8 +27,8 @@
 	/** @type {Props} */
 	let { id, field, fields, entries, level = 0, show_label = false, oninput } = $props()
 
-	let subfields = $derived(fields.filter((f) => f.parent === field.id).sort((a, b) => a.index - b.index))
-	let repeater_entries = $derived(entries.filter((r) => r.parent === id))
+	let subfields = $derived(fields?.filter((f) => f.parent === field.id).sort((a, b) => a.index - b.index))
+	let repeater_entries = $derived(entries?.filter((r) => r.parent === id))
 
 	let repeater_item_just_created = $state(null) // to autofocus on creation
 	async function add_item() {
@@ -61,7 +61,7 @@
 		<p class="primo--field-label">{field.label}</p>
 	{/if}
 	<ul class="fields">
-		{#each repeater_entries.sort((a, b) => a.index - b.index) as repeater_item, index (repeater_item.id)}
+		{#each repeater_entries?.sort((a, b) => a.index - b.index) as repeater_item, index (repeater_item.id)}
 			{@const subfield_id = `${field.key}-${index}`}
 			{@const autofocus = index === repeater_item_just_created}
 			{@const hovering = hover_index === index}

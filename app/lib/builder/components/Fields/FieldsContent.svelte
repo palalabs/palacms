@@ -66,10 +66,8 @@
 	}
 
 	// TABS
-	let selected_tabs = $state<Record<string, 'field' | 'entry'>>({})
-	$effect.pre(() => {
-		selected_tabs = Object.fromEntries(fields.map((f) => [f.id, f.key === 'new_field' ? 'field' : 'entry']))
-	})
+	let selected_tabs = $state<Record<string, 'field' | 'entry'>>(Object.fromEntries(fields.map((f) => [f.id, f.key === '' ? 'field' : 'entry'])))
+
 	function select_tab(field_id, tab) {
 		selected_tabs[field_id] = tab
 	}
@@ -93,7 +91,7 @@
 	{#each fields || [] as field (field.id)}
 		{@const Field_Component = get_component(field)}
 		<!-- TODO: $userRole === 'DEV' -->
-		{@const active_tab = selected_tabs[field.id]}
+		{@const active_tab = selected_tabs[field.id] || 'field'}
 		{@const is_visible = check_condition(field)}
 		<div class="entries-item">
 			<!-- TODO: hotkeys for tab switching  -->
@@ -140,7 +138,13 @@
 			<div class="container">
 				{#if active_tab === 'field'}
 					<div class="FieldItem">
-						<FieldItem {field} onchange={(data) => onchange({ id: field.id, data })} />
+						<FieldItem
+							{field}
+							onchange={(data) => {
+								console.log('yeee alright')
+								onchange({ id: field.id, data })
+							}}
+						/>
 					</div>
 				{:else if active_tab === 'entry'}
 					{#if is_visible}
