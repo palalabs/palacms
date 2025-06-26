@@ -60,9 +60,11 @@
 	let compilation_error = $state(null)
 
 	let component_head_html = $state(head || '')
+	let head_compiled = $state(false)
 	$effect.pre(() => {
-		if (head === null) {
+		if (head === null && !head_compiled) {
 			compile_component_head()
+			head_compiled = true
 		}
 	})
 	async function compile_component_head() {
