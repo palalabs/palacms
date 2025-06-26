@@ -1,6 +1,6 @@
 <script lang="ts">
 	import * as _ from 'lodash-es'
-	import Icon from '@iconify/svelte'
+	// import Icon from '@iconify/svelte'
 	import Toggle from 'svelte-toggle'
 	import { Button } from '$lib/components/ui/button'
 	import * as Dialog from '$lib/components/ui/dialog'
@@ -13,7 +13,7 @@
 	import { createEventDispatcher, onMount } from 'svelte'
 	import { block_html } from '$lib/builder/code_generators'
 	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
-	import { SiteSymbols } from '$lib/pocketbase/collections'
+	import { SiteSymbols, SiteSymbolFields, SiteSymbolEntries } from '$lib/pocketbase/collections'
 
 	const dispatch = createEventDispatcher()
 
@@ -38,13 +38,15 @@
 		}
 	}
 
-	$effect(() => {
-		SiteSymbols.update(symbol.id, { name: new_name })
-	})
+	// Disabled CollectionMapping update to avoid reactive loops
+	// $effect(() => {
+	// 	SiteSymbols.update(symbol.id, { name: new_name })
+	// })
 
 	function save_rename() {
 		renaming = false
-		SiteSymbols.commit()
+		// TODO: Implement direct PocketBase update instead of CollectionMapping
+		console.log('Would rename symbol to:', new_name)
 	}
 
 	let height = $state(0)
@@ -53,18 +55,28 @@
 	let component_error = $state()
 	onMount(() => {
 		if (!symbol) return
-		
+
 		const code = {
 			html: symbol.html,
 			css: symbol.css,
 			js: symbol.js
 		}
-		const data = getContent(symbol, symbol.fields(), symbol.entries())[$locale] ?? {}
-		block_html({
-			code,
-			data
-		}).then((res) => {
-			componentCode = res
+		// Get fields and entries directly from collections instead of relationship methods
+		const fields = SiteSymbolFields.list({ filter: `symbol = "${symbol.id}"` })
+		const entries = $derived.by(() => {
+			if (!fields.length) return []
+			const filter = fields.map((f) => `field = "${f.id}"`).join(' || ')
+			return SiteSymbolEntries.list({ filter })
+		})
+		const data = $derived(getContent(symbol, fields, entries)[$locale] ?? {})
+
+		$effect(() => {
+			block_html({
+				code,
+				data
+			}).then((res) => {
+				componentCode = res
+			})
 		})
 	})
 
@@ -135,36 +147,19 @@
 				<MenuPopup
 					icon="carbon:overflow-menu-vertical"
 					options={[
-						// $userRole === 'DEV'
-						...(true
-							? [
-									{
-										label: 'Edit Block',
-										icon: 'material-symbols:code',
-										on_click: () => dispatch('edit')
-									},
-									{
-										label: 'Duplicate',
-										icon: 'bxs:duplicate',
-										on_click: () => dispatch('duplicate')
-									}
-								]
-							: []),
 						{
-							label: 'Rename',
-							icon: 'ic:baseline-edit',
-							on_click: toggle_name_input
-						},
-						{
-							label: 'Download',
-							icon: 'ic:baseline-download',
-							on_click: () => dispatch('download')
+							label: 'Edit',
+							icon: 'clarity:edit-solid',
+							on_click: () => {
+								dispatch('edit')
+							}
 						},
 						{
 							label: 'Delete',
 							icon: 'ic:outline-delete',
-							is_danger: true,
-							on_click: () => dispatch('delete')
+							on_click: () => {
+								dispatch('delete')
+							}
 						}
 					]}
 				/>
@@ -175,20 +170,11 @@
 	<div class="symbol-container" class:disabled={component_error} bind:this={element} data-test-id="symbol-{symbol.id}">
 		{#if component_error}
 			<div class="error">
-				<Icon icon="heroicons:no-symbol-16-solid" />
+				<!-- <Icon icon="heroicons:no-symbol-16-solid" /> -->
 			</div>
 		{:else if componentCode}
 			<div class="symbol">
-				{#key componentCode}
-					<IFrame
-						bind:height
-						{append}
-						componentCode={{
-							...componentCode,
-							head
-						}}
-					/>
-				{/key}
+				<IFrame bind:height {append} {componentCode} />
 			</div>
 		{/if}
 	</div>

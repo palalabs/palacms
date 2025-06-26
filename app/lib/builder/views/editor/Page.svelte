@@ -20,7 +20,9 @@
 
 	const site = $derived(Sites.one(page.site))
 	const page_type = $derived(page.page_type ? PageTypes.one(page.page_type) : null)
-	const page_type_sections = $derived(page_type?.sections() || [])
+	// Get page type sections directly from collection instead of relationship
+	const all_page_type_sections = $derived(PageTypeSections.list())
+	const page_type_sections = $derived(page_type ? all_page_type_sections.filter((s) => s.page_type === page_type.id) : [])
 
 	// Group page type sections by zone
 	const header_sections = $derived(page_type_sections.filter((s) => s.zone === 'header'))
@@ -28,9 +30,12 @@
 	const page_type_body_sections = $derived(page_type_sections.filter((s) => s.zone === 'body' || !s.zone))
 
 	// Check if page type is static (no symbols toggled)
+	// Note: This might need to be updated to use direct collection access too if needed
 	const is_static_page_type = $derived(page_type ? (page_type.symbols() || []).length === 0 : false)
 
-	const sections = $derived(page.sections())
+	// Get page sections directly from collection instead of relationship
+	const all_page_sections = $derived(PageSections.list())
+	const sections = $derived(all_page_sections.filter((s) => s.page === page.id))
 
 	// Fade in page when all components mounted
 	let page_mounted = $state(false)
@@ -52,19 +57,15 @@
 	}
 
 	async function repair_section_indices() {
-		console.log('Repairing section indices...')
 		// Just use the current order of sections and assign consecutive indices
 		for (let i = 0; i < sections.length; i++) {
 			if (sections[i].index !== i) {
-				console.log(`Updating section ${sections[i].id} index from ${sections[i].index} to ${i}`)
 				await PageSections.update(sections[i].id, { index: i })
 			}
 		}
 	}
 
 	async function add_section_to_page({ symbol, position }) {
-		console.log('add_section_to_page called', { position, sections_count: sections.length, palette_sections_count: palette_sections.length })
-
 		// Check if indices need repair
 		const has_incorrect_indices = sections.some((section, i) => section.index !== i)
 		if (has_incorrect_indices) {
@@ -72,15 +73,7 @@
 		}
 
 		// Adjust indices of existing sections that come after the insertion position
-		console.log(
-			'All sections before filtering:',
-			sections.map((s) => ({ id: s.id, index: s.index }))
-		)
 		const existing_sections = sections.filter((section) => section.index >= position)
-		console.log(
-			'Sections to update:',
-			existing_sections.map((s) => ({ id: s.id, current_index: s.index, new_index: s.index + 1 }))
-		)
 
 		for (const section of existing_sections) {
 			await PageSections.update(section.id, { index: section.index + 1 })
@@ -94,8 +87,6 @@
 		})
 		await PageSections.commit()
 
-		console.log('Created new section', { id: new_section.id, position })
-
 		// Add to newly added sections for animation
 		newly_added_sections.add(new_section.id)
 
@@ -108,15 +99,12 @@
 	}
 
 	async function remove_section_from_page(section_id) {
-		console.log({ section_id })
 		const section_to_delete = sections.find((s) => s.id === section_id)
 		if (!section_to_delete) return
 
 		// Adjust indices of remaining sections that come after the deleted section
 		const sections_to_update = sections.filter((section) => section.index > section_to_delete.index)
-		console.log({ sections, section_to_delete, sections_to_update })
 		for (const section of sections_to_update) {
-			console.log(section.id, { index: section.index, newindex: section.index - 1 })
 			await PageSections.update(section.id, { index: section.index - 1 })
 		}
 
@@ -139,7 +127,6 @@
 	let hovering_toolbar = $state(false)
 
 	async function show_block_toolbar() {
-		console.log('show_block_toolbar called', { showing_block_toolbar, hovered_section_id, hovered_block_el: !!hovered_block_el })
 		// Clear any pending hide timeout
 		if (hide_toolbar_timeout) {
 			clearTimeout(hide_toolbar_timeout)
@@ -177,7 +164,6 @@
 	let hide_toolbar_timeout = null
 
 	async function hide_block_toolbar() {
-		console.log('hide_block_toolbar called', { hovering_toolbar })
 		// Clear any existing timeout
 		if (hide_toolbar_timeout) {
 			clearTimeout(hide_toolbar_timeout)
@@ -231,7 +217,6 @@
 	}
 
 	function hide_drop_indicator() {
-		console.log('hide_drop_indicator called', { showing_drop_indicator, drop_indicator_element: !!drop_indicator_element })
 		showing_drop_indicator = false
 		if (page_el) {
 			page_el.removeEventListener('scroll', position_drop_indicator)
@@ -292,7 +277,6 @@
 				)
 			},
 			async onDrag({ self, source }) {
-				console.log('Fallback onDrag triggered', { dragging_over_section, sections_count: sections.length })
 				// Clear any pending drag leave timeout since we're still dragging
 				if (drag_leave_timeout) {
 					clearTimeout(drag_leave_timeout)
@@ -337,7 +321,6 @@
 				}
 			},
 			onDragLeave({ source }) {
-				console.log('Fallback onDragLeave')
 				// Use a timeout to avoid hiding the indicator when briefly leaving the area
 				// but still dragging over a valid drop target
 				drag_leave_timeout = setTimeout(() => {
@@ -345,7 +328,6 @@
 				}, 100)
 			},
 			async onDrop({ source }) {
-				console.log('Fallback onDrop', { dragging_over_section })
 				// Immediately hide drop indicator
 				hide_drop_indicator()
 
@@ -356,7 +338,6 @@
 				}
 
 				if (dragging_over_section) {
-					console.log('Fallback onDrop early return due to dragging_over_section')
 					return // prevent double-adding block
 				}
 				const block_being_dragged = source.data.block
@@ -408,7 +389,6 @@
 				}
 			},
 			onDragEnter() {
-				console.log('Section onDragEnter')
 				// Clear any pending drag leave timeout since we're entering a valid drop target
 				if (drag_leave_timeout) {
 					clearTimeout(drag_leave_timeout)
@@ -417,7 +397,6 @@
 				dragging_over_section = true
 			},
 			onDragLeave() {
-				console.log('drag_item onDragLeave')
 				dragging_over_section = false
 				// Use a timeout to avoid hiding the indicator when briefly leaving the area
 				// but still dragging over a valid drop target
@@ -426,7 +405,6 @@
 				}, 100)
 			},
 			async onDrop({ self, source }) {
-				console.log('drag_item onDrop called', { section_id: self.data.section.id, dragging_over_section })
 				// Immediately hide drop indicator
 				hide_drop_indicator()
 
@@ -439,32 +417,17 @@
 				const section_dragged_over_index = sections.find((s) => s.id === self.data.section.id).index
 				const block_being_dragged = source.data.block
 				const closestEdgeOfTarget = extractClosestEdge(self.data)
-				console.log('drag_item onDrop details', { section_dragged_over_index, closestEdgeOfTarget })
 
 				if (closestEdgeOfTarget === 'top') {
-					console.log('Inserting BEFORE section at index', section_dragged_over_index)
-					const new_section_id = await add_section_to_page({
+					await add_section_to_page({
 						symbol: block_being_dragged,
 						position: section_dragged_over_index
 					})
-					// const new_section_el = page_el.querySelector(`[data-section="${new_section_id}"]`)
-					// new_section_el.scrollIntoView({
-					// 	behavior: 'smooth',
-					// 	block: 'center',
-					// 	inline: 'center'
-					// })
 				} else if (closestEdgeOfTarget === 'bottom') {
-					console.log('Inserting AFTER section at index', section_dragged_over_index)
-					const new_section_id = await add_section_to_page({
+					await add_section_to_page({
 						symbol: block_being_dragged,
 						position: section_dragged_over_index + 1
 					})
-					// const new_section_el = page_el.querySelector(`[data-section="${new_section_id}"]`)
-					// new_section_el.scrollIntoView({
-					// 	behavior: 'smooth',
-					// 	block: 'center',
-					// 	inline: 'center'
-					// })
 				}
 				reset_drag()
 				$dragging_symbol = false
@@ -552,10 +515,10 @@
 				hovered_section_id = null
 				hovered_block_el = null
 				page_el.removeEventListener('scroll', position_block_toolbar)
-				
+
 				// Check if this is a page type section or regular page section
-				const is_page_type_section = page_type_body_sections.some(s => s.id === section_id_to_delete)
-				
+				const is_page_type_section = page_type_body_sections.some((s) => s.id === section_id_to_delete)
+
 				if (is_page_type_section) {
 					// Delete from page type (affects all pages of this type)
 					await PageTypeSections.delete(section_id_to_delete)
@@ -570,16 +533,16 @@
 				if (!hovered_section_id) return
 				moving = true
 				hide_block_toolbar()
-				
+
 				// Check if this is a page type section or regular page section
-				const is_page_type_section = page_type_body_sections.some(s => s.id === hovered_section_id)
-				
+				const is_page_type_section = page_type_body_sections.some((s) => s.id === hovered_section_id)
+
 				if (is_page_type_section) {
 					// Move page type section
-					const section = page_type_body_sections.find(s => s.id === hovered_section_id)
+					const section = page_type_body_sections.find((s) => s.id === hovered_section_id)
 					if (!section) return
-					
-					const current_index = page_type_body_sections.findIndex(s => s.id === section.id)
+
+					const current_index = page_type_body_sections.findIndex((s) => s.id === section.id)
 					if (current_index > 0) {
 						const section_above = page_type_body_sections[current_index - 1]
 						await PageTypeSections.update(section.id, { index: current_index - 1 })
@@ -587,16 +550,16 @@
 					}
 				} else {
 					// Move regular page section
-					const section = sections.find(s => s.id === hovered_section_id)
+					const section = sections.find((s) => s.id === hovered_section_id)
 					if (!section || section.index === 0) return
-					
-					const section_above = sections.find(s => s.index === section.index - 1)
+
+					const section_above = sections.find((s) => s.index === section.index - 1)
 					if (!section_above) return
-					
+
 					await PageSections.update(section.id, { index: section.index - 1 })
 					await PageSections.update(section_above.id, { index: section.index })
 				}
-				
+
 				setTimeout(() => {
 					moving = false
 				}, 300)
@@ -605,16 +568,16 @@
 				if (!hovered_section_id) return
 				moving = true
 				hide_block_toolbar()
-				
+
 				// Check if this is a page type section or regular page section
-				const is_page_type_section = page_type_body_sections.some(s => s.id === hovered_section_id)
-				
+				const is_page_type_section = page_type_body_sections.some((s) => s.id === hovered_section_id)
+
 				if (is_page_type_section) {
 					// Move page type section
-					const section = page_type_body_sections.find(s => s.id === hovered_section_id)
+					const section = page_type_body_sections.find((s) => s.id === hovered_section_id)
 					if (!section) return
-					
-					const current_index = page_type_body_sections.findIndex(s => s.id === section.id)
+
+					const current_index = page_type_body_sections.findIndex((s) => s.id === section.id)
 					if (current_index < page_type_body_sections.length - 1) {
 						const section_below = page_type_body_sections[current_index + 1]
 						await PageTypeSections.update(section.id, { index: current_index + 1 })
@@ -622,16 +585,16 @@
 					}
 				} else {
 					// Move regular page section
-					const section = sections.find(s => s.id === hovered_section_id)
+					const section = sections.find((s) => s.id === hovered_section_id)
 					if (!section || section.index === sections.length - 1) return
-					
-					const section_below = sections.find(s => s.index === section.index + 1)
+
+					const section_below = sections.find((s) => s.index === section.index + 1)
 					if (!section_below) return
-					
+
 					await PageSections.update(section.id, { index: section.index + 1 })
 					await PageSections.update(section_below.id, { index: section.index })
 				}
-				
+
 				setTimeout(() => {
 					moving = false
 				}, 300)
