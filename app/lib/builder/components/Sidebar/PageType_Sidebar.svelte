@@ -4,6 +4,7 @@
 	import { goto } from '$app/navigation'
 	import { browser } from '$app/environment'
 	import UI from '../../ui/index.js'
+	// Icon component removed to prevent stack overflow issues
 	import Icon from '@iconify/svelte'
 	import BlockEditor from '$lib/builder/views/modal/BlockEditor.svelte'
 	import BlockPicker from '$lib/builder/views/modal/BlockPicker.svelte'
@@ -24,6 +25,9 @@
 	const page_type_id = $derived(page.params.page_type)
 	const site = $derived(Sites.one(site_id))
 	const page_type = $derived(PageTypes.list().find((page_type) => page_type.id === page_type_id))
+	const page_type_symbols = $derived(PageTypeSymbols.list({ filter: `page_type = "${page_type_id}"` }))
+	let site_symbols = $derived(SiteSymbols.list({ filter: `site = "${site_id}"` }))
+
 
 	// get the query param to set the tab when navigating from page (i.e. 'Edit Fields')
 	let active_tab = $state(page.url.searchParams.get('t') === 'p' ? 'CONTENT' : 'BLOCKS')
@@ -151,7 +155,7 @@
 			</Tabs.Trigger>
 		</Tabs.List>
 		<Tabs.Content value="blocks" class="px-1">
-			{#if Object.values(SiteSymbols.list().length > 0)}
+			{#if site_symbols.length > 0}
 				<div class="primo-buttons">
 					<button class="primo-button" onclick={show_block_picker}>
 						<Icon icon="mdi:plus" />
@@ -172,8 +176,8 @@
 				</div>
 				{#if $site_html !== null}
 					<div class="block-list">
-						{#each site?.symbols() ?? [] as symbol (symbol.id)}
-							{@const relation = page_type?.symbols().find((relation) => relation.symbol === symbol.id)}
+						{#each site_symbols as symbol (symbol.id)}
+							{@const relation = page_type_symbols.find((relation) => relation.symbol === symbol.id)}
 							{@const toggled = !!relation}
 							<div class="block" animate:flip={{ duration: 200 }} use:drag_target={symbol}>
 								<Sidebar_Symbol

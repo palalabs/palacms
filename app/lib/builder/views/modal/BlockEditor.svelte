@@ -36,9 +36,23 @@
 	const site_id = $derived(page.params.site)
 	const new_block = () => SiteSymbols.create({ css: '', html: '', js: '', name: 'New Block', site: site_id })
 	const block = $state(existing_block ?? new_block())
-	const fields = $derived(block?.fields() ?? [])
-	const entries = $derived(block?.entries() ?? [])
+	// Data will be loaded automatically by CollectionMapping system when accessed
+
+	// Get fields directly from collection to include staged changes
+	const fields = $derived(block ? SiteSymbolFields.list({ filter: `symbol = "${block.id}"` }) : [])
+	// Get entries directly from collection to include staged entries
+	const entries = $derived(block ? SiteSymbolEntries.list({ filter: `symbol = "${block.id}"` }) : [])
 	let component_data = $derived(getContent(block, fields, entries)[$locale] ?? {})
+
+	// Debug: log when fields change
+	$effect(() => {
+		console.log(
+			'Fields changed:',
+			fields.map((f) => ({ id: f.id, key: f.key, label: f.label }))
+		)
+	})
+
+	$inspect({ block, fields, entries })
 
 	let loading = false
 
@@ -79,7 +93,6 @@
 		js = block.js
 	})
 	$effect(() => {
-		SiteSymbols.update(block.id, { html, css, js })
 	})
 </script>
 
@@ -115,6 +128,7 @@
 						})
 					}}
 					oninput={(values) => {
+						console.log('oninput')
 						for (const [key, value] of Object.entries(values)) {
 							const field = fields.find((field) => field.key === key)
 							if (!field) {
@@ -123,6 +137,7 @@
 
 							const entry = entries.find((entry) => entry.field === field?.id)
 							if (entry) {
+								console.log({ entry, value })
 								SiteSymbolEntries.update(entry.id, { value })
 							} else {
 								SiteSymbolEntries.create({ field: field.id, locale: 'en', value })
@@ -130,6 +145,7 @@
 						}
 					}}
 					onchange={({ id, data }) => {
+						console.log('here', { id, data })
 						SiteSymbolFields.update(id, data)
 					}}
 				/>

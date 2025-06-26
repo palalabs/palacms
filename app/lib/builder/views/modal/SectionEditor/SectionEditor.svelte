@@ -33,9 +33,17 @@
 		}
 	}: { component: ObjectOf<typeof PageTypeSection> | ObjectOf<typeof PageSections>; tab: string; header?: any } = $props()
 
+	// Data will be loaded automatically by CollectionMapping system when accessed
+
 	const symbol = $derived(SiteSymbols.one(component.symbol))
-	const fields = $derived(symbol?.fields() ?? [])
-	const entries = $derived(component.entries())
+	// Get fields directly from collection to include staged changes
+	const fields = $derived(symbol ? SiteSymbolFields.list({ filter: `symbol = "${symbol.id}"` }) : [])
+
+	// Get entries directly from collections to include staged entries
+	const entries = $derived(
+		'page_type' in component ? PageTypeSectionEntries.list({ filter: `section = "${component.id}"` }) : 'page' in component ? PageSectionEntries.list({ filter: `section = "${component.id}"` }) : []
+	)
+
 	const component_data = $derived(getContent(component, fields, entries)[$locale] ?? {})
 
 	let loading = false
@@ -52,6 +60,7 @@
 		// }
 
 		if (!$has_error) {
+			SiteSymbols.update(symbol?.id, { html, css, js })
 			header.button.onclick()
 		}
 	}
@@ -66,11 +75,11 @@
 			js = symbol.js
 		}
 	})
-	$effect(() => {
-		if (symbol) {
-			SiteSymbols.update(symbol.id, { html, css, js })
-		}
-	})
+	// $effect(() => {
+	// 	if (symbol) {
+	// 		SiteSymbols.update(symbol.id, { html, css, js })
+	// 	}
+	// })
 </script>
 
 <Dialog.Header
