@@ -6,7 +6,7 @@
 	import UI from '../../ui/index.js'
 	import * as Dialog from '$lib/components/ui/dialog'
 	import SectionEditor from '$lib/builder/views/modal/SectionEditor/SectionEditor.svelte'
-	import ComponentNode from './Layout/ComponentNode-noicons.svelte'
+	import ComponentNode from './Layout/ComponentNode.svelte'
 	import BlockToolbar from './Layout/BlockToolbar-simple.svelte'
 	import DropIndicator from './Layout/DropIndicator.svelte'
 	import LockedOverlay from './Layout/LockedOverlay.svelte'

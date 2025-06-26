@@ -26,18 +26,16 @@
 			foot = site.foot
 		}
 	})
-	$effect(() => {
-		Sites.update(site_id, {
-			head,
-			foot
-		})
-	})
 
 	let disableSave = $state(false)
 
 	async function saveComponent() {
 		disableSave = true
 		try {
+			Sites.update(site_id, {
+				head,
+				foot
+			})
 			await Sites.commit()
 			await SiteFields.commit()
 			await SiteEntries.commit()
