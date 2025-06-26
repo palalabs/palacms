@@ -36,12 +36,9 @@
 	const site_id = $derived(page.params.site)
 	const new_block = () => SiteSymbols.create({ css: '', html: '', js: '', name: 'New Block', site: site_id })
 	const block = $state(existing_block ?? new_block())
-	// Data will be loaded automatically by CollectionMapping system when accessed
 
-	// Get fields directly from collection to include staged changes
-	const fields = $derived(block ? SiteSymbolFields.list({ filter: `symbol = "${block.id}"` }) : [])
-	// Get entries directly from collection to include staged entries
-	const entries = $derived(block ? SiteSymbolEntries.list({ filter: `symbol = "${block.id}"` }) : [])
+	const fields = $derived(block.fields())
+	const entries = $derived(block.entries())
 	let component_data = $derived(getContent(block, fields, entries)[$locale] ?? {})
 
 	// Debug: log when fields change
@@ -84,16 +81,9 @@
 		}
 	}
 
-	let html = $state('')
-	let css = $state('')
-	let js = $state('')
-	$effect.pre(() => {
-		html = block.html
-		css = block.css
-		js = block.js
-	})
-	$effect(() => {
-	})
+	let html = $state(block.html)
+	let css = $state(block.css)
+	let js = $state(block.js)
 </script>
 
 <Dialog.Header
@@ -112,7 +102,21 @@
 	<PaneGroup direction={$orientation} class="flex">
 		<Pane defaultSize={50}>
 			{#if tab === 'code'}
-				<FullCodeEditor bind:html bind:css bind:js data={component_data} on:save={save_component} on:mod-e={toggle_tab} />
+				<FullCodeEditor
+					bind:html
+					bind:css
+					bind:js
+					data={component_data}
+					on:save={save_component}
+					on:mod-e={toggle_tab}
+					oninput={() => {
+						SiteSymbols.update(block.id, {
+							html,
+							css,
+							js
+						})
+					}}
+				/>
 			{:else if tab === 'content'}
 				<Fields
 					entity={block}

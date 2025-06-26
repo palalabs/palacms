@@ -48,7 +48,7 @@
 	 */
 
 	/** @type {Props} */
-	let { data = {}, html = $bindable(''), css = $bindable(''), js = $bindable(''), onmod_e = () => {}, onmod_r = () => {} } = $props()
+	let { data = {}, html = $bindable(''), css = $bindable(''), js = $bindable(''), onmod_e = () => {}, onmod_r = () => {}, oninput = () => {} } = $props()
 
 	let html_pane = $state()
 	let css_pane = $state()
@@ -147,6 +147,7 @@
 					on:tab-switch={({ detail }) => toggleTab(detail)}
 					on:change={() => {
 						dispatch('htmlChange')
+						oninput()
 					}}
 					on:format={() => (showing_format_button = false)}
 					on:save
@@ -193,6 +194,7 @@
 					on:change={() => {
 						// showing_format_button = true
 						dispatch('cssChange')
+						oninput()
 					}}
 					on:mod-e
 					on:mod-r
@@ -243,6 +245,7 @@
 					on:change={() => {
 						// showing_format_button = true
 						dispatch('jsChange')
+						oninput()
 					}}
 					on:mod-e
 					on:mod-r
