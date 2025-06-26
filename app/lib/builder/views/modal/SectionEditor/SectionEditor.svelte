@@ -36,14 +36,8 @@
 	// Data will be loaded automatically by CollectionMapping system when accessed
 
 	const symbol = $derived(SiteSymbols.one(component.symbol))
-	// Get fields directly from collection to include staged changes
-	const fields = $derived(symbol ? SiteSymbolFields.list({ filter: `symbol = "${symbol.id}"` }) : [])
-
-	// Get entries directly from collections to include staged entries
-	const entries = $derived(
-		'page_type' in component ? PageTypeSectionEntries.list({ filter: `section = "${component.id}"` }) : 'page' in component ? PageSectionEntries.list({ filter: `section = "${component.id}"` }) : []
-	)
-
+	const fields = $derived(symbol?.fields() ?? [])
+	const entries = $derived('page_type' in component ? component.entries() : 'page' in component ? component.entries() : [])
 	const component_data = $derived(getContent(component, fields, entries)[$locale] ?? {})
 
 	let loading = false
@@ -59,27 +53,24 @@
 		// 	await refresh_preview()
 		// }
 
-		if (!$has_error) {
-			SiteSymbols.update(symbol?.id, { html, css, js })
+		if (!$has_error && symbol) {
+			SiteSymbols.update(symbol.id, { html, css, js })
+			SiteSymbols.commit()
+			SiteSymbolFields.commit()
+
+			if ('page_type' in component) {
+				PageTypeSectionEntries.commit()
+			} else if ('page' in component) {
+				PageSectionEntries.commit()
+			}
+
 			header.button.onclick()
 		}
 	}
 
-	let html = $state('')
-	let css = $state('')
-	let js = $state('')
-	$effect.pre(() => {
-		if (symbol) {
-			html = symbol.html
-			css = symbol.css
-			js = symbol.js
-		}
-	})
-	// $effect(() => {
-	// 	if (symbol) {
-	// 		SiteSymbols.update(symbol.id, { html, css, js })
-	// 	}
-	// })
+	let html = $state(symbol?.html ?? '')
+	let css = $state(symbol?.css ?? '')
+	let js = $state(symbol?.js ?? '')
 </script>
 
 <Dialog.Header
@@ -98,7 +89,18 @@
 	<PaneGroup direction={$orientation} class="flex gap-1">
 		<Pane defaultSize={50} class="flex flex-col">
 			{#if tab === 'code'}
-				<FullCodeEditor bind:html bind:css bind:js data={component_data} on:save={save_component} on:mod-e={toggle_tab} on:mod-r={() => $refresh_preview()} />
+				<FullCodeEditor
+					bind:html
+					bind:css
+					bind:js
+					data={component_data}
+					on:save={save_component}
+					on:mod-e={toggle_tab}
+					on:mod-r={() => $refresh_preview()}
+					oninput={() => {
+						SiteSymbols.update(symbol.id, { html, css, js })
+					}}
+				/>
 			{:else if tab === 'content'}
 				<Fields
 					id="section-{component.id}"
