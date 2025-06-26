@@ -3,6 +3,7 @@ import type { z } from 'zod'
 import { self } from './PocketBase'
 import { SvelteMap } from 'svelte/reactivity'
 import { customAlphabet } from 'nanoid'
+import { untrack } from 'svelte'
 
 export type ListOptions = {
 	sort?: string
@@ -48,49 +49,81 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 	const staged = new SvelteMap<string, StagedOperation<T>>()
 	const records = new SvelteMap<string, T | undefined>()
 	const lists = new SvelteMap<string, string[] | undefined>()
+	// Add a reactive signal to trigger updates when async loading completes
+	const loadingComplete = new SvelteMap<string, number>()
+	
+	const refreshLists = () => {
+		lists.clear()
+	}
 	const mapObject = (record: unknown): MappedObject<T, Options> => {
 		const object = model.parse(record)
 		const links = Object.fromEntries(Object.entries(options?.links ?? {}).map(([property, factory]) => [property, factory.bind({ ...object, collection: collectionMapping })]))
 		return Object.assign(object, links, { collection: collectionMapping })
 	}
 
+
 	const collectionMapping: CollectionMapping<T, Options> = {
 		one: (id) => {
-			$effect.pre(() => {
-				if (!records.has(id) && !staged.has(id)) {
-					records.set(id, undefined)
-					collection.getOne(id).then((record) => {
-						records.set(id, record as unknown as T)
-					})
-				}
-			})
-
-			let data = records.get(id)
+			// Check loading complete signal for this record to trigger reactivity
+			loadingComplete.get(`record-${id}`)
+			
 			const operation = staged.get(id)
+			let data = untrack(() => records.get(id))
+			
 			if (operation?.operation === 'delete') {
 				return undefined
 			} else if (operation) {
 				data = Object.assign({}, data, operation.data)
 			} else if (!data) {
+				// If no cached record exists, start loading it
+				if (!untrack(() => records.has(id))) {
+					untrack(() => {
+						records.set(id, undefined)
+						collection.getOne(id).then((record) => {
+							records.set(id, record as unknown as T)
+							// Signal completion for individual records too
+							loadingComplete.set(`record-${id}`, Date.now())
+						}).catch((error) => {
+							// Record doesn't exist, remove from cache
+							records.delete(id)
+							loadingComplete.set(`record-${id}`, Date.now())
+						})
+					})
+				}
 				return undefined
 			}
 			return mapObject(data)
 		},
 		list: (options) => {
 			const listId = JSON.stringify(options ?? {})
-			$effect.pre(() => {
-				if (!lists.has(listId)) {
-					lists.set(listId, undefined)
-					collection.getFullList({ ...options, fields: 'id' }).then((records) => {
-						lists.set(
-							listId,
-							records.map(({ id }) => id)
-						)
+			
+			// Check loading complete signal to trigger reactivity when async loading finishes
+			loadingComplete.get(listId)
+			
+			let list = [...(untrack(() => lists.get(listId)) ?? [])]
+			
+			// If no cached list exists, start loading it
+			if (!untrack(() => lists.has(listId))) {
+				untrack(() => {
+					lists.set(listId, [])
+					collection.getFullList(options).then((fetchedRecords) => {
+						// Store the full records
+						fetchedRecords.forEach((record) => {
+							records.set(record.id, record as unknown as T)
+						})
+						// Store the list of IDs
+						lists.set(listId, fetchedRecords.map(({ id }) => id))
+						// Signal that loading is complete to trigger reactivity
+						loadingComplete.set(listId, Date.now())
+					}).catch((error) => {
+						lists.set(listId, [])
+						// Signal that loading is complete even on error
+						loadingComplete.set(listId, Date.now())
 					})
-				}
-			})
-
-			const list = lists.get(listId) ?? []
+				})
+				return [] // Return empty array while loading
+			}
+			
 			for (const [id] of staged) {
 				if (!list.includes(id)) {
 					list.push(id)
@@ -108,7 +141,11 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 		update: (id, values) => {
 			let operation = staged.get(id)
 			if (operation && operation.operation !== 'delete') {
-				Object.assign(operation.data, values)
+				// Create a new operation object to ensure reactivity
+				operation = { 
+					operation: operation.operation, 
+					data: { ...operation.data, ...values } 
+				}
 				staged.set(id, operation)
 			} else {
 				operation = { operation: 'update', data: values }
