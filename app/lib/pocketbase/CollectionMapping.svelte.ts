@@ -51,7 +51,7 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 	const lists = new SvelteMap<string, string[] | undefined>()
 	// Add a reactive signal to trigger updates when async loading completes
 	const loadingComplete = new SvelteMap<string, number>()
-	
+
 	const refreshLists = () => {
 		lists.clear()
 	}
@@ -61,15 +61,14 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 		return Object.assign(object, links, { collection: collectionMapping })
 	}
 
-
 	const collectionMapping: CollectionMapping<T, Options> = {
 		one: (id) => {
 			// Check loading complete signal for this record to trigger reactivity
 			loadingComplete.get(`record-${id}`)
-			
+
 			const operation = staged.get(id)
 			let data = untrack(() => records.get(id))
-			
+
 			if (operation?.operation === 'delete') {
 				return undefined
 			} else if (operation) {
@@ -79,15 +78,18 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 				if (!untrack(() => records.has(id))) {
 					untrack(() => {
 						records.set(id, undefined)
-						collection.getOne(id).then((record) => {
-							records.set(id, record as unknown as T)
-							// Signal completion for individual records too
-							loadingComplete.set(`record-${id}`, Date.now())
-						}).catch((error) => {
-							// Record doesn't exist, remove from cache
-							records.delete(id)
-							loadingComplete.set(`record-${id}`, Date.now())
-						})
+						collection
+							.getOne(id)
+							.then((record) => {
+								records.set(id, record as unknown as T)
+								// Signal completion for individual records too
+								loadingComplete.set(`record-${id}`, Date.now())
+							})
+							.catch((error) => {
+								// Record doesn't exist, remove from cache
+								records.delete(id)
+								loadingComplete.set(`record-${id}`, Date.now())
+							})
 					})
 				}
 				return undefined
@@ -96,34 +98,40 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 		},
 		list: (options) => {
 			const listId = JSON.stringify(options ?? {})
-			
+
 			// Check loading complete signal to trigger reactivity when async loading finishes
 			loadingComplete.get(listId)
-			
+
 			let list = [...(untrack(() => lists.get(listId)) ?? [])]
-			
+
 			// If no cached list exists, start loading it
 			if (!untrack(() => lists.has(listId))) {
 				untrack(() => {
 					lists.set(listId, [])
-					collection.getFullList(options).then((fetchedRecords) => {
-						// Store the full records
-						fetchedRecords.forEach((record) => {
-							records.set(record.id, record as unknown as T)
+					collection
+						.getFullList(options)
+						.then((fetchedRecords) => {
+							// Store the full records
+							fetchedRecords.forEach((record) => {
+								records.set(record.id, record as unknown as T)
+							})
+							// Store the list of IDs
+							lists.set(
+								listId,
+								fetchedRecords.map(({ id }) => id)
+							)
+							// Signal that loading is complete to trigger reactivity
+							loadingComplete.set(listId, Date.now())
 						})
-						// Store the list of IDs
-						lists.set(listId, fetchedRecords.map(({ id }) => id))
-						// Signal that loading is complete to trigger reactivity
-						loadingComplete.set(listId, Date.now())
-					}).catch((error) => {
-						lists.set(listId, [])
-						// Signal that loading is complete even on error
-						loadingComplete.set(listId, Date.now())
-					})
+						.catch((error) => {
+							lists.set(listId, [])
+							// Signal that loading is complete even on error
+							loadingComplete.set(listId, Date.now())
+						})
 				})
 				return [] // Return empty array while loading
 			}
-			
+
 			for (const [id] of staged) {
 				if (!list.includes(id)) {
 					list.push(id)
@@ -142,11 +150,18 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 			let operation = staged.get(id)
 			if (operation && operation.operation !== 'delete') {
 				// Create a new operation object to ensure reactivity
-				operation = { 
-					operation: operation.operation, 
-					data: { ...operation.data, ...values } 
-				}
-				staged.set(id, operation)
+				const updatedOperation =
+					// Separate (duplicate) cases for each operation type to satify TypeScript
+					operation.operation == 'create'
+						? {
+								operation: operation.operation,
+								data: { ...operation.data, ...values }
+							}
+						: {
+								operation: operation.operation,
+								data: { ...operation.data, ...values }
+							}
+				staged.set(id, updatedOperation)
 			} else {
 				operation = { operation: 'update', data: values }
 				staged.set(id, operation)
