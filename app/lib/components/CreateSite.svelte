@@ -145,7 +145,8 @@
 			PageTypeSections.create({
 				symbol: welcome_symbol.id,
 				index: 0,
-				page_type: page_type.id
+				page_type: page_type.id,
+				zone: 'body'
 			})
 
 			await Sites.commit()
