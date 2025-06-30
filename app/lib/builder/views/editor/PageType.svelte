@@ -86,10 +86,19 @@
 		}
 	}
 
+	let hide_toolbar_timeout = null
+
 	function hide_block_toolbar() {
-		if (!hovering_toolbar) {
-			showing_block_toolbar = false
+		// Clear any existing timeout
+		if (hide_toolbar_timeout) {
+			clearTimeout(hide_toolbar_timeout)
 		}
+		// Increase delay to prevent toolbar flicker when moving between sections
+		hide_toolbar_timeout = setTimeout(() => {
+			if (!hovering_toolbar) {
+				showing_block_toolbar = false
+			}
+		}, 300)
 	}
 
 	let editing_section_tab = $state('code')
@@ -225,7 +234,7 @@
 			onDrag({ source }) {
 				if (dragging_over_section) return // Don't interfere with section drops
 			},
-			onDrop({ source }) {
+			async onDrop({ source }) {
 				if (dragging_over_section || !page_type || !source.data.block) return
 
 				const block_being_dragged = source.data.block
@@ -238,7 +247,7 @@
 					index: zone_target_index,
 					zone: zone
 				})
-				PageTypeSections.commit()
+				await PageTypeSections.commit()
 			}
 		})
 	}
@@ -295,7 +304,7 @@
 					index: body_target_index,
 					zone: 'body'
 				})
-				PageTypeSections.commit()
+				await PageTypeSections.commit()
 				reset_drag()
 				active_drop_zone = null
 
@@ -334,7 +343,7 @@
 			onDragLeave() {
 				dragging_over_section = false
 			},
-			onDrop({ self, source }) {
+			async onDrop({ self, source }) {
 				if (!page_type || !source.data.block) return
 
 				const block_being_dragged = source.data.block
@@ -353,7 +362,7 @@
 					index: target_index,
 					zone: section_zone
 				})
-				PageTypeSections.commit()
+				await PageTypeSections.commit()
 			}
 		})
 	}
@@ -416,7 +425,7 @@
 			on:delete={async () => {
 				if (!hovered_section_id) return
 				PageTypeSections.delete(hovered_section_id)
-				PageTypeSections.commit()
+				await PageTypeSections.commit()
 			}}
 			on:edit-code={() => edit_component('code')}
 			on:edit-content={() => edit_component('content')}
@@ -501,8 +510,12 @@
 					}
 				}}
 				onmouseleave={() => {
+					// Only hide if we're not immediately entering another section
 					setTimeout(() => {
-						hide_block_toolbar()
+						// Check if we've hovered over a different section in the meantime
+						if (hovered_section_id === section.id) {
+							hide_block_toolbar()
+						}
 					}, 50)
 				}}
 				in:fade={{ duration: 100 }}
@@ -574,8 +587,12 @@
 					}
 				}}
 				onmouseleave={() => {
+					// Only hide if we're not immediately entering another section
 					setTimeout(() => {
-						hide_block_toolbar()
+						// Check if we've hovered over a different section in the meantime
+						if (hovered_section_id === section.id) {
+							hide_block_toolbar()
+						}
 					}, 50)
 				}}
 				in:fade={{ duration: 100 }}
@@ -644,8 +661,12 @@
 					}
 				}}
 				onmouseleave={() => {
+					// Only hide if we're not immediately entering another section
 					setTimeout(() => {
-						hide_block_toolbar()
+						// Check if we've hovered over a different section in the meantime
+						if (hovered_section_id === section.id) {
+							hide_block_toolbar()
+						}
 					}, 50)
 				}}
 				in:fade={{ duration: 100 }}

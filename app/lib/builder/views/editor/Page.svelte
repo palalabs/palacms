@@ -168,13 +168,13 @@
 		if (hide_toolbar_timeout) {
 			clearTimeout(hide_toolbar_timeout)
 		}
-		// Add a small delay to prevent hiding when quickly moving between sections
+		// Increase delay to prevent toolbar flicker when moving between sections
 		hide_toolbar_timeout = setTimeout(() => {
 			if (!hovering_toolbar) {
 				showing_block_toolbar = false
 				page_el.removeEventListener('scroll', position_block_toolbar)
 			}
-		}, 100)
+		}, 300)
 	}
 
 	////////////////////////////
@@ -648,7 +648,13 @@
 						}
 					}}
 					onmouseleave={() => {
-						hide_block_toolbar()
+						// Only hide if we're not immediately entering another section
+						setTimeout(() => {
+							// Check if we've hovered over a different section in the meantime
+							if (hovered_section_id === page_type_section.id) {
+								hide_block_toolbar()
+							}
+						}, 50)
 					}}
 					use:drag_item={page_type_section}
 				>
@@ -696,7 +702,13 @@
 					}
 				}}
 				onmouseleave={(e) => {
-					hide_block_toolbar()
+					// Only hide if we're not immediately entering another section
+					setTimeout(() => {
+						// Check if we've hovered over a different section in the meantime
+						if (hovered_section_id === section.id) {
+							hide_block_toolbar()
+						}
+					}, 50)
 				}}
 				animate:flip={{ duration: 100 }}
 				use:drag_item={section}
