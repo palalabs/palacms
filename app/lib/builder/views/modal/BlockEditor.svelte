@@ -152,6 +152,9 @@
 						console.log('here', { id, data })
 						SiteSymbolFields.update(id, data)
 					}}
+					ondelete={(field_id) => {
+						SiteSymbolFields.delete(field_id)
+					}}
 				/>
 			{/if}
 		</Pane>

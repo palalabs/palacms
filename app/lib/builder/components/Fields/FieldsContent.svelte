@@ -15,7 +15,8 @@
 		entries,
 		create_field,
 		oninput,
-		onchange
+		onchange,
+		ondelete
 	}: {
 		entity: Entity
 		fields: Field[]
@@ -23,6 +24,7 @@
 		create_field: () => void
 		oninput: (values: Record<string, unknown>) => void
 		onchange: (details: { id: string; data: Partial<Field> }) => void
+		ondelete: (field_id: string) => void
 	} = $props()
 
 	$inspect({ entity, fields })
@@ -144,6 +146,7 @@
 								console.log('yeee alright')
 								onchange({ id: field.id, data })
 							}}
+							ondelete={() => ondelete(field.id)}
 						/>
 					</div>
 				{:else if active_tab === 'entry'}
