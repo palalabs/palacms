@@ -5,7 +5,7 @@ export const FieldBase = z.object({
 	key: z.string(),
 	label: z.string(),
 	type: z.string().nonempty(),
-	config: z.null()
+	config: z.any().nullable()
 })
 
 export type FieldBase = z.infer<typeof FieldBase>
