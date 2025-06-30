@@ -5,11 +5,7 @@ export const PageTypeSection = z.object({
 	page_type: z.string().nonempty(),
 	symbol: z.string().nonempty(),
 	index: z.number().int().nonnegative(),
-	zone: z.union([
-		z.enum(['header', 'body', 'footer']),
-		z.literal('').transform(() => undefined),
-		z.undefined()
-	]).optional()
+	zone: z.enum(['header', 'body', 'footer'])
 })
 
 export type PageTypeSection = z.infer<typeof PageTypeSection>
