@@ -35,6 +35,7 @@ export type CollectionMapping<T extends ObjectWithId, Options extends Collection
 	update: (id: string, values: Partial<T>) => MappedObject<T, Options>
 	delete: (id: string) => void
 	commit: () => Promise<void>
+	discard: () => void
 	authWithPassword: (usernameOrEmail: string, password: string) => Promise<RecordAuthResponse<MappedObject<T, Options>>>
 	requestPasswordReset: (email: string) => Promise<void>
 	confirmPasswordReset: (passwordResetToken: string, password: string, passwordConfirm: string) => Promise<void>
@@ -90,7 +91,7 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 		},
 		list: (options) => {
 			const listId = JSON.stringify(options ?? {})
-			const list = lists.get(listId) ?? []
+			const list = [...(lists.get(listId) ?? [])]
 
 			// If no cached list exists, start loading it
 			if (!lists.has(listId)) {
@@ -205,6 +206,9 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 			await Promise.all(promises)
 			staged.clear()
 			lists.clear()
+		},
+		discard: () => {
+			staged.clear()
 		},
 		authWithPassword: async (usernameOrEmail, password) => {
 			const response = await collection.authWithPassword(usernameOrEmail, password)

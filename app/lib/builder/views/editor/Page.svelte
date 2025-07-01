@@ -13,7 +13,7 @@
 	import { dropTargetForElements } from '$lib/builder/libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
 	import { attachClosestEdge, extractClosestEdge } from '$lib/builder/libraries/pragmatic-drag-and-drop-hitbox/closest-edge.js'
 	import { beforeNavigate } from '$app/navigation'
-	import { Pages, Sites, SiteSymbols, PageSections, PageTypes, PageTypeSections, PageSectionEntries } from '$lib/pocketbase/collections'
+	import { Pages, Sites, SiteSymbols, PageSections, PageTypes, PageTypeSections, PageSectionEntries, PageTypeSectionEntries, SiteSymbolFields } from '$lib/pocketbase/collections'
 	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
 
 	let { page }: { page: ObjectOf<typeof Pages> } = $props()
@@ -483,6 +483,14 @@
 	let hovered_section_id: string | null = $state(null)
 	let hovered_section = $derived(sections.find((s) => s.id === hovered_section_id) ?? page_type_body_sections.find((s) => s.id === hovered_section_id))
 	let editing_section = $state(false)
+	$effect(() => {
+		if (!editing_section) {
+			SiteSymbols.discard()
+			SiteSymbolFields.discard()
+			PageTypeSectionEntries.discard()
+			PageSectionEntries.discard()
+		}
+	})
 </script>
 
 {#if hovered_section}

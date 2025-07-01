@@ -17,17 +17,15 @@
 	import * as Tabs from '$lib/components/ui/tabs'
 	import { Cuboid, SquarePen } from 'lucide-svelte'
 	import { page } from '$app/state'
-	import { Sites, PageTypes, SiteSymbols, PageTypeSymbols } from '$lib/pocketbase/collections'
+	import { Sites, PageTypes, SiteSymbols, PageTypeSymbols, SiteSymbolFields, SiteSymbolEntries } from '$lib/pocketbase/collections'
 	import { site_html } from '$lib/builder/stores/app/page.js'
-	import { Symbol } from '$lib/common/models/Symbol.js'
 
 	const site_id = $derived(page.params.site)
 	const page_type_id = $derived(page.params.page_type)
 	const site = $derived(Sites.one(site_id))
-	const page_type = $derived(PageTypes.list().find((page_type) => page_type.id === page_type_id))
-	const page_type_symbols = $derived(PageTypeSymbols.list({ filter: `page_type = "${page_type_id}"` }))
-	let site_symbols = $derived(SiteSymbols.list({ filter: `site = "${site_id}"` }))
-
+	const page_type = $derived(PageTypes.one(page_type_id))
+	const page_type_symbols = $derived(page_type?.symbols() ?? [])
+	const site_symbols = $derived(site?.symbols() ?? [])
 
 	// get the query param to set the tab when navigating from page (i.e. 'Edit Fields')
 	let active_tab = $state(page.url.searchParams.get('t') === 'p' ? 'CONTENT' : 'BLOCKS')
@@ -88,6 +86,14 @@
 	let creating_block = $state(false)
 	let adding_block = $state(false)
 	let editing_page = $state(false)
+
+	$effect(() => {
+		if (!editing_block && !creating_block) {
+			SiteSymbols.discard()
+			SiteSymbolFields.discard()
+			SiteSymbolEntries.discard()
+		}
+	})
 </script>
 
 <Dialog.Root bind:open={editing_block}>

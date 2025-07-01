@@ -12,7 +12,7 @@
 	import { onNavigate } from '$app/navigation'
 	import { active_users } from '$lib/builder/stores/app/misc'
 	import { page as pageState } from '$app/state'
-	import { Sites, PageTypes } from '$lib/pocketbase/collections'
+	import { Sites, PageTypes, SiteEntries, SiteFields } from '$lib/pocketbase/collections'
 
 	import SiteEditor from '$lib/builder/views/modal/SiteEditor/SiteEditor.svelte'
 	import SitePages from '$lib/builder/views/modal/SitePages/SitePages.svelte'
@@ -39,6 +39,14 @@
 	let editing_page_types = $state(false)
 	let editing_collaborators = $state(false)
 
+	$effect(() => {
+		if (!editing_site) {
+			Sites.discard()
+			SiteFields.discard()
+			SiteEntries.discard()
+		}
+	})
+
 	// Close all dialogs on navigation
 	onNavigate(() => {
 		editing_pages = false
@@ -48,7 +56,7 @@
 
 <Dialog.Root bind:open={editing_site}>
 	<Dialog.Content class="z-[999] max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4">
-		<SiteEditor onClose={() => editing_site = false} />
+		<SiteEditor onClose={() => (editing_site = false)} />
 	</Dialog.Content>
 </Dialog.Root>
 

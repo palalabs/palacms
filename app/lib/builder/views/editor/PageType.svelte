@@ -13,7 +13,7 @@
 	import { locale } from '../../stores/app/misc.js'
 	import { dropTargetForElements } from '$lib/builder/libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
 	import { attachClosestEdge, extractClosestEdge } from '$lib/builder/libraries/pragmatic-drag-and-drop-hitbox/closest-edge.js'
-	import { PageTypes, PageTypeSections, PageTypeSymbols, SiteSymbols } from '$lib/pocketbase/collections'
+	import { PageTypes, PageTypeSectionEntries, PageTypeSections, PageTypeSymbols, SiteSymbolFields, SiteSymbols } from '$lib/pocketbase/collections'
 
 	import { page } from '$app/state'
 
@@ -373,6 +373,13 @@
 	})
 
 	let editing_section = $state(false)
+	$effect(() => {
+		if (!editing_section) {
+			SiteSymbols.discard()
+			SiteSymbolFields.discard()
+			PageTypeSectionEntries.discard()
+		}
+	})
 </script>
 
 <Dialog.Root bind:open={editing_section}>

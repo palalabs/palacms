@@ -55,7 +55,7 @@
 
 		if (!$has_error && symbol) {
 			SiteSymbols.update(symbol.id, { html, css, js })
-			SiteSymbols.commit()
+			await SiteSymbols.commit()
 			await SiteSymbolFields.commit()
 
 			if ('page_type' in component) {
