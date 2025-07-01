@@ -2,11 +2,11 @@
 	import * as _ from 'lodash-es'
 	import Card from '../ui/Card.svelte'
 	import { fieldTypes } from '../stores/app'
-	import { is_regex } from '../utils'
 	import type { Field } from '$lib/common/models/Field'
-	import { getResolvedEntries, type Entity } from '$lib/pocketbase/content'
+	import { getDirectEntries, type Entity } from '$lib/pocketbase/content'
+	import type { Entry } from '$lib/common/models/Entry'
 
-	const { entity, fields }: { entity: Entity; fields: Field[] } = $props()
+	const { entity, fields, entries, oninput }: { entity: Entity; entries: Entry[]; fields: Field[]; oninput: (values: Record<string, unknown>) => void } = $props()
 
 	function check_condition(field: Field) {
 		// TODO: Implement
@@ -39,16 +39,31 @@
 		{@const is_visible = check_condition(field)}
 		{@const is_valid = (field.key || field.type === 'info') && Field_Component}
 		{@const has_child_fields = field.type === 'repeater' || field.type === 'group'}
+		{@const content_entry = getDirectEntries(entity, field, entries)[0]}
 		{#if is_valid && is_visible}
 			<Card title={has_child_fields ? field.label : null} icon={field_type?.icon}>
 				<div class="field-item" id="field-{field.key}" class:repeater={field.key === 'repeater'}>
-					<Field_Component {entity} field={{ ...field, label: `${field.label} (PAGE FIELD)` }} />
+					<Field_Component
+						{entity}
+						field={{ ...field, label: `${field.label} (PAGE FIELD)` }}
+						entry={content_entry}
+						onchange={(value) => {
+							oninput({ [field.key]: value })
+						}}
+					/>
 				</div>
 			</Card>
 		{:else if is_valid && is_visible}
 			<Card title={has_child_fields ? field.label : null} icon={field_type?.icon}>
 				<div class="field-item" id="field-{field.key}" class:repeater={field.key === 'repeater'}>
-					<Field_Component {entity} {field} />
+					<Field_Component
+						{entity}
+						{field}
+						entry={content_entry}
+						onchange={(value) => {
+							oninput({ [field.key]: value })
+						}}
+					/>
 				</div>
 			</Card>
 		{:else if is_visible}

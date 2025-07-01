@@ -24,6 +24,8 @@
 	const page_type_id = $derived(page.params.page_type)
 	const site = $derived(Sites.one(site_id))
 	const page_type = $derived(PageTypes.one(page_type_id))
+	const fields = $derived(page_type?.fields() ?? [])
+	const entries = $derived(page_type?.entries() ?? [])
 	const page_type_symbols = $derived(page_type?.symbols() ?? [])
 	const site_symbols = $derived(site?.symbols() ?? [])
 
@@ -102,6 +104,8 @@
 			PageTypeEntries.discard()
 		}
 	})
+
+	let commit_task = $state<NodeJS.Timeout>()
 </script>
 
 <Dialog.Root bind:open={editing_block}>
@@ -252,7 +256,31 @@
 						<span>Edit Page Type</span>
 					</button>
 				{/if}
-				<Content entity={page_type} fields={page_type?.fields() || []} />
+				{#if page_type}
+					<Content
+						entity={page_type}
+						{fields}
+						{entries}
+						oninput={(values) => {
+							for (const [key, value] of Object.entries(values)) {
+								const field = fields?.find((field) => field.key === key)
+								if (!field) {
+									continue
+								}
+
+								const entry = entries?.find((entry) => entry.field === field?.id)
+								if (entry) {
+									PageTypeEntries.update(entry.id, { value })
+								} else {
+									PageTypeEntries.create({ field: field.id, locale: 'en', value })
+								}
+							}
+
+							clearTimeout(commit_task)
+							commit_task = setTimeout(() => PageTypeEntries.commit(), 500)
+						}}
+					/>
+				{/if}
 			</div>
 		</Tabs.Content>
 	</Tabs.Root>
