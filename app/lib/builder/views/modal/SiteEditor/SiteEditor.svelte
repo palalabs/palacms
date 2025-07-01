@@ -13,8 +13,8 @@
 
 	const site_id = page.params.site
 	const site = $derived(Sites.one(site_id))
-	const fields = $derived(site?.fields())
-	const entries = $derived(site?.entries())
+	const fields = $derived(site?.fields() ?? [])
+	const entries = $derived(site?.entries() ?? [])
 
 	setContext('hide_dynamic_field_types', true)
 

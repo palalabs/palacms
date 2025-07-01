@@ -23,11 +23,11 @@
 	const slug = $derived(pageState.params.page)
 	const site = $derived(Sites.one(site_id))
 	// Use direct collection queries instead of broken site.pages()
-	const page = $derived(slug ? Pages.list({ filter: `site = "${site_id}" && slug = "${slug}"` })[0] : site?.homepage())
+	const page = $derived(slug ? Pages.list({ filter: `site = "${site_id}" && slug = "${slug}"` })?.[0] : site?.homepage())
 	const page_type = $derived(page && PageTypes.one(page.page_type))
 
 	// Get symbols directly instead of using page_type.symbols()
-	let page_type_symbols = $derived(page_type ? PageTypeSymbols.list({ filter: `page_type = "${page_type.id}"` }) : [])
+	let page_type_symbols = $derived(page_type?.symbols() ?? [])
 	let has_symbols = $derived(!!page_type_symbols?.length)
 
 	$effect(() => {

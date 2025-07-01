@@ -17,7 +17,7 @@
 	const dispatch = createEventDispatcher()
 
 	// set page type equal to the last type used under this parent
-	const default_page_type_id = $derived(parent?.children()[0]?.page_type ?? site?.page_types()[0]?.id ?? '')
+	const default_page_type_id = $derived(parent?.children()?.[0]?.page_type ?? site?.page_types()?.[0]?.id ?? '')
 
 	let new_page = $state<Omit<Page, 'id' | 'parent' | 'site'>>({
 		name: '',

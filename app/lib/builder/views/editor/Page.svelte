@@ -28,9 +28,9 @@
 	const page_type_body_sections = $derived(page_type_sections.filter((s) => s.zone === 'body'))
 
 	// Check if page type is static (no symbols toggled)
-	const is_static_page_type = $derived(page_type ? page_type.symbols().length === 0 : false)
+	const is_static_page_type = $derived(page_type ? page_type.symbols()?.length === 0 : false)
 
-	const sections = $derived(page.sections())
+	const sections = $derived(page.sections() ?? [])
 
 	// Fade in page when all components mounted
 	let page_mounted = $state(false)

@@ -27,7 +27,7 @@
 		// TODO: Implement
 	}
 
-	let selected_group_id = $state(LibrarySymbolGroups.list()[0]?.id ?? '')
+	let selected_group_id = $state(LibrarySymbolGroups.list()?.[0]?.id ?? '')
 
 	let is_popover_open = $state(false)
 	let added_to_library = $state(false)
@@ -61,7 +61,7 @@
 						<p class="text-muted-foreground text-sm">Select a group for this block</p>
 					</div>
 					<RadioGroup.Root bind:value={selected_group_id}>
-						{#each LibrarySymbolGroups.list() as group}
+						{#each LibrarySymbolGroups.list() ?? [] as group}
 							<div class="flex items-center space-x-2">
 								<RadioGroup.Item value={group.id} id={group.id} />
 								<Label for={group.id}>{group.name}</Label>

@@ -13,7 +13,7 @@
 	}
 
 	const { entity, field }: { entity: Entity; field: ImageField } = $props()
-	const entry = $derived(getDirectEntries(entity, field)[0])
+	const entry = $derived(getDirectEntries(entity, field, [])[0])
 
 	async function upload_image(image) {
 		loading = true

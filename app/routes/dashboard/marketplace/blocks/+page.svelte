@@ -16,8 +16,8 @@
 
 	const group_id = $derived(page.url.searchParams.get('group') ?? undefined)
 	const marketplace_symbol_group = $derived(group_id ? LibrarySymbolGroups.from(marketplace).one(group_id) : undefined)
-	const marketplace_symbols = $derived(marketplace_symbol_group?.symbols())
-	const library_symbol_groups = $derived(LibrarySymbolGroups.list())
+	const marketplace_symbols = $derived(marketplace_symbol_group?.symbols() ?? [])
+	const library_symbol_groups = $derived(LibrarySymbolGroups.list() ?? [])
 
 	let design_variables_css = ''
 
@@ -44,7 +44,7 @@
 		} else return ''
 	}
 
-	let selected_group_id = $state(LibrarySymbolGroups.list()[0]?.id ?? '')
+	let selected_group_id = $state(LibrarySymbolGroups.list()?.[0]?.id ?? '')
 
 	let is_popover_open = $state(false)
 	let added_to_library = $state(false)

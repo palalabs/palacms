@@ -13,7 +13,7 @@
 	import { locale } from '../../stores/app/misc.js'
 	import { dropTargetForElements } from '$lib/builder/libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
 	import { attachClosestEdge, extractClosestEdge } from '$lib/builder/libraries/pragmatic-drag-and-drop-hitbox/closest-edge.js'
-	import { PageTypes, PageTypeSectionEntries, PageTypeSections, PageTypeSymbols, SiteSymbolFields, SiteSymbols } from '$lib/pocketbase/collections'
+	import { PageTypes, PageTypeSectionEntries, PageTypeSections, PageTypeSymbols, Sites, SiteSymbolFields, SiteSymbols } from '$lib/pocketbase/collections'
 
 	import { page } from '$app/state'
 
@@ -21,9 +21,10 @@
 	const page_type_id = $derived(page.params.page_type)
 	const page_type = $derived(PageTypes.one(page_type_id))
 
-	const page_type_sections = $derived(PageTypeSections.list({ filter: `page_type = "${page_type_id}"` }))
-	const page_type_symbols = $derived(PageTypeSymbols.list({ filter: `page_type = "${page_type_id}"` }))
-	const site_symbols = $derived(SiteSymbols.list({ filter: `site = "${site_id}"` }))
+	const site = $derived(Sites.one(site_id))
+	const site_symbols = $derived(site?.symbols() ?? [])
+	const page_type_sections = $derived(page_type?.sections() ?? [])
+	const page_type_symbols = $derived(page_type?.symbols() ?? [])
 
 	// Group sections by zone
 	const header_sections = $derived(page_type_sections.filter((s) => s.zone === 'header'))

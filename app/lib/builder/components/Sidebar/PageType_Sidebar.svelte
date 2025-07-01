@@ -72,7 +72,7 @@
 				const closestEdgeOfTarget = extractClosestEdge(self.data)
 				const block_dragged_over = self.data.block
 				const block_being_dragged = source.data.block
-				const block_dragged_over_index = SiteSymbols.list().findIndex((symbol) => symbol.id === block_dragged_over.id)
+				const block_dragged_over_index = site_symbols.findIndex((symbol) => symbol.id === block_dragged_over.id)
 				const target_index = closestEdgeOfTarget === 'top' ? block_dragged_over_index : block_dragged_over_index + 1
 				// TODO: reconfigure
 				// data.symbols = [

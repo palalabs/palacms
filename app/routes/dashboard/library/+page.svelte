@@ -20,12 +20,11 @@
 	import { goto } from '$app/navigation'
 	import { useSidebar } from '$lib/components/ui/sidebar'
 	import { LibrarySymbolGroups, LibrarySymbols } from '$lib/pocketbase/collections'
-	import { user } from '$lib/pocketbase/PocketBase'
 	import type { LibrarySymbol } from '$lib/common/models/LibrarySymbol'
 
 	const active_symbol_group_id = $derived(page.url.searchParams.get('group'))
 	const active_symbol_group = $derived(active_symbol_group_id ? LibrarySymbolGroups.one(active_symbol_group_id) : undefined)
-	const symbol_groups = $derived(LibrarySymbolGroups.list())
+	const symbol_groups = $derived(LibrarySymbolGroups.list() ?? [])
 
 	// Get symbols for the active group using direct query instead of relationship method
 	const group_symbols = $derived(active_symbol_group?.symbols() ?? [])

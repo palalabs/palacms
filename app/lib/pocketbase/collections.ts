@@ -19,7 +19,7 @@ import { SiteSymbol } from '$lib/common/models/SiteSymbol'
 import { SiteSymbolEntry } from '$lib/common/models/SiteSymbolEntry'
 import { SiteSymbolField } from '$lib/common/models/SiteSymbolField'
 import { User } from '$lib/common/models/User'
-import { createCollectionMapping } from './CollectionMapping.svelte'
+import { createCollectionMapping, type ObjectOf } from './CollectionMapping.svelte'
 
 export const Users = createCollectionMapping('users', User, {
 	links: {
@@ -43,9 +43,13 @@ export const LibrarySymbols = createCollectionMapping('library_symbols', Library
 			return LibrarySymbolFields.from(this.collection.instance).list({ filter: `symbol = "${this.id}"` })
 		},
 		entries() {
-			return LibrarySymbolFields.from(this.collection.instance)
-				.list({ filter: `symbol = "${this.id}"` })
-				.flatMap((field) => field.entries())
+			const fields = LibrarySymbolFields.from(this.collection.instance).list({ filter: `symbol = "${this.id}"` })
+			if (!fields) return undefined
+
+			const entryLists = fields.map((field) => field.entries())
+			if (entryLists.some((list) => list === undefined)) return undefined
+
+			return entryLists.filter((list) => list !== undefined).flat()
 		}
 	}
 })
@@ -79,9 +83,13 @@ export const Sites = createCollectionMapping('sites', Site, {
 			return SiteFields.from(this.collection.instance).list({ filter: `site = "${this.id}"` })
 		},
 		entries() {
-			return SiteFields.from(this.collection.instance)
-				.list({ filter: `site = "${this.id}"` })
-				.flatMap((field) => field.entries())
+			const fields = SiteFields.from(this.collection.instance).list({ filter: `site = "${this.id}"` })
+			if (!fields) return undefined
+
+			const entryLists = fields.map((field) => field.entries())
+			if (entryLists.some((list) => list === undefined)) return undefined
+
+			return entryLists.filter((list) => list !== undefined).flat()
 		},
 		page_types() {
 			return PageTypes.from(this.collection.instance).list({ filter: `site = "${this.id}"` })
@@ -90,7 +98,7 @@ export const Sites = createCollectionMapping('sites', Site, {
 			return Pages.from(this.collection.instance).list({ filter: `site = "${this.id}"` })
 		},
 		homepage() {
-			return Pages.from(this.collection.instance).list({ filter: `site = "${this.id}" && parent = ''` })[0]
+			return Pages.from(this.collection.instance).list({ filter: `site = "${this.id}" && parent = ''` })?.[0]
 		}
 	}
 })
@@ -113,9 +121,13 @@ export const SiteSymbols = createCollectionMapping('site_symbols', SiteSymbol, {
 			return SiteSymbolFields.from(this.collection.instance).list({ filter: `symbol = "${this.id}"` })
 		},
 		entries() {
-			return SiteSymbolFields.from(this.collection.instance)
-				.list({ filter: `symbol = "${this.id}"` })
-				.flatMap((field) => field.entries())
+			const fields = SiteSymbolFields.from(this.collection.instance).list({ filter: `symbol = "${this.id}"` })
+			if (!fields) return undefined
+
+			const entryLists = fields.map((field) => field.entries())
+			if (entryLists.some((list) => list === undefined)) return undefined
+
+			return entryLists.filter((list) => list !== undefined).flat()
 		}
 	}
 })
@@ -144,9 +156,13 @@ export const PageTypes = createCollectionMapping('page_types', PageType, {
 			return PageTypeFields.from(this.collection.instance).list({ filter: `page_type = "${this.id}"` })
 		},
 		entries() {
-			return PageTypeFields.from(this.collection.instance)
-				.list({ filter: `page_type = "${this.id}"` })
-				.flatMap((field) => field.entries())
+			const fields = PageTypeFields.from(this.collection.instance).list({ filter: `page_type = "${this.id}"` })
+			if (!fields) return undefined
+
+			const entryLists = fields.map((field) => field.entries())
+			if (entryLists.some((list) => list === undefined)) return undefined
+
+			return entryLists.filter((list) => list !== undefined).flat()
 		}
 	}
 })

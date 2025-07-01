@@ -7,9 +7,10 @@
 	import { Sites, Pages } from '$lib/pocketbase/collections'
 
 	const site_id = $derived(page.params.site)
-	const all_pages = $derived(Pages.list({ filter: `site = "${site_id}"` }))
-	const home_page = $derived(all_pages.find((p) => p.parent === '' || !p.parent))
-	const child_pages = $derived(all_pages.filter((p) => p.parent === home_page?.id))
+	const site = $derived(Sites.one(site_id))
+	const all_pages = $derived(site?.pages() ?? [])
+	const home_page = $derived(site?.homepage())
+	const child_pages = $derived(home_page?.children() ?? [])
 
 	let creating_page = $state(false)
 </script>

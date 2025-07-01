@@ -22,7 +22,7 @@
 	/** @type {Props} */
 	let { symbol_id, preview = null, head = '' } = $props()
 
-	const symbol_groups = $derived(LibrarySymbolGroups.list())
+	const symbol_groups = $derived(LibrarySymbolGroups.list() ?? [])
 	const symbol = $derived(LibrarySymbols.one(symbol_id))
 
 	if (!preview) {

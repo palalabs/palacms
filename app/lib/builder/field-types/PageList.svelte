@@ -1,14 +1,9 @@
 <script>
-	import { page } from '$app/state'
-	import { createEventDispatcher } from 'svelte'
-	import { Sites } from '$lib/pocketbase/collections'
-	const dispatch = createEventDispatcher()
+	import { PageTypes } from '$lib/pocketbase/collections'
 
 	let { field, value } = $props()
 
-	const site_id = $derived(page.params.site)
-	const site = $derived(Sites.one(site_id))
-	const selected_page_type = $derived(site?.page_types().find((pt) => pt.id === field.options.page_type))
+	const selected_page_type = $derived(PageTypes.one(field.config.page_type))
 </script>
 
 {#if selected_page_type}

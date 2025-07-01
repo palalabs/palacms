@@ -8,7 +8,7 @@
 	const { entity, field }: { entity: Entity; field: PageField } = $props()
 	const site_id = page.params.site
 	const site = $derived(Sites.one(site_id))
-	const entry = $derived(getDirectEntries(entity, field)[0])
+	const entry = $derived(getDirectEntries(entity, field, [])[0])
 	const selectable_pages = $derived((site?.pages() ?? []).filter((p) => p.page_type === field.config.page_type))
 </script>
 

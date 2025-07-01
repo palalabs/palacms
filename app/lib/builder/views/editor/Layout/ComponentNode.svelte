@@ -33,7 +33,7 @@
 	import { component_iframe_srcdoc } from '$lib/builder/components/misc'
 	import { getContent } from '$lib/pocketbase/content'
 	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
-	import { SiteSymbols, type PageSections, type PageTypeSections } from '$lib/pocketbase/collections'
+	import { PageSectionEntries, PageTypeSectionEntries, SiteSymbolFields, SiteSymbols, type PageSections, type PageTypeSections } from '$lib/pocketbase/collections'
 
 	const lowlight = createLowlight(all)
 
@@ -44,8 +44,8 @@
 	let node = $state()
 
 	const fields = $derived(block.fields())
-	const entries = $derived('page_type' in section ? section.entries() : 'page' in section ? section.entries() : [])
-	const component_data = $derived(getContent(section, fields, entries)[$locale] ?? {})
+	const entries = $derived('page_type' in section ? section.entries() : 'page' in section ? section.entries() : undefined)
+	const component_data = $derived(fields && entries && (getContent(section, fields, entries)[$locale] ?? {}))
 
 	let floating_menu = $state()
 	let bubble_menu = $state()
@@ -456,11 +456,11 @@
 		}
 	}
 
-	let compiled_code = $state(null)
+	let compiled_code = $state<string>('')
 	$effect(() => {
-		if (block && !_.isEqual(compiled_code, block.html)) {
+		if (block && component_data && compiled_code !== block.html) {
 			generate_component_code(block)
-			compiled_code = _.cloneDeep(block.html)
+			compiled_code = block.html
 		}
 	})
 
@@ -587,7 +587,7 @@
 	// to prevent is_local_change from retriggering effect
 	explicitEffect(
 		() => {
-			if (setup_complete && !is_local_change) {
+			if (setup_complete && !is_local_change && component_data) {
 				send_component_to_iframe(generated_js, component_data)
 			}
 			is_local_change = false

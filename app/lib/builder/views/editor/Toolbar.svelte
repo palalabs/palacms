@@ -12,7 +12,7 @@
 	import { onNavigate } from '$app/navigation'
 	import { active_users } from '$lib/builder/stores/app/misc'
 	import { page as pageState } from '$app/state'
-	import { Sites, PageTypes, SiteEntries, SiteFields } from '$lib/pocketbase/collections'
+	import { Sites, PageTypes, SiteEntries, SiteFields, Pages } from '$lib/pocketbase/collections'
 
 	import SiteEditor from '$lib/builder/views/modal/SiteEditor/SiteEditor.svelte'
 	import SitePages from '$lib/builder/views/modal/SitePages/SitePages.svelte'
@@ -25,7 +25,7 @@
 	const page_slug = $derived(pageState.params.page || '')
 	const page_type_id = $derived(pageState.params.page_type)
 	const site = $derived(Sites.one(site_id))
-	const page = $derived(currentPage || site?.pages().find((p) => p.slug === page_slug))
+	const page = $derived(currentPage ?? (page_slug ? Pages.list({ filter: `site = "${site_id}" && slug = "${page_slug}"` })?.[0] : undefined))
 	const page_type = $derived(page_type_id && PageTypes.one(page_type_id))
 	const page_page_type = $derived(page && PageTypes.one(page.page_type))
 

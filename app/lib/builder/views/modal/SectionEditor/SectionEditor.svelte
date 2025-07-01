@@ -37,7 +37,7 @@
 
 	const symbol = $derived(SiteSymbols.one(component.symbol))
 	const fields = $derived(symbol?.fields() ?? [])
-	const entries = $derived('page_type' in component ? component.entries() : 'page' in component ? component.entries() : [])
+	const entries = $derived('page_type' in component ? (component.entries() ?? []) : 'page' in component ? (component.entries() ?? []) : [])
 	const component_data = $derived(getContent(component, fields, entries)[$locale] ?? {})
 
 	let loading = false

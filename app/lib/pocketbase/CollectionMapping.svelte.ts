@@ -30,7 +30,7 @@ export type StagedOperation<T extends ObjectWithId> =
 
 export type CollectionMapping<T extends ObjectWithId, Options extends CollectionMappingOptions<T>> = {
 	one: (id: string) => MappedObject<T, Options> | undefined
-	list: (options?: ListOptions) => MappedObjectList<T, Options>
+	list: (options?: ListOptions) => MappedObjectList<T, Options> | undefined
 	create: (values: Omit<T, 'id'> & { id?: string }) => MappedObject<T, Options>
 	update: (id: string, values: Partial<T>) => MappedObject<T, Options>
 	delete: (id: string) => void
@@ -91,12 +91,11 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 		},
 		list: (options) => {
 			const listId = JSON.stringify(options ?? {})
-			const list = [...(lists.get(listId) ?? [])]
 
 			// If no cached list exists, start loading it
 			if (!lists.has(listId)) {
 				untrack(() => {
-					lists.set(listId, [])
+					lists.set(listId, undefined)
 					collection
 						.getFullList(options)
 						.then((fetchedRecords) => {
@@ -114,16 +113,21 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 							lists.set(listId, [])
 						})
 				})
-				return [] // Return empty array while loading
 			}
 
+			const list = [...(lists.get(listId) ?? [])]
 			for (const [id] of staged) {
 				if (!list.includes(id)) {
 					list.push(id)
 				}
 			}
 
-			return list.map((id) => collectionMapping.one(id)).filter((object) => object !== undefined)
+			const objects = list.map((id) => collectionMapping.one(id))
+			if ((lists.get(listId) === undefined && objects.length === 0) || objects.some((object) => object === undefined)) {
+				return undefined
+			} else {
+				return objects.filter((object) => object !== undefined)
+			}
 		},
 		create: (values) => {
 			const id = generateId()

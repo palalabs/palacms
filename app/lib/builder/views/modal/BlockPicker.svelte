@@ -9,12 +9,13 @@
 	let { site, onsave } = $props()
 
 	let selected_symbol_group = $state<ObjectOf<typeof LibrarySymbolGroups> | null>(null)
-	let columns = $derived(
+	const symbols = $derived(selected_symbol_group?.symbols() ?? [])
+	const columns = $derived(
 		selected_symbol_group
 			? [
-					selected_symbol_group.symbols().slice((selected_symbol_group.symbols.length / 3) * 2, (selected_symbol_group.symbols.length / 3) * 3),
-					selected_symbol_group.symbols().slice(selected_symbol_group.symbols.length / 3, (selected_symbol_group.symbols.length / 3) * 2),
-					selected_symbol_group.symbols().slice(0, selected_symbol_group.symbols.length / 3)
+					symbols.slice((selected_symbol_group.symbols.length / 3) * 2, (selected_symbol_group.symbols.length / 3) * 3),
+					symbols.slice(selected_symbol_group.symbols.length / 3, (selected_symbol_group.symbols.length / 3) * 2),
+					symbols.slice(0, selected_symbol_group.symbols.length / 3)
 				]
 			: []
 	)
@@ -47,7 +48,7 @@
 	<Sidebar.Root collapsible="none">
 		<Sidebar.Content class="p-2">
 			<Sidebar.Menu>
-				{#each LibrarySymbolGroups.list() as group}
+				{#each LibrarySymbolGroups.list() ?? [] as group}
 					<Sidebar.MenuItem>
 						<Sidebar.MenuButton isActive={selected_symbol_group?.id === group.id}>
 							{#snippet child({ props })}

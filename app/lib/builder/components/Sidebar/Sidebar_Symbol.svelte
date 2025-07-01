@@ -56,21 +56,17 @@
 	onMount(() => {
 		if (!symbol) return
 
-		const code = {
+		const code = $derived({
 			html: symbol.html,
 			css: symbol.css,
 			js: symbol.js
-		}
-		// Get fields and entries directly from collections instead of relationship methods
-		const fields = SiteSymbolFields.list({ filter: `symbol = "${symbol.id}"` })
-		const entries = $derived.by(() => {
-			if (!fields.length) return []
-			const filter = fields.map((f) => `field = "${f.id}"`).join(' || ')
-			return SiteSymbolEntries.list({ filter })
 		})
-		const data = $derived(getContent(symbol, fields, entries)[$locale] ?? {})
+		const fields = $derived(symbol.fields())
+		const entries = $derived(symbol.entries())
+		const data = $derived(fields && entries && (getContent(symbol, fields, entries)[$locale] ?? {}))
 
 		$effect(() => {
+			if (!data) return
 			block_html({
 				code,
 				data

@@ -18,7 +18,7 @@
 	let { onclose } = $props()
 
 	const site_group_id = $derived(page.url.searchParams.get('group'))
-	const starter_sites = $derived(Sites.list())
+	const starter_sites = $derived(Sites.list() ?? [])
 	const active_site_group = $derived(site_group_id && SiteGroups.one(site_group_id))
 
 	let site_name = $state(``)

@@ -6,10 +6,7 @@
 
 	const site_id = $derived(pageState.params.site)
 	const slug = $derived(pageState.params.page)
-	const site = $derived(Sites.one(site_id))
-	// Get page directly from collection instead of relationship
-	const all_pages = $derived(Pages.list({ filter: `site = "${site_id}"` }))
-	const page = $derived(all_pages.find((page) => page?.slug == slug))
+	const page = $derived(Pages.list({ filter: `site = "${site_id}" && slug = "${slug}"` })?.[0])
 </script>
 
 {#if $compilers_registered && page}

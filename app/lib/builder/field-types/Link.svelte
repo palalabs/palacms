@@ -17,8 +17,8 @@
 	const { entity, field }: { entity: Entity; field: LinkField } = $props()
 	const site_id = $derived(page.params.site)
 	const site = $derived(Sites.one(site_id))
-	const entry = $derived(getDirectEntries(entity, field)[0])
-	const selectable_pages = $derived(Object.values(Pages.list()).filter((p) => p.page_type === field.page_type.id))
+	const entry = $derived(getDirectEntries(entity, field, [])[0])
+	const selectable_pages = $derived(Pages.list()?.filter((p) => p.page_type === field.config.page_type) ?? [])
 
 	let selected = $state<'page' | 'url'>()
 	$effect.pre(() => {

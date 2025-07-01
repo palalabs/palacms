@@ -21,11 +21,10 @@
 	const site_group_id = $derived(page.url.searchParams.get('group')!)
 	// Data will be loaded automatically by CollectionMapping system when accessed
 
-
-	const site_groups = $derived(SiteGroups.list())
+	const site_groups = $derived(SiteGroups.list() ?? [])
 	const active_site_group = $derived(site_group_id ? SiteGroups.one(site_group_id) : undefined)
-	const all_sites = $derived(Sites.list())
-	const sites = $derived(site_group_id ? all_sites.filter(site => site.group === site_group_id) : [])
+	const all_sites = $derived(Sites.list() ?? [])
+	const sites = $derived(site_group_id ? all_sites.filter((site) => site.group === site_group_id) : [])
 
 	let creating_site = $state(false)
 

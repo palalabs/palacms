@@ -231,7 +231,7 @@
 			</Sidebar.Header>
 			<Sidebar.Content class="p-2">
 				<Sidebar.Menu>
-					{#each SiteGroups.list() as group}
+					{#each SiteGroups.list() ?? [] as group}
 						{@const url = `/dashboard/sites?group=${group.id}`}
 						<Sidebar.MenuItem>
 							<Sidebar.MenuButton isActive={$page.url.pathname + $page.url.search === url}>
@@ -264,7 +264,7 @@
 			</Sidebar.Header>
 			<Sidebar.Content class="p-2">
 				<Sidebar.Menu>
-					{#each LibrarySymbolGroups.list() as group}
+					{#each LibrarySymbolGroups.list() ?? [] as group}
 						{@const url = `/dashboard/library?group=${group.id}`}
 						<Sidebar.MenuItem>
 							<Sidebar.MenuButton isActive={$page.url.pathname + $page.url.search === url}>
@@ -324,7 +324,7 @@
 								<Collapsible.Content>
 									<Sidebar.GroupContent>
 										<Sidebar.Menu>
-											{#each LibrarySymbolGroups.from(marketplace).list() as group}
+											{#each LibrarySymbolGroups.from(marketplace).list() ?? [] as group}
 												{@const url = `/dashboard/marketplace/blocks?group=${group.id}`}
 												<Sidebar.MenuItem>
 													<Sidebar.MenuButton isActive={$page.url.pathname + $page.url.search === url}>
