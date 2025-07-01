@@ -27,8 +27,6 @@
 		ondelete: (field_id: string) => void
 	} = $props()
 
-	$inspect({ entity, fields })
-
 	function get_component(field: Field) {
 		const fieldType = $fieldTypes.find((ft) => ft.id === field.type)
 		if (fieldType) {

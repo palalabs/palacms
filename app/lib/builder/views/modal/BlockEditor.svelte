@@ -49,8 +49,6 @@
 		)
 	})
 
-	$inspect({ block, fields, entries })
-
 	let loading = false
 
 	hotkey_events.on('e', toggle_tab)

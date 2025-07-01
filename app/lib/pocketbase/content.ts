@@ -31,6 +31,14 @@ export type Entity = EntityOf<keyof typeof ENTRY_MODELS>
 
 export const getContent = <Collection extends keyof typeof ENTRY_MODELS>(entity: EntityOf<Collection>, fields: Field[], entries: EntryOf<Collection>[]) => {
 	const content: { [K in (typeof locales)[number]]?: Record<string, unknown[]> } = {}
+	fields = fields
+		.filter((field) =>
+			'symbol' in entity
+				? 'symbol' in field && field.symbol === entity.symbol
+				: (!('symbol' in field) || field.symbol === entity.id) && (!('site' in field) || field.site === entity.id) && (!('page_type' in field) || field.page_type === entity.id)
+		)
+		// Deduplicate
+		.filter((field1, index, array) => array.findIndex((field2) => field2.id === field1.id) === index)
 	for (const field of fields) {
 		const fieldEntries = getResolvedEntries(entity, field, entries)
 		for (const entry of fieldEntries) {
@@ -43,7 +51,7 @@ export const getContent = <Collection extends keyof typeof ENTRY_MODELS>(entity:
 }
 
 export const getDirectEntries = <Collection extends keyof typeof ENTRY_MODELS>(entity: EntityOf<Collection>, field: Field, entries: EntryOf<Collection>[]): EntryOf<Collection>[] => {
-	return entries.filter((entry) => entry.field === field.id)
+	return entries.filter((entry) => entry.field === field.id && (!('section' in entry) || entry.section === entity.id))
 }
 
 export const getResolvedEntries = <Collection extends keyof typeof ENTRY_MODELS>(entity: EntityOf<Collection>, field: Field, entries: EntryOf<Collection>[]): Entry[] => {
@@ -57,13 +65,14 @@ export const getResolvedEntries = <Collection extends keyof typeof ENTRY_MODELS>
 		// 	return get_resolved_entries(page, field)
 		// })
 	} else if (field.type === 'site-field') {
-		return fieldEntries.flatMap((entry) => {
-			const field = SiteFields.one(entry.value)
-			if (!field) return []
-			const site = Sites.one(field.site)
-			if (!site) return []
-			return getResolvedEntries(site, field, site.entries())
-		})
+		throw new Error('Not implemented')
+		// return fieldEntries.flatMap((entry) => {
+		// 	const field = SiteFields.one(entry.value)
+		// 	if (!field) return []
+		// 	const site = Sites.one(field.site)
+		// 	if (!site) return []
+		// 	return getResolvedEntries(site, field, entries)
+		// })
 	} else if (field.type === 'page') {
 		throw new Error('Not implemented')
 		// return fieldEntries.flatMap((entry) => {

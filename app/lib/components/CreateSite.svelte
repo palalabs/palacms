@@ -6,7 +6,6 @@
 	import * as Tabs from '$lib/components/ui/tabs'
 	import { Input } from '$lib/components/ui/input/index.js'
 	import { Label } from '$lib/components/ui/label/index.js'
-	import { convert_site_v3 } from '$lib/builder/new_converter'
 	import DesignFields from './Modals/DesignFields.svelte'
 	import * as code_generators from '$lib/builder/code_generators'
 	import { Site } from '$lib/common/models/Site'
@@ -24,22 +23,6 @@
 	let site_name = $state(``)
 
 	let preview = $state(``)
-	async function set_template_preview(data) {
-		const home_page = _.cloneDeep(data.pages.find((page) => page.slug === ''))
-		home_page.page_type = data.page_types.find((pt) => pt.id === home_page.page_type)
-		preview = (
-			await code_generators.page_html({
-				page: home_page,
-				site: data.site,
-				page_sections: data.sections.filter((section) => section.page === home_page.id),
-				page_symbols: data.symbols,
-				page_list: data.pages.map((page) => ({
-					...page,
-					page_type: page.page_type?.id || data.page_types.find((pt) => pt.id === page.page_type)
-				}))
-			})
-		).html
-	}
 
 	let design_values = $state({
 		heading_font: 'Merriweather',
@@ -54,33 +37,9 @@
 	}
 
 	let selected_starter_id = $state(``)
-	let selected_starter: Site | null = $derived(selected_starter_id === 'blank' ? null : Sites.one(selected_starter_id))
 	function select_starter(site_id) {
 		selected_starter_id = site_id
 		preview = ''
-	}
-
-	let duplicated_site_data = $state<Site | null>(null)
-	async function duplicate_site_file(event) {
-		const file = event.target.files[0]
-		if (!file) return
-
-		try {
-			const text = await file.text()
-			const uploaded = JSON.parse(text)
-
-			// if (uploaded.site?.design) {
-			// 	design_values = uploaded.site.design
-			// }
-
-			duplicated_site_data = convert_site_v3(uploaded)
-			set_template_preview(duplicated_site_data)
-		} catch (error) {
-			console.error('Error processing site file:', error)
-			// primo_json_valid = false
-		} finally {
-			// loading = false
-		}
 	}
 
 	const blank_site = {
@@ -102,7 +61,7 @@
 		parent: ''
 	} satisfies Partial<Page>
 
-	let completed = $derived(!!site_name && (selected_starter_id || !!duplicated_site_data))
+	let completed = $derived(!!site_name && selected_starter_id)
 	let loading = $state(false)
 	async function create_site() {
 		if (!selected_starter_id || !active_site_group) return
@@ -236,9 +195,7 @@
 						</div>
 					</div>
 					<div style="background: #222;" class="rounded">
-						{#if preview}
-							<SitePreview style="height: 100%" site_id={selected_starter_id} {preview} append={design_variables_css} />
-						{/if}
+						<SitePreview style="height: 100%" site_id={selected_starter_id} {preview} append={design_variables_css} />
 					</div>
 				</div>
 			</div>

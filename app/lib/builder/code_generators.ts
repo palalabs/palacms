@@ -1,11 +1,23 @@
 import { find as _find, chain as _chain, flattenDeep as _flattenDeep } from 'lodash-es'
-import * as _ from 'lodash-es'
 import { processors } from './component.js'
 import { getContent } from '../pocketbase/content.js'
 import { design_tokens } from './constants.js'
 import { type locales } from '$lib/common/constants.js'
-import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte.js'
-import { SiteSymbols, type Pages, type Sites } from '$lib/pocketbase/collections.js'
+import type { Site } from '$lib/common/models/Site.js'
+import type { Page } from '$lib/common/models/Page.js'
+import type { SiteField } from '$lib/common/models/SiteField.js'
+import type { PageTypeField } from '$lib/common/models/PageTypeField.js'
+import type { SiteSymbolField } from '$lib/common/models/SiteSymbolField.js'
+import { PageSection } from '$lib/common/models/PageSection.js'
+import type { PageTypeSection } from '$lib/common/models/PageTypeSection.js'
+import type { SiteEntry } from '$lib/common/models/SiteEntry.js'
+import type { PageTypeEntry } from '$lib/common/models/PageTypeEntry.js'
+import type { PageType } from '$lib/common/models/PageType.js'
+import type { PageSectionEntry } from '$lib/common/models/PageSectionEntry.js'
+import type { PageTypeSectionEntry } from '$lib/common/models/PageTypeSectionEntry.js'
+import type { PageTypeSymbol } from '$lib/common/models/PageTypeSymbol.js'
+import type { SiteSymbol } from '$lib/common/models/SiteSymbol.js'
+import type { SiteSymbolEntry } from '$lib/common/models/SiteSymbolEntry.js'
 
 export async function block_html({ code, data }) {
 	const { html, css: postcss, js } = code
@@ -17,36 +29,83 @@ export async function block_html({ code, data }) {
 	return res
 }
 
-export async function page_html({ site, page, locale = 'en', no_js = false }: { site: ObjectOf<typeof Sites>; page: ObjectOf<typeof Pages>; locale?: (typeof locales)[number]; no_js?: boolean }) {
-	const site_data = getContent(site, site.fields())
+export async function page_html({
+	site,
+	page_type,
+	page_sections,
+	page_type_sections,
+	page_type_symbols,
+	symbols,
+	site_fields,
+	page_type_fields,
+	symbol_fields,
+	site_entries,
+	page_type_entries,
+	page_section_entries,
+	page_type_section_entries,
+	locale = 'en',
+	no_js = false
+}: {
+	site: Site
+	page: Page
+	page_type: PageType
+	page_sections: PageSection[]
+	page_type_sections: PageTypeSection[]
+	page_type_symbols: PageTypeSymbol[]
+	symbols: SiteSymbol[]
+	site_fields: SiteField[]
+	page_type_fields: PageTypeField[]
+	symbol_fields: SiteSymbolField[]
+	site_entries: SiteEntry[]
+	page_type_entries: PageTypeEntry[]
+	symbol_entries: SiteSymbolEntry[]
+	page_section_entries: PageSectionEntry[]
+	page_type_section_entries: PageTypeSectionEntry[]
+	locale?: (typeof locales)[number]
+	no_js?: boolean
+}) {
+	const site_data = {
+		...getContent(site, site_fields, site_entries),
+		...getContent(page_type, page_type_fields, page_type_entries)
+	}
 	const head = {
-		code: site.head, // + page.page_type.head,
+		code: site.head + page_type.head,
 		data: site_data
 	}
-	const component = await Promise.all([
-		...page.sections().flatMap(async (section) => {
-			const symbol = SiteSymbols.one(section.symbol)
-			if (!symbol) return []
 
-			const { html, css: postcss, js } = symbol
+	const page_type_body_sections = page_type_sections.filter((section) => section.zone === 'body')
+	const body_sections = page_type_symbols.length === 0 || page_sections.length === 0 ? page_type_body_sections : page_sections
+	const header_sections = page_type_sections.filter((section) => section.zone === 'header')
+	const footer_sections = page_type_sections.filter((section) => section.zone === 'footer')
+	const sections = [...header_sections, ...body_sections, ...footer_sections]
+	const section_entries = [...page_type_section_entries, ...page_section_entries]
+	const component = (
+		await Promise.all(
+			sections.map(async (section: PageTypeSection | PageSection) => {
+				const symbol = symbols.find((symbol) => symbol.id === section.symbol)
+				if (!symbol) return []
 
-			const data = getContent(section, symbol?.fields() ?? [])
+				const { html, css: postcss, js } = symbol
 
-			// @ts-ignore
-			const { css, error } = await processors.css(postcss || '')
-			return [
-				{
-					html: `
-         <div data-section="${section.id}" id="section-${section.id}" data-symbol="${symbol.id}">
-           ${html}
-         </div>`,
-					js,
-					css,
-					data
-				}
-			]
-		})
-	])
+				const data = getContent(section, symbol_fields, section_entries)[locale] ?? {}
+
+				// @ts-ignore
+				const { css, error } = await processors.css(postcss || '')
+				return [
+					{
+						html: `
+							<div data-section="${section.id}" id="section-${section.id}" data-symbol="${symbol.id}">
+								${html}
+							</div>`,
+						js,
+						css,
+						data
+					}
+				]
+			})
+		)
+	).flat()
+	console.log(component)
 
 	const res = await processors.html({
 		component,
@@ -54,16 +113,13 @@ export async function page_html({ site, page, locale = 'en', no_js = false }: { 
 		locale
 	})
 
-	const symbol_ids = page
-		.sections()
-		.map((section) => section.symbol)
-		.filter((value, index, array) => array.indexOf(value) === index)
+	const symbol_ids = sections.map((section) => section.symbol).filter((value, index, array) => array.indexOf(value) === index)
 
 	const final = `\
  <!DOCTYPE html>
  <html lang="${locale}">
    <head>
-     <meta name="generator" content="WeaveCMS" />
+     <meta name="generator" content="PalaCMS" />
      ${res.head}
      <style>${res.css}</style>
    </head>
@@ -88,17 +144,17 @@ export async function page_html({ site, page, locale = 'en', no_js = false }: { 
 				(id) => `
      import('/_symbols/${id}.js')
      .then(({default:App}) => {
-       ${page.sections
-					.filter((section) => section.symbol.id === id)
+       ${sections
+					.filter((section) => section.symbol === id)
 					.map((section) => {
-						const instance_content = getContent(section.id, section.symbol.fields)[locale]
+						const instance_content = getContent(section, symbol_fields, section_entries)[locale]
 						return `
-           new App({
-             target: document.querySelector('#section-${section.id}'),
-             hydrate: true,
-             props: ${JSON.stringify(instance_content)}
-           })
-         `
+							new App({
+								target: document.querySelector('#section-${section.id}'),
+								hydrate: true,
+								props: ${JSON.stringify(instance_content)}
+							})
+         		`
 					})
 					.join('\n')}
      })

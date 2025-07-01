@@ -103,7 +103,6 @@
 				/>
 			{:else if tab === 'content'}
 				<Fields
-					id="section-{component.id}"
 					entity={component}
 					{fields}
 					{entries}

@@ -1,29 +1,68 @@
-<script>
+<script lang="ts">
 	import { tick, onDestroy } from 'svelte'
 	import { browser } from '$app/environment'
 	import { find as _find } from 'lodash-es'
 	import { page_html } from '$lib/builder/code_generators'
-	import { Sites } from '$lib/pocketbase/collections'
-	/**
-	 * @typedef {Object} Props
-	 * @property {string} [site_id]
-	 * @property {any} [preview]
-	 * @property {string} [head]
-	 * @property {string} [append]
-	 * @property {string} [style]
-	 */
+	import { PageTypes, Sites, SiteSymbols } from '$lib/pocketbase/collections'
 
-	/** @type {Props} */
-	let { site_id, preview = $bindable(null), head = '', append = '', style = '' } = $props()
+	let { site_id, preview = $bindable(), head = '', append = '', style = '' }: { site_id?: string; preview?: string; head?: string; append?: string; style?: string } = $props()
 
-	const site = $derived(site_id ? Sites.one(site_id) : null)
-	// $effect(() => {
-	// 	if (!preview && site) {
-	// 		page_html({ site, page: site.homepage(), no_js: true }).then(({ html }) => {
-	// 			preview = html
-	// 		})
-	// 	}
-	// })
+	const site = $derived(site_id ? Sites.one(site_id) : undefined)
+	const page = $derived(site?.homepage())
+	const page_type = $derived(page && PageTypes.one(page.page_type))
+	const page_sections = $derived(page?.sections())
+	const page_type_sections = $derived(page_type?.sections())
+	const page_type_symbols = $derived(page_type?.symbols())
+	const symbols = $derived(page_sections && page_type_sections && [...page_sections, ...page_type_sections].map((section) => SiteSymbols.one(section.symbol)).filter((symbol) => symbol !== undefined))
+	const site_fields = $derived(site?.fields())
+	const page_type_fields = $derived(page_type?.fields())
+	const symbol_fields = $derived(symbols?.every((symbol) => symbol.fields() !== undefined) ? symbols.flatMap((symbol) => symbol.fields() ?? []) : undefined)
+	const site_entries = $derived(site?.entries())
+	const page_type_entries = $derived(page_type?.entries())
+	const symbol_entries = $derived(symbols?.every((symbol) => symbol.entries() !== undefined) ? symbols.flatMap((symbol) => symbol.entries() ?? []) : undefined)
+	const page_section_entries = $derived(page_sections?.every((section) => section.entries() !== undefined) ? page_sections.flatMap((section) => section.entries() ?? []) : undefined)
+	const page_type_section_entries = $derived(page_type_sections?.every((section) => section.entries() !== undefined) ? page_type_sections.flatMap((section) => section.entries() ?? []) : undefined)
+	$effect(() => {
+		if (
+			!preview &&
+			site &&
+			page &&
+			page_type &&
+			page_sections &&
+			page_type_sections &&
+			page_type_symbols &&
+			symbols &&
+			site_fields &&
+			page_type_fields &&
+			symbol_fields &&
+			site_entries &&
+			page_type_entries &&
+			symbol_entries &&
+			page_section_entries &&
+			page_type_section_entries
+		) {
+			page_html({
+				site,
+				page,
+				page_type,
+				page_sections,
+				page_type_sections,
+				page_type_symbols,
+				symbols,
+				site_fields,
+				page_type_fields,
+				symbol_fields,
+				site_entries,
+				page_type_entries,
+				symbol_entries,
+				page_section_entries,
+				page_type_section_entries,
+				no_js: true
+			}).then(({ html }) => {
+				preview = html
+			})
+		}
+	})
 
 	let container = $state()
 	let scale = $state()
