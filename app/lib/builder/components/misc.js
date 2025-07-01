@@ -1,5 +1,5 @@
 export const dynamic_iframe_srcdoc = (head = '') => {
-  return `
+	return `
   <!DOCTYPE html>
   <html lang="en">
     <head>
@@ -84,7 +84,8 @@ export const dynamic_iframe_srcdoc = (head = '') => {
     </head>
     <body id="page"></body>
   </html>
-`}
+`
+}
 
 export const static_iframe_srcdoc = ({ head = '', html, css, foot = '' }) => {
 	return `

@@ -85,8 +85,6 @@
 
 	const markdown_classes = {}
 
-	let is_local_change = $state(false)
-
 	async function make_content_editable() {
 		if (!node?.contentDocument) return
 
@@ -576,24 +574,11 @@
 		}
 	}
 
-	// mount or hydrate component
-	function explicitEffect(fn, depsFn) {
-		$effect(() => {
-			depsFn()
-			untrack(fn)
-		})
-	}
-
-	// to prevent is_local_change from retriggering effect
-	explicitEffect(
-		() => {
-			if (setup_complete && !is_local_change && component_data) {
-				send_component_to_iframe(generated_js, component_data)
-			}
-			is_local_change = false
-		},
-		() => [setup_complete, generated_js, component_data]
-	)
+	$effect(() => {
+		if (setup_complete && component_data) {
+			send_component_to_iframe(generated_js, component_data)
+		}
+	})
 
 	async function send_component_to_iframe(js, data) {
 		try {

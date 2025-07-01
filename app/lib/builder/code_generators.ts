@@ -105,7 +105,6 @@ export async function page_html({
 			})
 		)
 	).flat()
-	console.log(component)
 
 	const res = await processors.html({
 		component,

@@ -36,9 +36,9 @@
 	// Data will be loaded automatically by CollectionMapping system when accessed
 
 	const symbol = $derived(SiteSymbols.one(component.symbol))
-	const fields = $derived(symbol?.fields() ?? [])
-	const entries = $derived('page_type' in component ? (component.entries() ?? []) : 'page' in component ? (component.entries() ?? []) : [])
-	const component_data = $derived(getContent(component, fields, entries)[$locale] ?? {})
+	const fields = $derived(symbol?.fields())
+	const entries = $derived('page_type' in component ? component.entries() : 'page' in component ? component.entries() : undefined)
+	const component_data = $derived(fields && entries && (getContent(component, fields, entries)[$locale] ?? {}))
 
 	let loading = false
 
@@ -101,7 +101,7 @@
 						SiteSymbols.update(symbol.id, { html, css, js })
 					}}
 				/>
-			{:else if tab === 'content'}
+			{:else if tab === 'content' && fields && entries}
 				<Fields
 					entity={component}
 					{fields}
@@ -152,17 +152,19 @@
 		</Pane>
 		<PaneResizer class="PaneResizer" />
 		<Pane defaultSize={50}>
-			<ComponentPreview
-				code={{
-					html,
-					css,
-					js
-				}}
-				data={component_data}
-				bind:orientation={$orientation}
-				view="small"
-				{loading}
-			/>
+			{#if component_data}
+				<ComponentPreview
+					code={{
+						html,
+						css,
+						js
+					}}
+					data={component_data}
+					bind:orientation={$orientation}
+					view="small"
+					{loading}
+				/>
+			{/if}
 		</Pane>
 	</PaneGroup>
 </main>

@@ -37,17 +37,9 @@
 	const new_block = () => SiteSymbols.create({ css: '', html: '', js: '', name: 'New Block', site: site_id })
 	const block = $state(existing_block ?? new_block())
 
-	const fields = $derived(block.fields() ?? [])
-	const entries = $derived(block.entries() ?? [])
-	let component_data = $derived(getContent(block, fields, entries)[$locale] ?? {})
-
-	// Debug: log when fields change
-	$effect(() => {
-		console.log(
-			'Fields changed:',
-			fields.map((f) => ({ id: f.id, key: f.key, label: f.label }))
-		)
-	})
+	const fields = $derived(block.fields())
+	const entries = $derived(block.entries())
+	let component_data = $derived(fields && entries && (getContent(block, fields, entries)[$locale] ?? {}))
 
 	let loading = false
 
@@ -115,7 +107,7 @@
 						})
 					}}
 				/>
-			{:else if tab === 'content'}
+			{:else if tab === 'content' && fields && entries}
 				<Fields
 					entity={block}
 					{fields}
@@ -155,7 +147,9 @@
 		</Pane>
 		<PaneResizer class="PaneResizer" />
 		<Pane defaultSize={50}>
-			<ComponentPreview bind:orientation={$orientation} view="small" {loading} code={{ html, css, js }} data={component_data} />
+			{#if component_data}
+				<ComponentPreview bind:orientation={$orientation} view="small" {loading} code={{ html, css, js }} data={component_data} />
+			{/if}
 		</Pane>
 	</PaneGroup>
 </main>

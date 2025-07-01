@@ -9,14 +9,12 @@
 </script>
 
 <script>
-	import * as _ from 'lodash-es'
 	import { onMount, tick } from 'svelte'
 	import { slide, fade } from 'svelte/transition'
 	import { dynamic_iframe_srcdoc } from './misc.js'
 	import { highlightedElement } from '../stores/app/misc'
 	import { Inspect } from 'svelte-inspect-value'
 	import Icon from '@iconify/svelte'
-	import { site_design_css } from '$lib/builder/code_generators'
 	import { content_editable } from '../utilities'
 	import { processCode } from '../utils.js'
 	import { page } from '$app/state'
@@ -71,7 +69,7 @@
 		loading = true
 
 		await compile()
-		await setTimeout(() => {
+		setTimeout(() => {
 			loading = false
 		}, 200)
 
@@ -87,8 +85,6 @@
 				}
 			})
 
-			console.log({ compiled_head })
-
 			if (!compiled_head.error) {
 				component_head_html = compiled_head.head
 			}
@@ -103,7 +99,7 @@
 
 		await compile()
 		// disable_save = compilationError
-		await setTimeout(() => {
+		setTimeout(() => {
 			loading = false
 		}, 200)
 
@@ -232,7 +228,7 @@
 		} else if (iframeLoaded) {
 			channel.postMessage({
 				event: 'SET_APP_DATA',
-				payload: { data: _.cloneDeep(data) }
+				payload: { data }
 			})
 		}
 	}
