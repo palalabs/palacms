@@ -132,7 +132,6 @@
 						})
 					}}
 					oninput={(values) => {
-						console.log('oninput')
 						for (const [key, value] of Object.entries(values)) {
 							const field = fields.find((field) => field.key === key)
 							if (!field) {
@@ -141,7 +140,6 @@
 
 							const entry = entries.find((entry) => entry.field === field?.id)
 							if (entry) {
-								console.log({ entry, value })
 								SiteSymbolEntries.update(entry.id, { value })
 							} else {
 								SiteSymbolEntries.create({ field: field.id, locale: 'en', value })
@@ -149,7 +147,6 @@
 						}
 					}}
 					onchange={({ id, data }) => {
-						console.log('here', { id, data })
 						SiteSymbolFields.update(id, data)
 					}}
 					ondelete={(field_id) => {

@@ -6,12 +6,14 @@
 	import * as _ from 'lodash-es'
 	import CodeEditor from '$lib/builder/components/CodeEditor/CodeMirror.svelte'
 	import { page } from '$app/state'
-	import { PageTypes } from '$lib/pocketbase/collections'
+	import { PageTypeEntries, PageTypeFields, PageTypes } from '$lib/pocketbase/collections'
 
 	let { onClose }: { onClose?: () => void } = $props()
 
 	const page_type_id = page.params.page_type
 	const page_type = $derived(PageTypes.one(page_type_id))
+	const fields = $derived(page_type?.fields() ?? [])
+	const entries = $derived(page_type?.entries() ?? [])
 
 	let head = $state('')
 	let foot = $state('')
@@ -21,19 +23,20 @@
 			foot = page_type.foot
 		}
 	})
-	$effect(() => {
-		PageTypes.update(page_type_id, {
-			head,
-			foot
-		})
-	})
+	$effect(() => {})
 
 	let disableSave = $state(false)
 
 	async function saveComponent() {
 		disableSave = true
 		try {
+			PageTypes.update(page_type_id, {
+				head,
+				foot
+			})
 			await PageTypes.commit()
+			await PageTypeFields.commit()
+			await PageTypeEntries.commit()
 			if (onClose) onClose()
 		} finally {
 			disableSave = false
@@ -55,7 +58,43 @@
 	<main class="SiteEditor">
 		<PaneGroup direction="horizontal" style="display: flex;">
 			<Pane defaultSize={50}>
-				<Fields id="page-type-{page_type.id}" entity_id={page_type.id} fields={page_type.fields()} />
+				<Fields
+					entity={page_type}
+					{fields}
+					{entries}
+					create_field={() => {
+						PageTypeFields.create({
+							type: 'text',
+							key: '',
+							label: '',
+							config: null,
+							page_type: page_type.id
+						})
+					}}
+					oninput={(values) => {
+						console.log('oninput')
+						for (const [key, value] of Object.entries(values)) {
+							const field = fields.find((field) => field.key === key)
+							if (!field) {
+								continue
+							}
+
+							const entry = entries.find((entry) => entry.field === field?.id)
+							if (entry) {
+								console.log({ entry, value })
+								PageTypeEntries.update(entry.id, { value })
+							} else {
+								PageTypeEntries.create({ field: field.id, locale: 'en', value })
+							}
+						}
+					}}
+					onchange={({ id, data }) => {
+						PageTypeFields.update(id, data)
+					}}
+					ondelete={(field_id) => {
+						PageTypeFields.delete(field_id)
+					}}
+				/>
 			</Pane>
 			<PaneResizer class="PaneResizer-primary">
 				<div class="icon primary">

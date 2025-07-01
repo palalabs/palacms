@@ -11,6 +11,7 @@ import { PageSectionEntry } from '../common/models/PageSectionEntry'
 import { PageTypeSectionEntry } from '../common/models/PageTypeSectionEntry'
 import { SiteSymbolEntry } from '../common/models/SiteSymbolEntry'
 import { SiteEntry } from '../common/models/SiteEntry'
+import { PageTypeEntry } from '$lib/common/models/PageTypeEntry'
 
 /**
  * Entry models by name of the owning collection.
@@ -19,6 +20,7 @@ export const ENTRY_MODELS = {
 	library_symbols: LibrarySymbolEntry,
 	sites: SiteEntry,
 	site_symbols: SiteSymbolEntry,
+	page_types: PageTypeEntry,
 	page_type_sections: PageTypeSectionEntry,
 	page_sections: PageSectionEntry
 } as const

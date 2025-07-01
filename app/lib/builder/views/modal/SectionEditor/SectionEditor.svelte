@@ -128,11 +128,9 @@
 
 							const entry = entries.find((entry) => entry.field === field?.id)
 							if ('page_type' in component) {
-								console.log('alright')
 								if (entry) {
 									PageTypeSectionEntries.update(entry.id, { value })
 								} else {
-									console.log('HERE', { field, value, component })
 									PageTypeSectionEntries.create({ field: field.id, locale: 'en', value, section: component.id })
 								}
 							} else if ('page' in component) {

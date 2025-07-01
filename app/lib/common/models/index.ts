@@ -17,6 +17,8 @@ import { LibrarySymbolEntry } from './LibrarySymbolEntry'
 import { LibrarySymbolField } from './LibrarySymbolField'
 import { LibrarySymbolGroup } from './LibrarySymbolGroup'
 import { LibrarySymbol } from './LibrarySymbol'
+import { PageTypeField } from './PageTypeField'
+import { PageTypeEntry } from './PageTypeEntry'
 
 /**
  * Model for each collection. Used in a PocketBase hook to validate records.
@@ -31,6 +33,8 @@ export const models = {
 	page_sections: PageSection,
 	page_type_section_entries: PageTypeSectionEntry,
 	page_type_sections: PageTypeSection,
+	page_type_entries: PageTypeEntry,
+	page_type_fields: PageTypeField,
 	page_type_symbols: PageTypeSymbol,
 	page_types: PageType,
 	pages: Page,

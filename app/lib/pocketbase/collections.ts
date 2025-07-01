@@ -6,6 +6,8 @@ import { Page } from '$lib/common/models/Page'
 import { PageSection } from '$lib/common/models/PageSection'
 import { PageSectionEntry } from '$lib/common/models/PageSectionEntry'
 import { PageType } from '$lib/common/models/PageType'
+import { PageTypeEntry } from '$lib/common/models/PageTypeEntry'
+import { PageTypeField } from '$lib/common/models/PageTypeField'
 import { PageTypeSection } from '$lib/common/models/PageTypeSection'
 import { PageTypeSectionEntry } from '$lib/common/models/PageTypeSectionEntry'
 import { PageTypeSymbol } from '$lib/common/models/PageTypeSymbol'
@@ -139,10 +141,26 @@ export const PageTypes = createCollectionMapping('page_types', PageType, {
 			return PageTypeSections.from(this.collection.instance).list({ filter: `page_type = "${this.id}"` })
 		},
 		fields() {
-			// TODO: Implement
-			return []
+			return PageTypeFields.from(this.collection.instance).list({ filter: `page_type = "${this.id}"` })
+		},
+		entries() {
+			return PageTypeFields.from(this.collection.instance)
+				.list({ filter: `page_type = "${this.id}"` })
+				.flatMap((field) => field.entries())
 		}
 	}
+})
+
+export const PageTypeFields = createCollectionMapping('page_type_fields', PageTypeField, {
+	links: {
+		entries() {
+			return PageTypeEntries.from(this.collection.instance).list({ filter: `field = "${this.id}"` })
+		}
+	}
+})
+
+export const PageTypeEntries = createCollectionMapping('page_type_entries', PageTypeEntry, {
+	links: {}
 })
 
 export const PageTypeSymbols = createCollectionMapping('page_type_symbols', PageTypeSymbol, {

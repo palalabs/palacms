@@ -17,7 +17,7 @@
 	import * as Tabs from '$lib/components/ui/tabs'
 	import { Cuboid, SquarePen } from 'lucide-svelte'
 	import { page } from '$app/state'
-	import { Sites, PageTypes, SiteSymbols, PageTypeSymbols, SiteSymbolFields, SiteSymbolEntries } from '$lib/pocketbase/collections'
+	import { Sites, PageTypes, SiteSymbols, PageTypeSymbols, SiteSymbolFields, SiteSymbolEntries, PageTypeFields, PageTypeEntries } from '$lib/pocketbase/collections'
 	import { site_html } from '$lib/builder/stores/app/page.js'
 
 	const site_id = $derived(page.params.site)
@@ -92,6 +92,14 @@
 			SiteSymbols.discard()
 			SiteSymbolFields.discard()
 			SiteSymbolEntries.discard()
+		}
+	})
+
+	$effect(() => {
+		if (!editing_page) {
+			PageTypes.discard()
+			PageTypeFields.discard()
+			PageTypeEntries.discard()
 		}
 	})
 </script>
