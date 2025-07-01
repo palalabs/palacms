@@ -94,13 +94,6 @@
 				site: site.id
 			})
 
-			// Create a section on the homepage using the welcome symbol
-			PageSections.create({
-				page: page.id,
-				symbol: welcome_symbol.id,
-				index: 0
-			})
-
 			PageTypeSections.create({
 				symbol: welcome_symbol.id,
 				index: 0,
