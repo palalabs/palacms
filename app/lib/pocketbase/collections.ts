@@ -3,6 +3,7 @@ import { LibrarySymbolEntry } from '$lib/common/models/LibrarySymbolEntry'
 import { LibrarySymbolField } from '$lib/common/models/LibrarySymbolField'
 import { LibrarySymbolGroup } from '$lib/common/models/LibrarySymbolGroup'
 import { Page } from '$lib/common/models/Page'
+import { PageEntry } from '$lib/common/models/PageEntry'
 import { PageSection } from '$lib/common/models/PageSection'
 import { PageSectionEntry } from '$lib/common/models/PageSectionEntry'
 import { PageType } from '$lib/common/models/PageType'
@@ -202,8 +203,15 @@ export const Pages = createCollectionMapping('pages', Page, {
 		},
 		sections() {
 			return PageSections.from(this.collection.instance).list({ filter: `page = "${this.id}"` })
+		},
+		entries() {
+			return PageEntries.from(this.collection.instance).list({ filter: `page = "${this.id}"` })
 		}
 	}
+})
+
+export const PageEntries = createCollectionMapping('page_entries', PageEntry, {
+	links: {}
 })
 
 export const PageSections = createCollectionMapping('page_sections', PageSection, {

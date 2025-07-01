@@ -3,7 +3,6 @@
 	import * as _ from 'lodash-es'
 	import UI from '$lib/builder/ui'
 	import { dragging_symbol } from '$lib/builder/stores/app/misc'
-	import { site_design_css } from '$lib/builder/code_generators.js'
 	import Sidebar_Symbol from './Sidebar_Symbol.svelte'
 	import Content from '../Content.svelte'
 	import { browser } from '$app/environment'
@@ -14,7 +13,7 @@
 	import * as Tabs from '$lib/components/ui/tabs'
 	import { Cuboid, SquarePen } from 'lucide-svelte'
 	import { page as pageState } from '$app/state'
-	import { PageTypes, Sites, Pages, PageTypeSymbols } from '$lib/pocketbase/collections'
+	import { PageTypes, Sites, Pages, PageTypeSymbols, PageEntries } from '$lib/pocketbase/collections'
 	import { SiteSymbols } from '$lib/pocketbase/collections'
 
 	let active_tab = $state((browser && localStorage.getItem('page-tab')) || 'BLOCKS')
@@ -25,6 +24,8 @@
 	// Use direct collection queries instead of broken site.pages()
 	const page = $derived(slug ? Pages.list({ filter: `site = "${site_id}" && slug = "${slug}"` })?.[0] : site?.homepage())
 	const page_type = $derived(page && PageTypes.one(page.page_type))
+	const page_type_fields = $derived(page_type?.fields())
+	const page_entries = $derived(page?.entries())
 
 	// Get symbols directly instead of using page_type.symbols()
 	let page_type_symbols = $derived(page_type?.symbols() ?? [])
@@ -67,6 +68,8 @@
 			}
 		})
 	}
+
+	let commit_task = $state<NodeJS.Timeout>()
 </script>
 
 <div class="sidebar primo-reset">
@@ -106,9 +109,33 @@
 				{/if}
 			</Tabs.Content>
 			<Tabs.Content value="content">
-				<div class="page-type-fields">
-					<Content entity={page} fields={page_type?.fields} />
-				</div>
+				{#if page && page_type_fields && page_entries}
+					<div class="page-type-fields">
+						<Content
+							entity={page}
+							fields={page_type_fields}
+							entries={page_entries}
+							oninput={(values) => {
+								for (const [key, value] of Object.entries(values)) {
+									const field = page_type_fields?.find((field) => field.key === key)
+									if (!field) {
+										continue
+									}
+
+									const entry = page_entries?.find((entry) => entry.field === field?.id)
+									if (entry) {
+										PageEntries.update(entry.id, { value })
+									} else {
+										PageEntries.create({ page: page.id, field: field.id, locale: 'en', value })
+									}
+								}
+
+								clearTimeout(commit_task)
+								commit_task = setTimeout(() => PageEntries.commit(), 500)
+							}}
+						/>
+					</div>
+				{/if}
 				<!-- $userRole === 'DEV' -->
 				{#if true}
 					<button onclick={() => goto(`/${site?.id}/page-type--${page_type?.id}?t=p`)} class="footer-link">Manage Fields</button>
@@ -116,9 +143,33 @@
 			</Tabs.Content>
 		</Tabs.Root>
 	{:else}
-		<div class="p-4 page-type-fields">
-			<Content entity={page} fields={page_type?.fields()} />
-		</div>
+		{#if page && page_type_fields && page_entries}
+			<div class="p-4 page-type-fields">
+				<Content
+					entity={page}
+					fields={page_type_fields}
+					entries={page_entries}
+					oninput={(values) => {
+						for (const [key, value] of Object.entries(values)) {
+							const field = page_type_fields?.find((field) => field.key === key)
+							if (!field) {
+								continue
+							}
+
+							const entry = page_entries?.find((entry) => entry.field === field?.id)
+							if (entry) {
+								PageEntries.update(entry.id, { value })
+							} else {
+								PageEntries.create({ page: page.id, field: field.id, locale: 'en', value })
+							}
+						}
+
+						clearTimeout(commit_task)
+						commit_task = setTimeout(() => PageEntries.commit(), 500)
+					}}
+				/>
+			</div>
+		{/if}
 		<!-- $userRole === 'DEV' -->
 		{#if true}
 			<button onclick={() => goto(`/${site?.id}/page-type--${page_type?.id}?t=p`)} class="footer-link mb-2 mr-2">Manage Fields</button>

@@ -12,6 +12,7 @@ import { PageTypeSectionEntry } from '../common/models/PageTypeSectionEntry'
 import { SiteSymbolEntry } from '../common/models/SiteSymbolEntry'
 import { SiteEntry } from '../common/models/SiteEntry'
 import { PageTypeEntry } from '$lib/common/models/PageTypeEntry'
+import { PageEntry } from '$lib/common/models/PageEntry'
 
 /**
  * Entry models by name of the owning collection.
@@ -21,6 +22,7 @@ export const ENTRY_MODELS = {
 	sites: SiteEntry,
 	site_symbols: SiteSymbolEntry,
 	page_types: PageTypeEntry,
+	pages: PageEntry,
 	page_type_sections: PageTypeSectionEntry,
 	page_sections: PageSectionEntry
 } as const
