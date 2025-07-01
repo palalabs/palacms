@@ -195,7 +195,7 @@
 						</div>
 					</div>
 					<div style="background: #222;" class="rounded">
-						<SitePreview style="height: 100%" site_id={selected_starter_id} {preview} append={design_variables_css} />
+						<!-- <SitePreview style="height: 100%" site_id={selected_starter_id} {preview} append={design_variables_css} /> -->
 					</div>
 				</div>
 			</div>
