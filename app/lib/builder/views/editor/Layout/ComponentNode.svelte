@@ -43,7 +43,9 @@
 
 	let node = $state()
 
-	let component_data = $derived(getContent(section, block?.fields() ?? [], block?.entries() ?? [])[$locale] ?? {})
+	const fields = $derived(block.fields())
+	const entries = $derived('page_type' in section ? section.entries() : 'page' in section ? section.entries() : [])
+	const component_data = $derived(getContent(section, fields, entries)[$locale] ?? {})
 
 	let floating_menu = $state()
 	let bubble_menu = $state()
@@ -106,15 +108,11 @@
 		const assigned_entry_ids = new Set() // elements that have been matched to a field ID
 
 		const static_field_types = ['text', 'link', 'image', 'markdown']
-		const static_fields = block?.fields()?.filter((f) => static_field_types.includes(f.type)) ?? []
+		const static_fields = fields.filter((f) => static_field_types.includes(f.type)) ?? []
 
 		for (const field of static_fields) {
-			const relevant_entries = section.entries.filter((e) => e.field === field.id)
-
+			const relevant_entries = entries.filter((e) => e.field === field.id)
 			for (const entry of relevant_entries) {
-				if (!entry) {
-					continue
-				}
 				search_elements_for_value({
 					id: entry.id,
 					key: field.key,
@@ -599,7 +597,7 @@
 
 	async function send_component_to_iframe(js, data) {
 		try {
-			node.contentWindow.postMessage({ type: 'component', payload: { js, data: _.cloneDeep(data) } }, '*')
+			node.contentWindow.postMessage({ type: 'component', payload: { js, data } }, '*')
 			// setTimeout(make_content_editable, 200) // wait for component to mount within iframe
 		} catch (e) {
 			console.error(e)
