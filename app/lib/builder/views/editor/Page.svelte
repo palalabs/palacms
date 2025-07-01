@@ -610,9 +610,11 @@
 		<header class="page-header-zone">
 			{#each header_sections as page_type_section (page_type_section.id)}
 				{@const block = SiteSymbols.one(page_type_section.symbol)}
-				<div role="presentation" data-section={page_type_section.id} data-symbol={block?.id} class="page-type-section header-section">
-					<ComponentNode {block} section={page_type_section} on:lock={() => {}} on:unlock={() => {}} on:mount={() => sections_mounted++} on:resize={() => {}} />
-				</div>
+				{#if block}
+					<div role="presentation" data-section={page_type_section.id} data-symbol={block?.id} class="page-type-section header-section">
+						<ComponentNode {block} section={page_type_section} on:lock={() => {}} on:unlock={() => {}} on:mount={() => sections_mounted++} on:resize={() => {}} />
+					</div>
+				{/if}
 			{/each}
 		</header>
 	{/if}
@@ -623,9 +625,11 @@
 		{#if is_static_page_type && page_type_body_sections.length > 0}
 			{#each page_type_body_sections as page_type_section (page_type_section.id)}
 				{@const block = SiteSymbols.one(page_type_section.symbol)}
-				<div role="presentation" data-section={page_type_section.id} data-symbol={block?.id} class="page-type-section static-content-section">
-					<ComponentNode {block} section={page_type_section} on:lock={() => {}} on:unlock={() => {}} on:mount={() => sections_mounted++} on:resize={() => {}} />
-				</div>
+				{#if block}
+					<div role="presentation" data-section={page_type_section.id} data-symbol={block?.id} class="page-type-section static-content-section">
+						<ComponentNode {block} section={page_type_section} on:lock={() => {}} on:unlock={() => {}} on:mount={() => sections_mounted++} on:resize={() => {}} />
+					</div>
+				{/if}
 			{/each}
 		{/if}
 
@@ -661,18 +665,20 @@
 					{#if locked}
 						<LockedOverlay {locked} />
 					{/if}
-					<ComponentNode
-						{block}
-						section={page_type_section}
-						on:lock={() => lock_block(page_type_section.id)}
-						on:unlock={() => unlock_block()}
-						on:mount={() => sections_mounted++}
-						on:resize={() => {
-							if (showing_block_toolbar) {
-								position_block_toolbar()
-							}
-						}}
-					/>
+					{#if block}
+						<ComponentNode
+							{block}
+							section={page_type_section}
+							on:lock={() => lock_block(page_type_section.id)}
+							on:unlock={() => unlock_block()}
+							on:mount={() => sections_mounted++}
+							on:resize={() => {
+								if (showing_block_toolbar) {
+									position_block_toolbar()
+								}
+							}}
+						/>
+					{/if}
 				</div>
 			{/each}
 		{/if}
@@ -716,18 +722,20 @@
 				{#if locked && !in_current_tab}
 					<LockedOverlay {locked} />
 				{/if}
-				<ComponentNode
-					{block}
-					{section}
-					on:lock={() => lock_block(section.id)}
-					on:unlock={() => unlock_block()}
-					on:mount={() => sections_mounted++}
-					on:resize={() => {
-						if (showing_block_toolbar) {
-							position_block_toolbar()
-						}
-					}}
-				/>
+				{#if block}
+					<ComponentNode
+						{block}
+						{section}
+						on:lock={() => lock_block(section.id)}
+						on:unlock={() => unlock_block()}
+						on:mount={() => sections_mounted++}
+						on:resize={() => {
+							if (showing_block_toolbar) {
+								position_block_toolbar()
+							}
+						}}
+					/>
+				{/if}
 			</div>
 		{/each}
 
@@ -756,9 +764,11 @@
 		<footer class="page-footer-zone">
 			{#each footer_sections as page_type_section (page_type_section.id)}
 				{@const block = SiteSymbols.one(page_type_section.symbol)}
-				<div role="presentation" data-section={page_type_section.id} data-symbol={block?.id} class="page-type-section footer-section">
-					<ComponentNode {block} section={page_type_section} on:lock={() => {}} on:unlock={() => {}} on:mount={() => sections_mounted++} on:resize={() => {}} />
-				</div>
+				{#if block}
+					<div role="presentation" data-section={page_type_section.id} data-symbol={block?.id} class="page-type-section footer-section">
+						<ComponentNode {block} section={page_type_section} on:lock={() => {}} on:unlock={() => {}} on:mount={() => sections_mounted++} on:resize={() => {}} />
+					</div>
+				{/if}
 			{/each}
 		</footer>
 	{/if}
