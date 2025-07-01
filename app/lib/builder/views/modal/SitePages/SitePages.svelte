@@ -36,8 +36,8 @@
 					if (url_taken) {
 						alert(`That URL is already in use`)
 					} else {
-						await Pages.create({ ...new_page, parent: home_page.id, site: site_id })
-						Pages.refresh()
+						Pages.create({ ...new_page, parent: home_page.id, site: site_id })
+						Pages.commit()
 					}
 				}}
 			/>

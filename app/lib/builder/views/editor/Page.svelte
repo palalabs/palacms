@@ -13,29 +13,24 @@
 	import { dropTargetForElements } from '$lib/builder/libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
 	import { attachClosestEdge, extractClosestEdge } from '$lib/builder/libraries/pragmatic-drag-and-drop-hitbox/closest-edge.js'
 	import { beforeNavigate } from '$app/navigation'
-	import { Pages, Sites, SiteSymbols, PageSections, PageTypes, PageTypeSections } from '$lib/pocketbase/collections'
+	import { Pages, Sites, SiteSymbols, PageSections, PageTypes, PageTypeSections, PageSectionEntries } from '$lib/pocketbase/collections'
 	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
 
 	let { page }: { page: ObjectOf<typeof Pages> } = $props()
 
 	const site = $derived(Sites.one(page.site))
 	const page_type = $derived(page.page_type ? PageTypes.one(page.page_type) : null)
-	// Get page type sections directly from collection instead of relationship
-	const all_page_type_sections = $derived(PageTypeSections.list())
-	const page_type_sections = $derived(page_type ? all_page_type_sections.filter((s) => s.page_type === page_type.id) : [])
+	const page_type_sections = $derived(page_type?.sections() ?? [])
 
 	// Group page type sections by zone
 	const header_sections = $derived(page_type_sections.filter((s) => s.zone === 'header'))
 	const footer_sections = $derived(page_type_sections.filter((s) => s.zone === 'footer'))
-	const page_type_body_sections = $derived(page_type_sections.filter((s) => s.zone === 'body' || !s.zone))
+	const page_type_body_sections = $derived(page_type_sections.filter((s) => s.zone === 'body'))
 
 	// Check if page type is static (no symbols toggled)
-	// Note: This might need to be updated to use direct collection access too if needed
-	const is_static_page_type = $derived(page_type ? (page_type.symbols() || []).length === 0 : false)
+	const is_static_page_type = $derived(page_type ? page_type.symbols().length === 0 : false)
 
-	// Get page sections directly from collection instead of relationship
-	const all_page_sections = $derived(PageSections.list())
-	const sections = $derived(all_page_sections.filter((s) => s.page === page.id))
+	const sections = $derived(page.sections())
 
 	// Fade in page when all components mounted
 	let page_mounted = $state(false)
@@ -60,9 +55,34 @@
 		// Just use the current order of sections and assign consecutive indices
 		for (let i = 0; i < sections.length; i++) {
 			if (sections[i].index !== i) {
-				await PageSections.update(sections[i].id, { index: i })
+				PageSections.update(sections[i].id, { index: i })
 			}
 		}
+	}
+
+	async function copy_default_sections() {
+		// Create default sections from page type
+		const copied_sections: ObjectOf<typeof PageSections>[] = []
+		for (const section of page_type_body_sections) {
+			console.log(section.id)
+			const copied_section = PageSections.create({
+				page: page.id,
+				symbol: section.symbol,
+				index: section.index
+			})
+			for (const entry of section.entries()) {
+				PageSectionEntries.create({
+					section: copied_section.id,
+					field: entry.field,
+					locale: entry.locale,
+					value: entry.value
+				})
+			}
+			copied_sections.push(copied_section)
+		}
+		await PageSections.commit()
+		await PageSectionEntries.commit()
+		return copied_sections
 	}
 
 	async function add_section_to_page({ symbol, position }) {
@@ -72,11 +92,15 @@
 			await repair_section_indices()
 		}
 
+		if (sections.length === 0 && page_type_body_sections.length !== 0) {
+			await copy_default_sections()
+		}
+
 		// Adjust indices of existing sections that come after the insertion position
 		const existing_sections = sections.filter((section) => section.index >= position)
 
 		for (const section of existing_sections) {
-			await PageSections.update(section.id, { index: section.index + 1 })
+			PageSections.update(section.id, { index: section.index + 1 })
 		}
 
 		// Create new section
@@ -105,7 +129,7 @@
 		// Adjust indices of remaining sections that come after the deleted section
 		const sections_to_update = sections.filter((section) => section.index > section_to_delete.index)
 		for (const section of sections_to_update) {
-			await PageSections.update(section.id, { index: section.index - 1 })
+			PageSections.update(section.id, { index: section.index - 1 })
 		}
 
 		// Delete the section
@@ -230,10 +254,17 @@
 	////////////////////////////
 
 	let editing_section_tab = $state('code')
-	function edit_section(tab) {
+	async function edit_section(tab) {
 		if (!hovered_section) return
+
+		if (sections.length === 0 && page_type_body_sections.length !== 0) {
+			const copied_sections = await copy_default_sections()
+
+			// Now that the sections exist on the page, target the correct section for editing.
+			hovered_section_id = copied_sections[hovered_section.index].id
+		}
+
 		lock_block(hovered_section_id)
-		const section = sections.find((s) => s.id === hovered_section_id) // get updated block (necessary if actively editing on-page)
 		editing_section = true
 		editing_section_tab = tab
 	}
@@ -305,7 +336,7 @@
 					return
 				}
 
-				const last_section_id = palette_sections[palette_sections.length - 1]?.id
+				const last_section_id = sections[sections.length - 1]?.id ?? page_type_body_sections[page_type_body_sections.length - 1]?.id
 				if (!last_section_id) return
 				hovered_block_el = page_el.querySelector(`[data-section="${last_section_id}"]`)
 
@@ -414,7 +445,8 @@
 					drag_leave_timeout = null
 				}
 
-				const section_dragged_over_index = sections.find((s) => s.id === self.data.section.id).index
+				const section_dragged_over_index =
+					sections.length === 0 ? (page_type_body_sections.find((s) => s.id === self.data.section.id)?.index ?? 0) : (sections.find((s) => s.id === self.data.section.id)?.index ?? 0)
 				const block_being_dragged = source.data.block
 				const closestEdgeOfTarget = extractClosestEdge(self.data)
 
@@ -443,37 +475,35 @@
 			page_mounted = true
 		}
 	})
-	let block_toolbar_on_locked_block = $derived($locked_blocks.find((b) => b.block_id === hovered_section?.id))
+	let block_toolbar_on_locked_block = $derived($locked_blocks.find((b) => b === hovered_section?.id))
 	$effect(() => {
 		if (block_toolbar_on_locked_block) hide_block_toolbar()
 	})
 
-	let palette_sections = $derived(sections.filter((s) => s.palette))
-
 	let hovered_section_id: string | null = $state(null)
-	let hovered_section = $derived(page?.sections().find((s) => s.id === hovered_section_id))
+	let hovered_section = $derived(sections.find((s) => s.id === hovered_section_id) ?? page_type_body_sections.find((s) => s.id === hovered_section_id))
 	let editing_section = $state(false)
 </script>
 
-<Dialog.Root bind:open={editing_section}>
-	<Dialog.Content class="z-[999] max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4">
-		<SectionEditor
-			component={hovered_section}
-			tab={editing_section_tab}
-			header={{
-				button: {
-					label: 'Save',
-					onclick: (updated_data) => {
-						// TODO
-						// Object.assign(hovered_section, updated_data)
-						hovering_toolbar = false
-						editing_section = false
+{#if hovered_section}
+	<Dialog.Root bind:open={editing_section}>
+		<Dialog.Content class="z-[999] max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4">
+			<SectionEditor
+				component={hovered_section}
+				tab={editing_section_tab}
+				header={{
+					button: {
+						label: 'Save',
+						onclick: () => {
+							hovering_toolbar = false
+							editing_section = false
+						}
 					}
-				}
-			}}
-		/>
-	</Dialog.Content>
-</Dialog.Root>
+				}}
+			/>
+		</Dialog.Content>
+	</Dialog.Root>
+{/if}
 
 <!-- Loading Spinner -->
 {#if !page_mounted && sections.length > 1}
@@ -520,8 +550,7 @@
 				const is_page_type_section = page_type_body_sections.some((s) => s.id === section_id_to_delete)
 
 				if (is_page_type_section) {
-					// Delete from page type (affects all pages of this type)
-					await PageTypeSections.delete(section_id_to_delete)
+					// Do not delete section from page type
 				} else {
 					// Delete from this specific page
 					await remove_section_from_page(section_id_to_delete)
@@ -530,70 +559,54 @@
 			on:edit-code={() => edit_section('code')}
 			on:edit-content={() => edit_section('content')}
 			on:moveUp={async () => {
-				if (!hovered_section_id) return
+				if (!hovered_section) return
+
+				let section_to_move = hovered_section
+				if (sections.length === 0 && page_type_body_sections.length !== 0) {
+					const copied_sections = await copy_default_sections()
+
+					// Now that the sections exist on the page, target the correct section for editing.
+					section_to_move = copied_sections[section_to_move.index]
+				}
+
+				if (!section_to_move || section_to_move.index === 0) return
+
+				const section_above = sections.find((s) => s.index === section_to_move.index - 1)
+				if (!section_above) return
+
 				moving = true
 				hide_block_toolbar()
 
-				// Check if this is a page type section or regular page section
-				const is_page_type_section = page_type_body_sections.some((s) => s.id === hovered_section_id)
-
-				if (is_page_type_section) {
-					// Move page type section
-					const section = page_type_body_sections.find((s) => s.id === hovered_section_id)
-					if (!section) return
-
-					const current_index = page_type_body_sections.findIndex((s) => s.id === section.id)
-					if (current_index > 0) {
-						const section_above = page_type_body_sections[current_index - 1]
-						await PageTypeSections.update(section.id, { index: current_index - 1 })
-						await PageTypeSections.update(section_above.id, { index: current_index })
-					}
-				} else {
-					// Move regular page section
-					const section = sections.find((s) => s.id === hovered_section_id)
-					if (!section || section.index === 0) return
-
-					const section_above = sections.find((s) => s.index === section.index - 1)
-					if (!section_above) return
-
-					await PageSections.update(section.id, { index: section.index - 1 })
-					await PageSections.update(section_above.id, { index: section.index })
-				}
+				PageSections.update(section_to_move.id, { index: section_to_move.index - 1 })
+				PageSections.update(section_above.id, { index: section_to_move.index })
+				await PageSections.commit()
 
 				setTimeout(() => {
 					moving = false
 				}, 300)
 			}}
 			on:moveDown={async () => {
-				if (!hovered_section_id) return
+				if (!hovered_section) return
+
+				let section_to_move = hovered_section
+				if (sections.length === 0 && page_type_body_sections.length !== 0) {
+					const copied_sections = await copy_default_sections()
+
+					// Now that the sections exist on the page, target the correct section for editing.
+					section_to_move = copied_sections[section_to_move.index]
+				}
+
+				if (!section_to_move || section_to_move.index === sections.length - 1) return
+
+				const section_below = sections.find((s) => s.index === section_to_move.index + 1)
+				if (!section_below) return
+
 				moving = true
 				hide_block_toolbar()
 
-				// Check if this is a page type section or regular page section
-				const is_page_type_section = page_type_body_sections.some((s) => s.id === hovered_section_id)
-
-				if (is_page_type_section) {
-					// Move page type section
-					const section = page_type_body_sections.find((s) => s.id === hovered_section_id)
-					if (!section) return
-
-					const current_index = page_type_body_sections.findIndex((s) => s.id === section.id)
-					if (current_index < page_type_body_sections.length - 1) {
-						const section_below = page_type_body_sections[current_index + 1]
-						await PageTypeSections.update(section.id, { index: current_index + 1 })
-						await PageTypeSections.update(section_below.id, { index: current_index })
-					}
-				} else {
-					// Move regular page section
-					const section = sections.find((s) => s.id === hovered_section_id)
-					if (!section || section.index === sections.length - 1) return
-
-					const section_below = sections.find((s) => s.index === section.index + 1)
-					if (!section_below) return
-
-					await PageSections.update(section.id, { index: section.index + 1 })
-					await PageSections.update(section_below.id, { index: section.index })
-				}
+				PageSections.update(section_to_move.id, { index: section_to_move.index + 1 })
+				PageSections.update(section_below.id, { index: section_to_move.index })
+				await PageSections.commit()
 
 				setTimeout(() => {
 					moving = false
@@ -622,7 +635,7 @@
 	<!-- Page Content Area -->
 	<section class="page-content-zone flex-1 flex flex-col">
 		<!-- Page Type Body Sections (Static Page Type) -->
-		{#if is_static_page_type && page_type_body_sections.length > 0}
+		{#if is_static_page_type}
 			{#each page_type_body_sections as page_type_section (page_type_section.id)}
 				{@const block = SiteSymbols.one(page_type_section.symbol)}
 				{#if block}
@@ -634,38 +647,38 @@
 		{/if}
 
 		<!-- Page Type Body Sections (Dynamic Page Type - Default Content) -->
-		{#if !is_static_page_type && page_type_body_sections.length > 0}
+		{#if !is_static_page_type && sections.length === 0}
 			{#each page_type_body_sections as page_type_section (page_type_section.id)}
 				{@const block = SiteSymbols.one(page_type_section.symbol)}
-				{@const locked = $locked_blocks.find((b) => b.block_id === page_type_section.id)}
+				{@const locked = $locked_blocks.find((b) => b === page_type_section.id)}
 				{@const show_block_toolbar_on_hover = page_mounted && !moving}
-				<div
-					role="presentation"
-					data-section={page_type_section.id}
-					data-symbol={block?.id}
-					class="page-type-section default-content-section"
-					onmouseenter={async (e) => {
-						hovered_section_id = page_type_section.id
-						hovered_block_el = e.currentTarget
-						if (show_block_toolbar_on_hover) {
-							show_block_toolbar()
-						}
-					}}
-					onmouseleave={() => {
-						// Only hide if we're not immediately entering another section
-						setTimeout(() => {
-							// Check if we've hovered over a different section in the meantime
-							if (hovered_section_id === page_type_section.id) {
-								hide_block_toolbar()
+				{#if block}
+					<div
+						role="presentation"
+						data-section={page_type_section.id}
+						data-symbol={block?.id}
+						class="page-type-section default-content-section"
+						onmouseenter={async (e) => {
+							hovered_section_id = page_type_section.id
+							hovered_block_el = e.currentTarget
+							if (show_block_toolbar_on_hover) {
+								show_block_toolbar()
 							}
-						}, 50)
-					}}
-					use:drag_item={page_type_section}
-				>
-					{#if locked}
-						<LockedOverlay {locked} />
-					{/if}
-					{#if block}
+						}}
+						onmouseleave={() => {
+							// Only hide if we're not immediately entering another section
+							setTimeout(() => {
+								// Check if we've hovered over a different section in the meantime
+								if (hovered_section_id === page_type_section.id) {
+									hide_block_toolbar()
+								}
+							}, 50)
+						}}
+						use:drag_item={page_type_section}
+					>
+						{#if locked}
+							<LockedOverlay {locked} />
+						{/if}
 						<ComponentNode
 							{block}
 							section={page_type_section}
@@ -678,15 +691,15 @@
 								}
 							}}
 						/>
-					{/if}
-				</div>
+					</div>
+				{/if}
 			{/each}
 		{/if}
 
 		<!-- Page's Own Sections -->
-		{#each sections as section (section.id)}
-			{@const block = SiteSymbols.one(section.symbol)}
-			{@const locked = $locked_blocks.find((b) => b.block_id === section.id)}
+		{#each sections.filter((s) => SiteSymbols.one(s.symbol)) as section (section.id)}
+			{@const block = SiteSymbols.one(section.symbol)!}
+			{@const locked = $locked_blocks.find((b) => b === section.id)}
 			{@const in_current_tab = false}
 			{@const show_block_toolbar_on_hover = page_mounted && !moving}
 			{@const is_newly_added = newly_added_sections.has(section.id)}
@@ -722,25 +735,23 @@
 				{#if locked && !in_current_tab}
 					<LockedOverlay {locked} />
 				{/if}
-				{#if block}
-					<ComponentNode
-						{block}
-						{section}
-						on:lock={() => lock_block(section.id)}
-						on:unlock={() => unlock_block()}
-						on:mount={() => sections_mounted++}
-						on:resize={() => {
-							if (showing_block_toolbar) {
-								position_block_toolbar()
-							}
-						}}
-					/>
-				{/if}
+				<ComponentNode
+					{block}
+					{section}
+					on:lock={() => lock_block(section.id)}
+					on:unlock={() => unlock_block()}
+					on:mount={() => sections_mounted++}
+					on:resize={() => {
+						if (showing_block_toolbar) {
+							position_block_toolbar()
+						}
+					}}
+				/>
 			</div>
 		{/each}
 
 		<!-- Empty State (only show if no content at all) -->
-		{#if sections.length === 0 && (!page_type_body_sections.length || !is_static_page_type)}
+		{#if sections.length === 0 && page_type_body_sections.length === 0}
 			<div
 				class="empty-state"
 				class:dragging-over={hovered_block_el && dragging}

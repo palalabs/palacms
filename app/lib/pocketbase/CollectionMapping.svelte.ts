@@ -23,7 +23,10 @@ export type MappedObject<T extends ObjectWithId, Options extends CollectionMappi
 
 export type MappedObjectList<T extends ObjectWithId, Options extends CollectionMappingOptions<T>> = MappedObject<T, Options>[]
 
-export type StagedOperation<T extends ObjectWithId> = { operation: 'create'; data: Omit<T, 'id'> } | { operation: 'update'; data: Partial<T> } | { operation: 'delete' }
+export type StagedOperation<T extends ObjectWithId> =
+	| { operation: 'create'; processed: boolean; data: Omit<T, 'id'> }
+	| { operation: 'update'; processed: boolean; data: Partial<T> }
+	| { operation: 'delete'; processed: boolean }
 
 export type CollectionMapping<T extends ObjectWithId, Options extends CollectionMappingOptions<T>> = {
 	one: (id: string) => MappedObject<T, Options> | undefined
@@ -32,7 +35,6 @@ export type CollectionMapping<T extends ObjectWithId, Options extends Collection
 	update: (id: string, values: Partial<T>) => MappedObject<T, Options>
 	delete: (id: string) => void
 	commit: () => Promise<void>
-	refresh: () => void
 	authWithPassword: (usernameOrEmail: string, password: string) => Promise<RecordAuthResponse<MappedObject<T, Options>>>
 	requestPasswordReset: (email: string) => Promise<void>
 	confirmPasswordReset: (passwordResetToken: string, password: string, passwordConfirm: string) => Promise<void>
@@ -49,12 +51,7 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 	const staged = new SvelteMap<string, StagedOperation<T>>()
 	const records = new SvelteMap<string, T | undefined>()
 	const lists = new SvelteMap<string, string[] | undefined>()
-	// Add a reactive signal to trigger updates when async loading completes
-	const loadingComplete = new SvelteMap<string, number>()
 
-	const refreshLists = () => {
-		lists.clear()
-	}
 	const mapObject = (record: unknown): MappedObject<T, Options> => {
 		const object = model.parse(record)
 		const links = Object.fromEntries(Object.entries(options?.links ?? {}).map(([property, factory]) => [property, factory.bind({ ...object, collection: collectionMapping })]))
@@ -63,11 +60,8 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 
 	const collectionMapping: CollectionMapping<T, Options> = {
 		one: (id) => {
-			// Check loading complete signal for this record to trigger reactivity
-			loadingComplete.get(`record-${id}`)
-
 			const operation = staged.get(id)
-			let data = untrack(() => records.get(id))
+			let data = records.get(id)
 
 			if (operation?.operation === 'delete') {
 				return undefined
@@ -75,37 +69,31 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 				data = Object.assign({}, data, operation.data)
 			} else if (!data) {
 				// If no cached record exists, start loading it
-				if (!untrack(() => records.has(id))) {
+				if (!records.has(id)) {
 					untrack(() => {
 						records.set(id, undefined)
 						collection
 							.getOne(id)
 							.then((record) => {
 								records.set(id, record as unknown as T)
-								// Signal completion for individual records too
-								loadingComplete.set(`record-${id}`, Date.now())
 							})
 							.catch((error) => {
 								// Record doesn't exist, remove from cache
 								records.delete(id)
-								loadingComplete.set(`record-${id}`, Date.now())
 							})
 					})
 				}
 				return undefined
 			}
+
 			return mapObject(data)
 		},
 		list: (options) => {
 			const listId = JSON.stringify(options ?? {})
-
-			// Check loading complete signal to trigger reactivity when async loading finishes
-			loadingComplete.get(listId)
-
-			let list = [...(untrack(() => lists.get(listId)) ?? [])]
+			const list = lists.get(listId) ?? []
 
 			// If no cached list exists, start loading it
-			if (!untrack(() => lists.has(listId))) {
+			if (!lists.has(listId)) {
 				untrack(() => {
 					lists.set(listId, [])
 					collection
@@ -120,13 +108,9 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 								listId,
 								fetchedRecords.map(({ id }) => id)
 							)
-							// Signal that loading is complete to trigger reactivity
-							loadingComplete.set(listId, Date.now())
 						})
 						.catch((error) => {
 							lists.set(listId, [])
-							// Signal that loading is complete even on error
-							loadingComplete.set(listId, Date.now())
 						})
 				})
 				return [] // Return empty array while loading
@@ -143,7 +127,7 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 		create: (values) => {
 			const id = generateId()
 			const data = { ...values, id }
-			staged.set(id, { operation: 'create', data })
+			staged.set(id, { operation: 'create', processed: false, data })
 			return mapObject(data)
 		},
 		update: (id, values) => {
@@ -155,15 +139,17 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 					operation.operation == 'create'
 						? {
 								operation: operation.operation,
+								processed: false,
 								data: { ...operation.data, ...values }
 							}
 						: {
 								operation: operation.operation,
+								processed: false,
 								data: { ...operation.data, ...values }
 							}
 				staged.set(id, updatedOperation)
 			} else {
-				operation = { operation: 'update', data: values }
+				operation = { operation: 'update', processed: false, data: values }
 				staged.set(id, operation)
 			}
 
@@ -173,15 +159,22 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 		},
 		delete: (id) => {
 			const operation = staged.get(id)
-			if (operation?.operation === 'create') {
+			if (operation?.operation === 'create' && !operation.processed) {
 				staged.delete(id)
 			} else {
-				staged.set(id, { operation: 'delete' })
+				staged.set(id, { operation: 'delete', processed: false })
 			}
 		},
 		commit: async () => {
 			const promises: Promise<void>[] = []
 			for (const [id, operation] of staged) {
+				// Avoid redoing operation if commit is done twice in a row
+				if (operation.processed) {
+					continue
+				} else {
+					operation.processed = true
+				}
+
 				switch (operation.operation) {
 					case 'create':
 						promises.push(
@@ -212,10 +205,6 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 			await Promise.all(promises)
 			staged.clear()
 			lists.clear()
-		},
-		refresh: () => {
-			// Force refresh lists without clearing objects immediately
-			refreshLists()
 		},
 		authWithPassword: async (usernameOrEmail, password) => {
 			const response = await collection.authWithPassword(usernameOrEmail, password)
