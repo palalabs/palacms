@@ -43,10 +43,16 @@
 	// 	SiteSymbols.update(symbol.id, { name: new_name })
 	// })
 
-	function save_rename() {
-		renaming = false
-		// TODO: Implement direct PocketBase update instead of CollectionMapping
-		console.log('Would rename symbol to:', new_name)
+	async function save_rename() {
+		if (!symbol || !new_name.trim()) return
+		
+		try {
+			// Update the symbol name directly in the database
+			await symbol.collection.instance.collection('site_symbols').update(symbol.id, { name: new_name.trim() })
+			renaming = false
+		} catch (error) {
+			console.warn('Failed to rename symbol:', error)
+		}
 	}
 
 	let height = $state(0)
@@ -145,9 +151,17 @@
 					options={[
 						{
 							label: 'Edit',
-							icon: 'clarity:edit-solid',
+							icon: 'material-symbols:code',
 							on_click: () => {
 								dispatch('edit')
+							}
+						},
+						{
+							label: 'Rename',
+							icon: 'clarity:edit-solid',
+							on_click: () => {
+								new_name = symbol.name
+								renaming = true
 							}
 						},
 						{

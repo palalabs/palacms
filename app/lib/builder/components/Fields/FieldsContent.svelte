@@ -141,7 +141,6 @@
 						<FieldItem
 							{field}
 							onchange={(data) => {
-								console.log('yeee alright')
 								onchange({ id: field.id, data })
 							}}
 							ondelete={() => ondelete(field.id)}
