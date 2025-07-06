@@ -33,7 +33,7 @@
 	import { component_iframe_srcdoc } from '$lib/builder/components/misc'
 	import { getContent } from '$lib/pocketbase/content'
 	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
-	import { PageSectionEntries, PageTypeSectionEntries, SiteSymbolFields, SiteSymbols, type PageSections, type PageTypeSections } from '$lib/pocketbase/collections'
+	import { SiteSymbolFields, SiteSymbols, type PageSections, type PageTypeSections } from '$lib/pocketbase/collections'
 
 	const lowlight = createLowlight(all)
 
@@ -46,6 +46,8 @@
 	const fields = $derived(block.fields())
 	const entries = $derived('page_type' in section ? section.entries() : 'page' in section ? section.entries() : undefined)
 	const component_data = $derived(fields && entries && (getContent(section, fields, entries)[$locale] ?? {}))
+
+
 
 	let floating_menu = $state()
 	let bubble_menu = $state()

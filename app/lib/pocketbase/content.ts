@@ -43,10 +43,18 @@ export const getContent = <Collection extends keyof typeof ENTRY_MODELS>(entity:
 		.filter((field1, index, array) => array.findIndex((field2) => field2.id === field1.id) === index)
 	for (const field of fields) {
 		const fieldEntries = getResolvedEntries(entity, field, entries)
-		for (const entry of fieldEntries) {
-			if (!content[entry.locale]) content[entry.locale] = {}
-			if (!content[entry.locale]![field.key]) content[entry.locale]![field.key] = []
-			content[entry.locale]![field.key].push(entry.value)
+		
+		// If field has a key but no entries, fill with empty value
+		if (field.key && fieldEntries.length === 0) {
+			if (!content.en) content.en = {}
+			if (!content.en![field.key]) content.en![field.key] = []
+			content.en![field.key].push('')
+		} else {
+			for (const entry of fieldEntries) {
+				if (!content[entry.locale]) content[entry.locale] = {}
+				if (!content[entry.locale]![field.key]) content[entry.locale]![field.key] = []
+				content[entry.locale]![field.key].push(entry.value)
+			}
 		}
 	}
 	return content

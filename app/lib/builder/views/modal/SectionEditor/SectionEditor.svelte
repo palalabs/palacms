@@ -58,10 +58,11 @@
 			await SiteSymbols.commit()
 			await SiteSymbolFields.commit()
 
+			// Commit any existing entry changes made through the UI
 			if ('page_type' in component) {
-				PageTypeSectionEntries.commit()
+				await PageTypeSectionEntries.commit()
 			} else if ('page' in component) {
-				PageSectionEntries.commit()
+				await PageSectionEntries.commit()
 			}
 
 			header.button.onclick()
@@ -145,6 +146,7 @@
 						SiteSymbolFields.update(id, data)
 					}}
 					ondelete={(field_id) => {
+						// PocketBase cascade deletion will automatically clean up all associated entries
 						SiteSymbolFields.delete(field_id)
 					}}
 				/>
