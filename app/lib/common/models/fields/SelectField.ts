@@ -6,12 +6,12 @@ export const SelectField = FieldBase.extend({
 	config: z.object({
 		options: z
 			.object({
-				value: z.string().nonempty(),
-				label: z.string().nonempty(),
+				value: z.string(),
+				label: z.string(),
 				icon: z.string()
 			})
 			.array()
-	})
+	}).nullable()
 })
 
 export type SelectField = z.infer<typeof SelectField>

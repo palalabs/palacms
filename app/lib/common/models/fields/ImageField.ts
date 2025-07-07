@@ -6,7 +6,7 @@ export const ImageField = FieldBase.extend({
 	config: z.object({
 		maxSizeMB: z.number().positive().optional(),
 		maxWidthOrHeight: z.number().int().positive().optional()
-	})
+	}).nullable()
 })
 
 export type ImageField = z.infer<typeof ImageField>
