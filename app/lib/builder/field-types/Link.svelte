@@ -8,32 +8,23 @@
 	import { Sites, Pages } from '$lib/pocketbase/collections'
 	import { getDirectEntries, type Entity } from '$lib/pocketbase/content'
 
+	const { entity, field, entry: passedEntry, onchange }: { entity: Entity; field: LinkField; entry?: any; onchange: (value: any) => void } = $props()
+
 	const default_value = {
 		label: '',
 		url: '',
 		active: false
 	}
 
-	const { entity, field }: { entity: Entity; field: LinkField } = $props()
+	const default_entry = { value: default_value }
+
 	const site_id = $derived(page.params.site)
 	const site = $derived(Sites.one(site_id))
-	const entry = $derived(getDirectEntries(entity, field, [])[0])
-	const selectable_pages = $derived(Pages.list()?.filter((p) => p.page_type === field.config.page_type) ?? [])
+	const entry = $derived(passedEntry || default_entry)
+	const selectable_pages = $derived(Pages.list({ filter: `site = "${site_id}"` }) ?? [])
 
-	let selected = $state<'page' | 'url'>()
-	$effect.pre(() => {
-		selected = urlMatchesPage(entry?.value.url)
-	})
-
-	function urlMatchesPage(url) {
-		if (url && url.startsWith('/')) {
-			return 'page'
-		} else {
-			return 'url'
-		}
-	}
-
-	let selected_page = $derived(entry.value.page ?? site?.homepage())
+	let selected = $state('url')
+	let selected_page = $state(null)
 	function get_page_url(page) {
 		const prefix = $locale === 'en' ? '/' : `/${$locale}/`
 		if (page.slug === '') {
@@ -43,6 +34,8 @@
 			return parent_urls.length ? prefix + parent_urls.join('/') + '/' + page.slug : prefix + page.slug
 		}
 	}
+
+	$inspect({ selectable_pages, selected_page })
 </script>
 
 <div class="Link">
@@ -50,7 +43,7 @@
 		<UI.TextInput
 			label={field.label}
 			oninput={(text) => {
-				entry.value.label = text
+				onchange({ ...entry.value, label: text })
 			}}
 			value={entry.value.label}
 			id="page-label"
@@ -69,16 +62,20 @@
 			</div>
 			{#if selected === 'page'}
 				<UI.Select
-					value={selected_page}
-					options={[site.homepage()]}
-					on:input={({ detail: page }) => {
-						selected_page = page
+					value={selected_page?.id}
+					options={selectable_pages.map((p) => ({ ...p, label: p.name, value: p.id }))}
+					on:input={({ detail: pageId }) => {
+						const page = selectable_pages.find(p => p.id === pageId)
+						if (page) {
+							selected_page = page
+							onchange({ ...entry.value, page: page.id, url: get_page_url(page) })
+						}
 					}}
 				/>
 			{:else}
 				<UI.TextInput
 					oninput={(text) => {
-						entry.value.url = text
+						onchange({ ...entry.value, url: text })
 					}}
 					value={entry.value.url}
 					type="url"
