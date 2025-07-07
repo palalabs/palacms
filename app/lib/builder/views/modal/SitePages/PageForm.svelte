@@ -13,6 +13,7 @@
 
 	const site_id = $derived(page.params.site)
 	const site = $derived(Sites.one(site_id))
+	const page_types = $derived(site?.page_types())
 
 	const dispatch = createEventDispatcher()
 
@@ -46,7 +47,7 @@
 		dispatch('create', new_page)
 	}}
 	in:fade={{ duration: 100 }}
-	class:has-page-types={!!site?.page_types().length}
+	class:has-page-types={!!page_types?.length}
 >
 	<UI.TextInput autofocus={true} bind:value={new_page.name} id="page-label" label="Page Name" placeholder="About Us" />
 	<UI.TextInput bind:value={new_page.slug} id="page-slug" label="Page Slug" oninput={() => (page_label_edited = true)} placeholder="about-us" />
@@ -55,7 +56,7 @@
 			fullwidth={true}
 			label="Page Type"
 			value={new_page.page_type}
-			options={site.page_types().map((p) => ({ value: p.id, icon: p.icon, label: p.name }))}
+			options={page_types?.map((p) => ({ value: p.id, icon: p.icon, label: p.name }))}
 			on:input={({ detail: page_type_id }) => (new_page.page_type = page_type_id)}
 		/>
 	{/if}

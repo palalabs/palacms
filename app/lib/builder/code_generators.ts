@@ -18,6 +18,7 @@ import type { PageTypeSectionEntry } from '$lib/common/models/PageTypeSectionEnt
 import type { PageTypeSymbol } from '$lib/common/models/PageTypeSymbol.js'
 import type { SiteSymbol } from '$lib/common/models/SiteSymbol.js'
 import type { SiteSymbolEntry } from '$lib/common/models/SiteSymbolEntry.js'
+import { page } from '$app/state'
 
 export async function block_html({ code, data }) {
 	const { html, css: postcss, js } = code
@@ -31,6 +32,7 @@ export async function block_html({ code, data }) {
 
 export async function page_html({
 	site,
+	page,
 	page_type,
 	page_sections,
 	page_type_sections,
@@ -73,12 +75,18 @@ export async function page_html({
 		data: site_data
 	}
 
-	const page_type_body_sections = page_type_sections.filter((section) => section.zone === 'body')
-	const body_sections = page_type_symbols.length === 0 || page_sections.length === 0 ? page_type_body_sections : page_sections
+	page_sections = page_sections.filter((section) => section.page === page.id)
+	page_type_sections = page_type_sections.filter((section) => section.page_type === page_type.id)
+	page_type_symbols = page_type_symbols.filter((symbol) => symbol.page_type === page_type.id)
+
 	const header_sections = page_type_sections.filter((section) => section.zone === 'header')
 	const footer_sections = page_type_sections.filter((section) => section.zone === 'footer')
-	const sections = [...header_sections, ...body_sections, ...footer_sections]
-	const section_entries = [...page_type_section_entries, ...page_section_entries]
+	const page_type_body_sections = page_type_sections.filter((section) => section.zone === 'body')
+	const body_sections = page_type_symbols.length === 0 || page_sections.length === 0 ? page_type_body_sections : page_sections
+
+	const sections = [...header_sections, ...body_sections, ...footer_sections].filter(deduplicate('id'))
+	const section_entries = [...page_type_section_entries, ...page_section_entries].filter((entry) => sections.some((section) => section.id === entry.section)).filter(deduplicate('id'))
+
 	const component = (
 		await Promise.all(
 			sections.map(async (section: PageTypeSection | PageSection) => {
@@ -178,3 +186,8 @@ export function site_design_css(values) {
 	</style>
 	`
 }
+
+const deduplicate =
+	<T>(key: keyof T) =>
+	(item: T, index: number, array: T[]) =>
+		array.findIndex((value) => value[key] === item[key]) === index

@@ -18,6 +18,7 @@
 	import SitePages from '$lib/builder/views/modal/SitePages/SitePages.svelte'
 	import PageTypeModal from '$lib/builder/views/modal/PageTypeModal/PageTypeModal.svelte'
 	import Collaboration from '$lib/builder/views/modal/Collaboration.svelte'
+	import { usePublishSite } from '$lib/Publish.svelte'
 
 	let { children, currentPage } = $props()
 
@@ -28,6 +29,8 @@
 	const page = $derived(currentPage ?? (page_slug ? Pages.list({ filter: `site = "${site_id}" && slug = "${page_slug}"` })?.[0] : undefined))
 	const page_type = $derived(page_type_id && PageTypes.one(page_type_id))
 	const page_page_type = $derived(page && PageTypes.one(page.page_type))
+
+	const publish = $derived(usePublishSite(site_id))
 
 	let going_up = $state(false)
 	let going_down = $state(false)
@@ -162,12 +165,12 @@
 				<ToolbarButton id="redo" title="Redo" icon="material-symbols:redo" style="border: 0; font-size: 1.5rem;" on:click={redo_change} />
 			{/if} -->
 			<!-- $userRole === 'DEV' -->
-			{#if true}
+			<!-- {#if true}
 				<ToolbarButton icon="clarity:users-solid" on:click={() => (editing_collaborators = true)} />
-			{/if}
+			{/if} -->
 			{@render children?.()}
 			<!-- <LocaleSelector /> -->
-			<ToolbarButton type="primo" icon="entypo:publish" label="Publish" active={false} on:click={() => {}} disabled={false} />
+			<ToolbarButton type="primo" icon="entypo:publish" label="Publish" loading={publish.status !== 'standby'} on:click={publish.publish} />
 		</div>
 	</div>
 </nav>
