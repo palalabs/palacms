@@ -47,13 +47,24 @@ export const getContent = <Collection extends keyof typeof ENTRY_MODELS>(entity:
 		// If field has a key but no entries, fill with empty value
 		if (field.key && fieldEntries.length === 0) {
 			if (!content.en) content.en = {}
-			if (!content.en![field.key]) content.en![field.key] = []
-			content.en![field.key].push('')
+			// For repeater fields, use empty array; for single fields, use empty string/appropriate default
+			if (field.type === 'repeater') {
+				content.en![field.key] = []
+			} else {
+				content.en![field.key] = ''
+			}
 		} else {
 			for (const entry of fieldEntries) {
 				if (!content[entry.locale]) content[entry.locale] = {}
-				if (!content[entry.locale]![field.key]) content[entry.locale]![field.key] = []
-				content[entry.locale]![field.key].push(entry.value)
+				
+				// For repeater fields, collect values in array; for single fields, use direct value
+				if (field.type === 'repeater') {
+					if (!content[entry.locale]![field.key]) content[entry.locale]![field.key] = []
+					content[entry.locale]![field.key].push(entry.value)
+				} else {
+					// For single-value fields, just use the value directly (last one wins if multiple)
+					content[entry.locale]![field.key] = entry.value
+				}
 			}
 		}
 	}
