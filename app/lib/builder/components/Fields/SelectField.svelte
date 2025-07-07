@@ -3,8 +3,18 @@
 	import IconPicker from '../../components/IconPicker.svelte'
 	import UI from '../../ui/index.js'
 	import Icon from '@iconify/svelte'
+	import { createEventDispatcher } from 'svelte'
 
 	const { field }: { field: SelectField } = $props()
+	const dispatch = createEventDispatcher()
+
+	// Manage options separately since field.config keeps getting reset
+	let options = $state(field.config?.options || [])
+
+	function addOption() {
+		options = [...options, { value: '', label: '', icon: '' }]
+		dispatch('input', { config: { options } })
+	}
 
 	function validateFieldKey(key) {
 		// replace dash and space with underscore
@@ -13,23 +23,34 @@
 
 	// track focused value inputs to auto-fill values when unedited
 	const clicked_value_inputs = new Set()
+
+	$inspect('FIELD UPDATED:', field)
 </script>
 
 <!-- <div class="SelectField" style="margin-left: {1.5 + level}rem"> -->
 <div class="SelectField">
-	{#each field.options as option, i}
+	{#each options as option, i}
 		<div class="select-field">
 			<div class="option-icon">
 				<span class="primo--field-label">Icon</span>
-				<IconPicker variant="small" search_query={option.label} icon={option.icon || 'ri:checkbox-blank-circle-fill'} on:input={({ detail: icon }) => (option.icon = icon)} />
+				<IconPicker
+					variant="small"
+					search_query={option.label}
+					icon={option.icon || 'ri:checkbox-blank-circle-fill'}
+					on:input={({ detail: icon }) => {
+						option.icon = icon
+						dispatch('input', { detail: { config: { options } } })
+					}}
+				/>
 			</div>
 			<UI.TextInput
 				label="Option Label"
 				value={option.label}
-				autofocus={option.label.length === 0}
+				autofocus={!option.label || option.label.length === 0}
 				oninput={(text) => {
 					option.value = clicked_value_inputs.has(i) ? option.value : validateFieldKey(text)
 					option.label = text
+					dispatch('input', { detail: { config: { options } } })
 				}}
 			/>
 			<UI.TextInput
@@ -38,6 +59,7 @@
 				onfocus={() => clicked_value_inputs.add(i)}
 				oninput={(text) => {
 					option.value = text
+					dispatch('input', { detail: { config: { options } } })
 				}}
 			/>
 			<div class="item-options" id="repeater-{field.key}-{i}">
@@ -46,7 +68,7 @@
 						<Icon icon="fa-solid:arrow-up" />
 					</button>
 				{/if}
-				{#if i !== field.options.length - 1}
+				{#if i !== options.length - 1}
 					<button title="Move {field.label} down" onclick={() => {}}>
 						<Icon icon="fa-solid:arrow-down" />
 					</button>
@@ -57,7 +79,10 @@
 			</div>
 		</div>
 	{/each}
-	<button class="field-button subfield-button" onclick={() => field.options.push({ value: '', label: '', icon: '' })}>
+	<button
+		class="field-button subfield-button"
+		onclick={addOption}
+	>
 		<Icon icon="ic:baseline-plus" />
 		Create Option
 	</button>

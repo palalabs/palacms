@@ -213,7 +213,7 @@
 			<div class="main column-container">
 				<UI.TextInput
 					label="Information"
-					value={field.config.info || ''}
+					value={field.config?.info || ''}
 					autogrow={true}
 					placeholder="Something important about the following fields..."
 					oninput={(text) => {
@@ -376,8 +376,8 @@
 			<SelectField
 				{field}
 				{level}
-				on:input={({ detail: updated_field }) => {
-					onchange(updated_field)
+				on:input={(event) => {
+					onchange(event.detail)
 				}}
 			/>
 		{/if}

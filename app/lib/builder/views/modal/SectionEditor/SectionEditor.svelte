@@ -40,6 +40,8 @@
 	const entries = $derived('page_type' in component ? component.entries() : 'page' in component ? component.entries() : undefined)
 	const component_data = $derived(fields && entries && (getContent(component, fields, entries)[$locale] ?? {}))
 
+	$inspect({entries, component_data})
+
 	let loading = false
 
 	hotkey_events.on('e', toggle_tab)
@@ -120,6 +122,7 @@
 						})
 					}}
 					oninput={(values) => {
+						console.log({ values, component })
 						for (const [key, value] of Object.entries(values)) {
 							const field = fields.find((field) => field.key === key)
 							if (!field) {
