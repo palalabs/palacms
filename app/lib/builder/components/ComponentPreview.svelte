@@ -18,6 +18,7 @@
 	import { content_editable } from '../utilities'
 	import { processCode } from '../utils.js'
 	import { page } from '$app/state'
+	import { debounce } from 'lodash-es'
 	import { Sites } from '$lib/pocketbase/collections'
 
 	/**
@@ -126,9 +127,12 @@
 		}
 	}
 
-	// Set the refresh_preview store to the compile function
+	// Debounce compilation to prevent frequent recompilation during typing
+	const debouncedCompile = debounce(compile_component_code, 100)
+
+	// Set the refresh_preview store to the debounced compile function
 	$effect(() => {
-		$refresh_preview = compile_component_code
+		$refresh_preview = debouncedCompile
 	})
 
 	let channel
@@ -273,7 +277,9 @@
 	}
 
 	$effect(() => {
-		$auto_refresh && compile_component_code()
+		if ($auto_refresh && (code.html || code.css || code.js)) {
+			debouncedCompile()
+		}
 	})
 	$effect(() => {
 		if (iframe) {
