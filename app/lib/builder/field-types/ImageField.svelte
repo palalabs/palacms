@@ -12,8 +12,8 @@
 		url: ''
 	}
 
-	const { entity, field }: { entity: Entity; field: ImageField } = $props()
-	const entry = $derived(getDirectEntries(entity, field, [])[0])
+	const { entity, field, entry: passedEntry, onchange }: { entity: Entity; field: ImageField; entry?: any; onchange: (value: any) => void } = $props()
+	const entry = $derived(passedEntry || { value: default_value })
 
 	async function upload_image(image) {
 		loading = true
@@ -84,18 +84,17 @@
 			{/if}
 		</div>
 		<div class="inputs">
-			<TextInput value={entry.value.alt} label="Description" oninput={(alt) => (entry.value.alt = alt)} />
+			<TextInput value={entry.value.alt} label="Description" oninput={(alt) => onchange({ ...entry.value, alt })} />
 			<TextInput
 				value={entry.value.url}
 				label="URL"
 				oninput={(value) => {
-					entry.value.url = value
+					onchange({ ...entry.value, url: value })
 				}}
 			/>
 		</div>
 	</div>
 </div>
-{@render children?.()}
 
 <style lang="postcss">
 	* {

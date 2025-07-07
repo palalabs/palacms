@@ -1,28 +1,26 @@
-<script>
+<script lang="ts">
 	import { getIcon, loadIcon, buildIcon } from '@iconify/svelte'
 	import IconPicker from '../components/IconPicker.svelte'
 	import axios from 'axios'
+	import type { Entity } from '$lib/pocketbase/content'
+	import type { Field } from '$lib/common/models/Field'
+	import type { Entry } from '$lib/common/models/Entry'
 
-	/**
-	 * @typedef {Object} Props
-	 * @property {any} field
-	 * @property {any} value
-	 * @property {string} [search_query]
-	 * @property {(val: {value: string, metadata: {icon: string|null}}) => void} oninput
-	 */
-
-	/** @type {Props} */
-	let { field, value = $bindable(), search_query = '', oninput = /** @type {(val: {value: string, metadata: {icon: string|null}}) => void} */ () => {} } = $props()
+	let { field, entry, onchange, search_query = '' }: { entity: Omit<Entity, 'id'>; field: Omit<Field, 'id'>; entry?: Omit<Entry, 'id'>; onchange: (value: string) => void; search_query?: string } = $props()
+	
+	const value = $derived(entry?.value ?? '')
 
 	let searched = $state(false)
 
-	if (!getIcon(value) && !value.startsWith('<svg')) {
-		// reset value when invalid (i.e. when switching field type)
-		value = ''
-	} else if (getIcon(value)) {
-		// convert icon-id to icon-svg
-		select_icon(value)
-	}
+	$effect(() => {
+		if (!getIcon(value) && !value.startsWith('<svg')) {
+			// reset value when invalid (i.e. when switching field type)
+			onchange('')
+		} else if (getIcon(value)) {
+			// convert icon-id to icon-svg
+			select_icon(value)
+		}
+	})
 
 	// search immediately when passed a query
 	if (search_query) {
@@ -47,10 +45,8 @@
 	async function select_icon(icon) {
 		// delete icon
 		if (!icon) {
-			oninput({
-				value: '',
-				metadata: { icon: null }
-			})
+			onchange('')
+			return
 		}
 
 		// select icon
@@ -58,10 +54,7 @@
 		if (icon_data) {
 			const { attributes } = buildIcon(icon_data)
 			const svg = `<svg xmlns="http://www.w3.org/2000/svg" data-key="${field.key}" data-icon="${icon}" aria-hidden="true" role="img" height="${attributes.height}" width="${attributes.width}" viewBox="${attributes.viewBox}" preserveAspectRatio="${attributes.preserveAspectRatio}">${icon_data.body}</svg>`
-			oninput({
-				value: svg,
-				metadata: { icon }
-			})
+			onchange(svg)
 		}
 	}
 </script>

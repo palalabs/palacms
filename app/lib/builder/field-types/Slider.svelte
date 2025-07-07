@@ -1,12 +1,18 @@
-<script>
-	let { field, value, oninput = /** @type {(val: string) => void} */ () => {} } = $props()
+<script lang="ts">
+	import type { Entity } from '$lib/pocketbase/content'
+	import type { Field } from '$lib/common/models/Field'
+	import type { Entry } from '$lib/common/models/Entry'
+
+	let { field, entry, onchange }: { entity: Omit<Entity, 'id'>; field: Omit<Field, 'id'>; entry?: Omit<Entry, 'id'>; onchange: (value: string) => void } = $props()
+	
+	const value = $derived(entry?.value ?? '')
 </script>
 
 <div>
 	<p class="label">{field.label}</p>
 	<div class="container">
 		<p class="value">{value}</p>
-		<input oninput={({ target }) => oninput(target.value)} class="input" {value} type="range" />
+		<input oninput={({ target }) => onchange(target.value)} class="input" {value} type="range" />
 	</div>
 </div>
 

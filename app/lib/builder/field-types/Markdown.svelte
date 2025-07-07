@@ -1,22 +1,28 @@
-<script>
+<script lang="ts">
 	import { onMount } from 'svelte'
 	import autosize from 'autosize'
 	import { convert_markdown_to_html } from '../utils'
+	import type { Entity } from '$lib/pocketbase/content'
+	import type { Field } from '$lib/common/models/Field'
+	import type { Entry } from '$lib/common/models/Entry'
 
-	let { field, value = $bindable(), oninput = /** @type {(val: {value: {html: string, markdown: string}}) => void} */ () => {} } = $props()
+	let { field, entry, onchange }: { entity: Omit<Entity, 'id'>; field: Omit<Field, 'id'>; entry?: Omit<Entry, 'id'>; onchange: (value: {html: string, markdown: string}) => void } = $props()
 
 	// ensure value is correct shape
-	if (typeof value === 'string') {
-		value = {
-			markdown: value,
-			html: value
+	let value = $derived.by(() => {
+		if (typeof entry?.value === 'string') {
+			return {
+				markdown: entry.value,
+				html: entry.value
+			}
+		} else if (typeof entry?.value !== 'object' || !entry?.value?.hasOwnProperty('markdown')) {
+			return {
+				markdown: '',
+				html: ''
+			}
 		}
-	} else if (typeof value !== 'object' || !value?.hasOwnProperty('markdown')) {
-		value = {
-			markdown: '',
-			html: ''
-		}
-	}
+		return entry.value
+	})
 
 	let element = $state()
 
@@ -28,7 +34,7 @@
 
 	async function parseContent(markdown) {
 		const html = await convert_markdown_to_html(markdown)
-		oninput({ value: { html, markdown } })
+		onchange({ html, markdown })
 	}
 </script>
 

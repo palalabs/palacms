@@ -1,11 +1,14 @@
-<script>
+<script lang="ts">
 	import UI from '../ui'
+	import type { Entity } from '$lib/pocketbase/content'
+	import type { Field } from '$lib/common/models/Field'
+	import type { Entry } from '$lib/common/models/Entry'
 
-	let { field, value, oninput = /** @type {(val: string) => void} */ () => {} } = $props()
+	let { field, entry, onchange }: { entity: Omit<Entity, 'id'>; field: Omit<Field, 'id'>; entry?: Omit<Entry, 'id'>; onchange: (value: string) => void } = $props()
 </script>
 
 <div>
-	<UI.TextInput {...field} {value} oninput={(text) => oninput({ value: text })} type="url" />
+	<UI.TextInput {...field} value={entry?.value ?? ''} oninput={(text) => onchange(text)} type="url" />
 </div>
 
 <style lang="postcss">
