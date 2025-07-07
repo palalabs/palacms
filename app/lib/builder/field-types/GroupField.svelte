@@ -4,6 +4,7 @@
 	import Icon from '@iconify/svelte'
 	import { fieldTypes } from '../stores/app'
 	import { is_regex } from '../utils'
+	import { PageTypeSectionEntries, PageSectionEntries } from '$lib/pocketbase/collections'
 
 	const dispatch = createEventDispatcher()
 
@@ -18,9 +19,9 @@
 	 */
 
 	/** @type {Props} */
-	let { id, field, fields, entries, level = 0, oninput } = $props()
+	let { entity, field, fields = [], entries = [], entry, level = 0, onchange } = $props()
 
-	let subfields = $derived(fields.filter((f) => f.parent === field.id).sort((a, b) => a.index - b.index))
+	let subfields = $derived(fields.filter((f) => f.parent === field.id).sort((a, b) => (a.index || 0) - (b.index || 0)))
 
 	let hidden = $state(false)
 
@@ -30,12 +31,12 @@
 	}
 
 	function check_condition(field) {
-		if (!field.options.condition) return true // has no condition
-		const { field: field_id, value, comparison } = field.options.condition
+		if (!field.config?.condition) return true // has no condition
+		const { field: field_id, value, comparison } = field.config.condition
 		const field_to_compare = fields.find((f) => f.id === field_id)
 		if (!field_to_compare) {
 			// field has been deleted, reset condition
-			// field.options.condition = null
+			// field.config.condition = null
 			return true
 		}
 		// const { value: comparable_value } = entries.find((e) => e.field === field_id)
@@ -69,38 +70,51 @@
 	{/if}
 	{#if !hidden}
 		<div class="group-entries">
-			{#each subfields as subfield}
-				{@const is_visible = check_condition(subfield)}
-				{@const entry = entries.find((e) => e.field === subfield.id && e.parent === id)}
-				{#if !entry}
-					<span>Field is corrupt ({subfield.key} - {subfield.id})</span>
-				{:else if is_visible}
-					{@const SvelteComponent = getFieldComponent(subfield)}
-					<div class="group-item">
-						<SvelteComponent
-							id={entry.id}
-							value={entry.value}
-							metadata={entry.metadata}
-							field={subfield}
-							{fields}
-							{entries}
-							level={level + 1}
-							on:save
-							on:add
-							on:remove
-							on:move
-							oninput={(detail) => {
-								if (detail.id) {
-									oninput(detail)
-									// dispatch('input', detail)
-								} else {
-									oninput({ id: entry.id, data: detail })
-								}
-							}}
-						/>
-					</div>
-				{/if}
-			{/each}
+			{#if subfields.length === 0}
+				<div class="no-subfields">
+					<span>No subfields in this group. Add subfields in the Field tab.</span>
+				</div>
+			{:else}
+				{#each subfields as subfield}
+					{@const is_visible = check_condition(subfield)}
+					{@const entry = entries.find((e) => e.field === subfield.id)}
+					{#if is_visible}
+						{@const SvelteComponent = getFieldComponent(subfield)}
+						<div class="group-item">
+							<SvelteComponent
+								{entity}
+								field={subfield}
+								{fields}
+								{entries}
+								{entry}
+								level={level + 1}
+								on:save
+								on:add
+								on:remove
+								on:move
+								onchange={(value) => {
+									// Handle entry creation/update for subfield
+									const entry = entries.find((entry) => entry.field === subfield.id)
+									if ('page_type' in entity) {
+										if (entry) {
+											PageTypeSectionEntries.update(entry.id, { value })
+										} else {
+											PageTypeSectionEntries.create({ field: subfield.id, locale: 'en', value, section: entity.id })
+										}
+									} else if ('page' in entity) {
+										if (entry) {
+											PageSectionEntries.update(entry.id, { value })
+										} else {
+											PageSectionEntries.create({ field: subfield.id, locale: 'en', value, section: entity.id })
+										}
+									}
+									onchange(value)
+								}}
+							/>
+						</div>
+					{/if}
+				{/each}
+			{/if}
 		</div>
 	{/if}
 </div>
