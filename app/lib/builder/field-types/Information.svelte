@@ -3,14 +3,15 @@
 
 	let {
 		field = {
-			options: {
+			config: {
 				info: ''
 			}
 		}
 	} = $props()
 
 	let html = $state('')
-	convert_markdown_to_html(field.options.info).then((result) => {
+	const info = field.config?.info || ''
+	convert_markdown_to_html(info).then((result) => {
 		html = result
 	})
 </script>
