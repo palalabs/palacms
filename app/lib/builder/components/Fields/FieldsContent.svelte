@@ -21,11 +21,12 @@
 		entity: Entity
 		fields: Field[]
 		entries: Entry[]
-		create_field: () => void
+		create_field: (parentId?: string) => void
 		oninput: (values: Record<string, unknown>) => void
 		onchange: (details: { id: string; data: Partial<Field> }) => void
 		ondelete: (field_id: string) => void
 	} = $props()
+
 
 	function get_component(field: Field) {
 		const fieldType = $fieldTypes.find((ft) => ft.id === field.type)
@@ -88,7 +89,7 @@
 </script>
 
 <div class="Fields">
-	{#each fields || [] as field (field.id)}
+	{#each (fields || []).filter((f) => !f.parent || f.parent === '') as field (field.id)}
 		{@const Field_Component = get_component(field)}
 		<!-- TODO: $userRole === 'DEV' -->
 		{@const active_tab = selected_tabs[field.id] || 'field'}
@@ -140,10 +141,25 @@
 					<div class="FieldItem">
 						<FieldItem
 							{field}
+							{fields}
+							{create_field}
 							onchange={(data) => {
-								onchange({ id: field.id, data })
+								// Check if this is already a properly structured onchange call
+								if (data.id && data.data) {
+									// This is from a subfield, pass it through as-is
+									onchange(data)
+								} else {
+									// This is from the root field itself
+									onchange({ id: field.id, data })
+								}
 							}}
 							ondelete={() => ondelete(field.id)}
+							onduplicate={() => {
+								// TODO: Implement duplicate
+							}}
+							onmove={(direction) => {
+								// TODO: Implement move
+							}}
 						/>
 					</div>
 				{:else if active_tab === 'entry'}
@@ -163,14 +179,14 @@
 								{/if}
 							</div>
 							<Card {title} {icon}>
-								<Field_Component {entity} {field} entry={source_entry} onchange={(value) => oninput({ [field.key]: value })} />
+								<Field_Component {entity} {field} {fields} {entries} entry={source_entry} onchange={(value) => oninput({ [field.key]: value })} />
 							</Card>
 						{:else}
 							{@const content_entry = getDirectEntries(entity, field, entries)[0]}
 							{@const title = ['repeater', 'group'].includes(field.type) ? field.label : null}
 							{@const icon = undefined}
 							<Card {title} {icon}>
-								<Field_Component {entity} {field} entry={content_entry} onchange={(value) => oninput({ [field.key]: value })} />
+								<Field_Component {entity} {field} {fields} {entries} entry={content_entry} onchange={(value) => oninput({ [field.key]: value })} />
 							</Card>
 						{/if}
 						<!-- TODO: $userRole === 'DEV' -->
@@ -186,7 +202,7 @@
 	{/each}
 	<!-- TODO: $userRole === 'DEV' -->
 	{#if true}
-		<button class="field-button" onclick={create_field}>
+		<button class="field-button" onclick={() => create_field()}>
 			<div class="icon">
 				<Icon icon="fa-solid:plus" />
 			</div>

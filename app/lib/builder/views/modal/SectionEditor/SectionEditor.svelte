@@ -40,7 +40,7 @@
 	const entries = $derived('page_type' in component ? component.entries() : 'page' in component ? component.entries() : undefined)
 	const component_data = $derived(fields && entries && (getContent(component, fields, entries)[$locale] ?? {}))
 
-	$inspect({entries, component_data})
+	// $inspect({entries, component_data})
 
 	let loading = false
 
@@ -109,16 +109,23 @@
 					entity={component}
 					{fields}
 					{entries}
-					create_field={() => {
+					create_field={(parentId) => {
 						if (!symbol) {
 							return
 						}
+
+						// Get the highest index for fields at this level
+						const siblingFields = fields?.filter((f) => f.parent === parentId) || []
+						const nextIndex = Math.max(...siblingFields.map((f) => f.index || 0), -1) + 1
+
 						SiteSymbolFields.create({
 							type: 'text',
 							key: '',
 							label: '',
 							config: null,
-							symbol: symbol.id
+							symbol: symbol.id,
+							...(parentId ? { parent: parentId } : {}),
+							index: nextIndex
 						})
 					}}
 					oninput={(values) => {
@@ -146,7 +153,9 @@
 						}
 					}}
 					onchange={({ id, data }) => {
+						console.log('Updating field:', id, 'with data:', data)
 						SiteSymbolFields.update(id, data)
+						console.log('Field after update:', SiteSymbolFields.one(id))
 					}}
 					ondelete={(field_id) => {
 						// PocketBase cascade deletion will automatically clean up all associated entries
