@@ -23,6 +23,7 @@
 		fields,
 		level = 0,
 		top_level = true,
+		create_field,
 		onchange,
 		onduplicate,
 		ondelete,
@@ -32,6 +33,7 @@
 		fields: Field[]
 		level?: number
 		top_level?: boolean
+		create_field?: (parentId?: string) => void
 		onchange: (values: Partial<Field>) => void
 		onduplicate: () => void
 		ondelete: () => void
@@ -290,14 +292,19 @@
 					autofocus={is_new_field}
 					on:keydown
 					oninput={(text) => {
+						// Mark as no longer new once user types something substantial
+						if (text.length > 0) {
+							is_new_field = false
+						}
+						
 						// only auto-set key and type on new fields
 						onchange({
 							label: text,
 							key: key_edited || !is_new_field ? field.key : validate_field_key(text),
-							type: field_type_changed || !is_new_field ? field.type : update_field_type(text)
+							// type: field_type_changed || !is_new_field || field.label !== '' ? field.type : update_field_type(text)
+							type: field.type // Always preserve existing type
 						})
 					}}
-					on:blur={() => (is_new_field = false)}
 				/>
 			</div>
 			<!-- svelte-ignore a11y_label_has_associated_control -->
@@ -412,14 +419,39 @@
 	{#if has_subfields}
 		<div class="children-container" style:padding-left="{level + 1}rem">
 			{#each child_fields.sort((a, b) => a.index - b.index) as subfield (subfield.id)}
-				<FieldItem field={cloneDeep(subfield)} {fields} top_level={false} level={level + 1} {onduplicate} {ondelete} {onmove} {onchange} />
+				<FieldItem 
+					field={cloneDeep(subfield)} 
+					{fields} 
+					{create_field} 
+					top_level={false} 
+					level={level + 1} 
+					{onduplicate} 
+					{ondelete} 
+					{onmove} 
+					onchange={(data) => {
+						console.log('Subfield onchange called with:', data, 'for subfield:', subfield.id)
+						// The data parameter here could be either:
+						// 1. Direct field data (label, key, type, etc.) from the subfield itself
+						// 2. Nested onchange call with {id, data} structure from a sub-subfield
+						
+						if (data.id && data.data) {
+							// This is a nested onchange call, pass it through
+							onchange(data)
+						} else {
+							// This is direct field data from the subfield
+							onchange({ id: subfield.id, data })
+						}
+					}} 
+				/>
 			{/each}
 			{#if field.type === 'repeater' || field.type === 'group'}
 				<button
 					class="subfield-button"
 					data-level={level}
 					onclick={() => {
-						// TODO: Implement
+						if (create_field) {
+							create_field(field.id)
+						}
 					}}
 				>
 					<Icon icon="fa-solid:plus" />
