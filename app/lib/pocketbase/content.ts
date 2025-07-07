@@ -44,8 +44,31 @@ export const getContent = <Collection extends keyof typeof ENTRY_MODELS>(entity:
 	for (const field of fields) {
 		const fieldEntries = getResolvedEntries(entity, field, entries)
 		
+		// Handle group fields specially - collect subfield entries into an object
+		if (field.type === 'group' && field.key) {
+			if (!content.en) content.en = {}
+			
+			// Find all subfields for this group
+			const subfields = fields.filter(f => f.parent === field.id)
+			const groupObject: Record<string, unknown> = {}
+			
+			// Collect each subfield's value
+			for (const subfield of subfields) {
+				const subfieldEntries = getDirectEntries(entity, subfield, entries)
+				if (subfieldEntries.length > 0) {
+					// Use the last entry if there are multiple (same as single fields)
+					const subfieldEntry = subfieldEntries[subfieldEntries.length - 1]
+					groupObject[subfield.key] = subfieldEntry.value
+				} else {
+					// Default empty value for missing subfields
+					groupObject[subfield.key] = ''
+				}
+			}
+			
+			content.en![field.key] = groupObject
+		}
 		// If field has a key but no entries, fill with empty value
-		if (field.key && fieldEntries.length === 0) {
+		else if (field.key && fieldEntries.length === 0) {
 			if (!content.en) content.en = {}
 			// For repeater fields, use empty array; for single fields, use empty string/appropriate default
 			if (field.type === 'repeater') {
