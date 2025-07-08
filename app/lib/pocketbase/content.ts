@@ -2,7 +2,7 @@ import { find as _find, chain as _chain, flattenDeep as _flattenDeep } from 'lod
 import * as _ from 'lodash-es'
 import type { Entry } from '$lib/common/models/Entry.js'
 import type { locales } from '../common'
-import { SiteFields, Sites } from './collections'
+import { SiteFields, Sites, Pages, SiteSymbolFields } from './collections'
 import { LibrarySymbolEntry } from '../common/models/LibrarySymbolEntry'
 import type { models } from '$lib/common/models'
 import type { z } from 'zod'
@@ -101,48 +101,51 @@ export const getDirectEntries = <Collection extends keyof typeof ENTRY_MODELS>(e
 export const getResolvedEntries = <Collection extends keyof typeof ENTRY_MODELS>(entity: EntityOf<Collection>, field: Field, entries: EntryOf<Collection>[]): Entry[] => {
 	const fieldEntries = getDirectEntries(entity, field, entries)
 	if (field.type === 'page-field') {
-		throw new Error('Not implemented')
-		// return fieldEntries.flatMap((entry) => {
-		// 	const page = Pages.one(entry.value.page)
-		// 	const field = SiteSymbolFields.one(entry.value.field)
-		// 	if (!page || !field) return []
-		// 	return get_resolved_entries(page, field)
-		// })
+		return fieldEntries.flatMap((entry) => {
+			const page = Pages.one(entry.value.page)
+			const pageField = SiteSymbolFields.one(entry.value.field)
+			if (!page || !pageField) return []
+			// Get entries for the field from the page's entries
+			const pageEntries = page.entries()
+			return getResolvedEntries(page, pageField, pageEntries)
+		})
 	} else if (field.type === 'site-field') {
-		throw new Error('Not implemented')
-		// return fieldEntries.flatMap((entry) => {
-		// 	const field = SiteFields.one(entry.value)
-		// 	if (!field) return []
-		// 	const site = Sites.one(field.site)
-		// 	if (!site) return []
-		// 	return getResolvedEntries(site, field, entries)
-		// })
+		return fieldEntries.flatMap((entry) => {
+			const siteField = SiteFields.one(entry.value)
+			if (!siteField) return []
+			const site = Sites.one(siteField.site)
+			if (!site) return []
+			// Get entries for the site field from the site's entries
+			const siteEntries = site.entries()
+			return getResolvedEntries(site, siteField, siteEntries)
+		})
 	} else if (field.type === 'page') {
-		throw new Error('Not implemented')
-		// return fieldEntries.flatMap((entry) => {
-		// 	const page = Pages.one(entry.value)
-		// 	if (!page) return []
-		// 	return page.fields().flatMap((field) => get_resolved_entries(page, field))
-		// })
+		return fieldEntries.flatMap((entry) => {
+			const page = Pages.one(entry.value)
+			if (!page) return []
+			// Get all entries from all fields in the page
+			const pageEntries = page.entries()
+			return page.fields().flatMap((pageField) => getResolvedEntries(page, pageField, pageEntries))
+		})
 	} else if (field.type === 'page-list') {
-		throw new Error('Not implemented')
-		// return fieldEntries.flatMap((entry) =>
-		// 	entry.value.flatMap((page_id: string) => {
-		// 		const page = Pages.one(page_id)
-		// 		if (!page) return []
-		// 		const symbols = page
-		// 			.sections()
-		// 			.map((section) => section.symbol())
-		// 			.filter(isNotUndefined)
-		// 			.filter(deduplicate)
-		// 		const fields = symbols.flatMap((symbol) => symbol.fields())
-		// 		return fields.flatMap((field) => get_resolved_entries(field))
-		// 	})
-		// )
+		return fieldEntries.flatMap((entry) =>
+			entry.value.flatMap((page_id: string) => {
+				const page = Pages.one(page_id)
+				if (!page) return []
+				const symbols = page
+					.sections()
+					.map((section) => section.symbol())
+					.filter(isNotUndefined)
+					.filter(deduplicate)
+				const fields = symbols.flatMap((symbol) => symbol.fields())
+				const pageEntries = page.entries()
+				return fields.flatMap((pageField) => getResolvedEntries(page, pageField, pageEntries))
+			})
+		)
 	} else {
 		return fieldEntries
 	}
 }
 
-// const isNotUndefined = <T>(item: T): item is Exclude<T, undefined> => item !== undefined
-// const deduplicate = <T>(item: T, index: number, array: T[]) => array.indexOf(item) === index
+const isNotUndefined = <T>(item: T): item is Exclude<T, undefined> => item !== undefined
+const deduplicate = <T>(item: T, index: number, array: T[]) => array.indexOf(item) === index
