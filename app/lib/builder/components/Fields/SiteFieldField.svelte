@@ -5,12 +5,18 @@
 	let { field, oninput = /** @type {(val: any) => void} */ () => {} } = $props()
 
 	// Get all site fields
-	const siteFields = $derived(SiteFields.list() || [])
-	let field_list = $derived(siteFields.map(sf => ({
-		id: sf.id,
-		label: sf.label || sf.key,
-		value: sf.id
-	})))
+	const siteFields = $derived(() => {
+		const list = SiteFields.list()
+		return Array.isArray(list) ? list : []
+	})
+	
+	let field_list = $derived(() => {
+		return siteFields.map(sf => ({
+			id: sf.id,
+			label: sf.label || sf.key,
+			value: sf.id
+		}))
+	})
 </script>
 
 <div class="PageFieldField">
@@ -21,11 +27,11 @@
 			on:input={({ detail }) => oninput(detail)}
 			label="Site Field"
 			value={field.source}
-			options={field_list.map((f) => ({
+			options={Array.isArray(field_list) ? field_list.map((f) => ({
 				label: f.label,
 				value: f.id,
 				icon: undefined
-			}))}
+			})) : []}
 		/>
 	</div>
 </div>

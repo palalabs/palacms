@@ -392,7 +392,9 @@
 			<ImageFieldOptions {field} on:input={onchange} />
 		{/if}
 		{#if field.type === 'page-field'}
-			<PageFieldField {field} on:input={onchange} />
+			<PageFieldField {field} on:input={(event) => {
+				onchange(event.detail)
+			}} />
 		{/if}
 		{#if field.type === 'site-field'}
 			<SiteFieldField {field} oninput={onchange} />
