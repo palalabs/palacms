@@ -116,17 +116,18 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 			}
 
 			const list = [...(lists.get(listId) ?? [])]
-			for (const [id] of staged) {
-				if (!list.includes(id)) {
+			for (const [id, value] of staged) {
+				// Only add non-deleted staged items to the list
+				if (value !== null && !list.includes(id)) {
 					list.push(id)
 				}
 			}
 
-			const objects = list.map((id) => collectionMapping.one(id))
-			if ((lists.get(listId) === undefined && objects.length === 0) || objects.some((object) => object === undefined)) {
+			const objects = list.map((id) => collectionMapping.one(id)).filter((object) => object !== undefined)
+			if (lists.get(listId) === undefined && objects.length === 0) {
 				return undefined
 			} else {
-				return objects.filter((object) => object !== undefined)
+				return objects
 			}
 		},
 		create: (values) => {
