@@ -9,10 +9,11 @@
 	import Letter from '$lib/builder/ui/Letter.svelte'
 	import { PrimoButton } from '$lib/builder/components/buttons'
 	import { mod_key_held } from '$lib/builder/stores/app/misc'
-	import { onNavigate } from '$app/navigation'
+	import { onNavigate, goto } from '$app/navigation'
 	import { active_users } from '$lib/builder/stores/app/misc'
 	import { page as pageState } from '$app/state'
 	import { Sites, PageTypes, SiteEntries, SiteFields, Pages } from '$lib/pocketbase/collections'
+	import hotkey_events from '$lib/builder/stores/app/hotkey_events'
 
 	import SiteEditor from '$lib/builder/views/modal/SiteEditor/SiteEditor.svelte'
 	import SitePages from '$lib/builder/views/modal/SitePages/SitePages.svelte'
@@ -35,6 +36,27 @@
 	let going_up = $state(false)
 	let going_down = $state(false)
 
+	// Get all pages for navigation
+	const all_pages = $derived(site?.pages() ?? [])
+	const current_page_index = $derived(all_pages.findIndex((p) => p.id === page?.id))
+	const can_navigate_up = $derived(current_page_index > 0)
+	const can_navigate_down = $derived(current_page_index < all_pages.length - 1 && current_page_index !== -1)
+
+	// Navigation functions
+	function navigate_up() {
+		if (can_navigate_up) {
+			const prev_page = all_pages[current_page_index - 1]
+			goto(`/${site_id}/${prev_page.slug}`)
+		}
+	}
+
+	function navigate_down() {
+		if (can_navigate_down) {
+			const next_page = all_pages[current_page_index + 1]
+			goto(`/${site_id}/${next_page.slug}`)
+		}
+	}
+
 	let customAnchor = $state<HTMLElement>(null!)
 
 	let editing_site = $state(false)
@@ -54,6 +76,23 @@
 	onNavigate(() => {
 		editing_pages = false
 		editing_page_types = false
+	})
+
+	// Hotkey event listeners
+	hotkey_events.on('up', () => {
+		if (can_navigate_up) {
+			going_up = true
+			navigate_up()
+			setTimeout(() => (going_up = false), 150)
+		}
+	})
+
+	hotkey_events.on('down', () => {
+		if (can_navigate_down) {
+			going_down = true
+			navigate_down()
+			setTimeout(() => (going_down = false), 150)
+		}
 	})
 </script>
 
@@ -94,8 +133,8 @@
 			<div class="button-group">
 				{#if $mod_key_held}
 					<div class="page-hotkeys">
-						<div style:color={going_up ? 'var(--weave-primary-color)' : 'inherit'} style:opacity={1}>&#8984; ↑</div>
-						<div style:color={going_down ? 'var(--weave-primary-color)' : 'inherit'} style:opacity={1}>&#8984; ↓</div>
+						<div style:color={going_up ? 'var(--weave-primary-color)' : 'inherit'} style:opacity={can_navigate_up ? 1 : 0.3}>&#8984; ↑</div>
+						<div style:color={going_down ? 'var(--weave-primary-color)' : 'inherit'} style:opacity={can_navigate_down ? 1 : 0.3}>&#8984; ↓</div>
 					</div>
 				{:else}
 					<div class="flex rounded" style="border: 1px solid #222" bind:this={customAnchor}>

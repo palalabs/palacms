@@ -19,7 +19,7 @@
 	/** @type {Props} */
 	let { tabs, active_tab_id = $bindable(tabs[0]?.id), variant = 'primary', disable_hotkeys = false, style = '', onswitch = () => {} } = $props()
 
-	// hotkey_events.on('tab-switch', (tab) => (active_tab_id = tabs[tab - 1]?.id))
+	hotkey_events.on('tab-switch', (tab) => (active_tab_id = tabs[tab - 1]?.id))
 
 	$effect(() => {
 		dispatch('switch', active_tab_id)
