@@ -16,6 +16,7 @@
 	import { page } from '$app/state'
 	import type { Site } from '$lib/common/models/Site'
 	import { Sites, SiteGroups } from '$lib/pocketbase/collections'
+	import { self as pb } from '$lib/pocketbase/PocketBase'
 	const sidebar = useSidebar()
 
 	const site_group_id = $derived(page.url.searchParams.get('group')!)
@@ -72,7 +73,7 @@
 	async function handle_rename() {
 		if (!current_site) return
 		Sites.update(current_site.id, { name: new_site_name })
-		await SiteGroups.commit()
+		await Sites.commit()
 		is_rename_site_open = false
 	}
 
@@ -81,10 +82,29 @@
 	async function delete_site() {
 		if (!current_site) return
 		deleting_site = true
-		Sites.delete(current_site.id)
-		await Sites.commit()
-		is_delete_site_open = false
-		deleting_site = false
+
+		try {
+			const siteId = current_site.id
+			
+			// Delete pages first to avoid cascade deletion conflicts
+			const pages = await pb.collection('pages').getList(1, 50, { filter: `site = "${siteId}"` })
+			for (const page of pages.items) {
+				await pb.collection('pages').delete(page.id)
+			}
+			
+			// Delete the site - PocketBase will cascade delete remaining records
+			await pb.collection('sites').delete(siteId)
+			is_delete_site_open = false
+		} catch (error) {
+			if (error.status === 404) {
+				// Site already deleted - treat as success
+				is_delete_site_open = false
+			} else {
+				console.error('Error deleting site:', error)
+			}
+		} finally {
+			deleting_site = false
+		}
 	}
 
 	let is_move_site_open = $state(false)
@@ -92,7 +112,7 @@
 	async function move_site() {
 		if (!current_site) return
 		Sites.update(current_site.id, { group: selected_group_id })
-		await SiteGroups.commit()
+		await Sites.commit()
 		is_move_site_open = false
 	}
 </script>
