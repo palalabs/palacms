@@ -12,7 +12,8 @@
 
 	// Get page type fields
 	const allFields = $derived.by(() => {
-		const pageTypes = PageTypes.list() || []
+		const pageTypes = PageTypes.list({ filter: `site = "${site_id}"` }) || []
+		console.log({ pageTypes })
 		return pageTypes.flatMap((pageType) => {
 			const fields = pageType.fields() || []
 			return fields.map((f) => ({
@@ -39,7 +40,7 @@
 		<UI.Select
 			fullwidth={true}
 			on:input={({ detail }) => {
-				dispatch('input', { 
+				dispatch('input', {
 					config: {
 						...field.config,
 						field: detail
@@ -47,7 +48,7 @@
 				})
 			}}
 			label="Page Content"
-			value={field.config?.field || ''}
+			value={field.config?.field || (field_list.length > 0 ? field_list[0].id : '')}
 			options={Array.isArray(field_list)
 				? field_list.map((f) => ({
 						label: f.label,

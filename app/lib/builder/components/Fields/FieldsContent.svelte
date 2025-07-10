@@ -27,6 +27,7 @@
 		ondelete: (field_id: string) => void
 	} = $props()
 
+	$inspect({ entries })
 
 	function get_component(field: Field) {
 		const fieldType = $fieldTypes.find((ft) => ft.id === field.type)
@@ -174,7 +175,7 @@
 									<span>Site Content</span>
 								{:else if field.type === 'page-field'}
 									{@const content_entry = getDirectEntries(entity, field, entries)[0]}
-									<Icon icon={content_entry?.value.page.page_type.icon} />
+									<!-- <Icon icon={content_entry?.value.page.page_type.icon} /> -->
 									<span>Page Content</span>
 								{/if}
 							</div>

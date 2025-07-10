@@ -1,25 +1,34 @@
 <script lang="ts">
-	import { page } from '$app/state'
+	import { page } from '$app/stores'
 	import type { PageField } from '$lib/common/models/fields/PageField'
 	import UI from '../ui/index.js'
 	import { Sites } from '$lib/pocketbase/collections'
-	import { getDirectEntries, type Entity } from '$lib/pocketbase/content.js'
+	import type { Entity } from '$lib/pocketbase/content.js'
+	import type { Entry } from '$lib/common/models/Entry'
 
-	const { entity, field }: { entity: Entity; field: PageField } = $props()
-	const site_id = page.params.site
+	const { entity, field, entry, onchange }: { entity: Entity; field: PageField; entry?: Entry; onchange?: (value: any) => void } = $props()
+	const site_id = $page.params.site
 	const site = $derived(Sites.one(site_id))
-	const entry = $derived(getDirectEntries(entity, field, [])[0])
-	const selectable_pages = $derived((site?.pages() ?? []).filter((p) => p.page_type === field.config.page_type))
+	const selectable_pages = $derived.by(() => {
+		const pages = site?.pages() ?? []
+		const filtered = pages.filter((p) => p.page_type === field.config.page_type)
+		return filtered
+	})
 </script>
 
 <div>
 	<UI.Select
 		label={field.label}
-		value={entry.value}
+		value={entry?.value || ''}
 		options={selectable_pages.map((page) => ({
-			value: page,
+			value: page.id,
 			label: page?.name
 		}))}
+		on:input={({ detail }) => {
+			if (onchange) {
+				onchange(detail)
+			}
+		}}
 		fullwidth={true}
 	/>
 </div>

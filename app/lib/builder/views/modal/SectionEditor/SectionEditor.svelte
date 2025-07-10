@@ -13,7 +13,7 @@
 	import { locale } from '../../../stores/app/misc.js'
 	import hotkey_events from '../../../stores/app/hotkey_events.js'
 	import { getContent } from '$lib/pocketbase/content'
-	import { PageSectionEntries, PageSections, PageTypeSectionEntries, SiteSymbolFields, SiteSymbols } from '$lib/pocketbase/collections'
+	import { PageSectionEntries, PageSections, PageEntries, PageTypeSectionEntries, SiteSymbolFields, SiteSymbols, SiteEntries } from '$lib/pocketbase/collections'
 	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
 	import type { PageTypeSection } from '$lib/common/models/PageTypeSection'
 
@@ -66,6 +66,9 @@
 			} else if ('page' in component) {
 				await PageSectionEntries.commit()
 			}
+
+			await PageEntries.commit()
+			await SiteEntries.commit()
 
 			header.button.onclick()
 		}

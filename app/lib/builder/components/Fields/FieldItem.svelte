@@ -17,6 +17,8 @@
 	import { pluralize } from '../../field-types/RepeaterField.svelte'
 	import { getContext } from 'svelte'
 	import type { Field } from '$lib/common/models/Field'
+	import { PageTypes } from '$lib/pocketbase/collections'
+	import { page } from '$app/stores'
 
 	let {
 		field,
@@ -150,7 +152,24 @@
 				on:input={({ detail: field_type_id }) => {
 					field_type_changed = true
 					selected_field_type_id = field_type_id
-					onchange({ type: field_type_id, config: null })
+					
+					// Set default config based on field type
+					let defaultConfig = {}
+					if (field_type_id === 'page') {
+						// Page field requires page_type - get the first available page type
+						const site_id = $page.params.site
+						const pageTypes = PageTypes.list({ filter: `site = "${site_id}"` }) || []
+						const firstPageType = pageTypes[0]?.id || 'default'
+						defaultConfig = { page_type: firstPageType }
+					} else if (field_type_id === 'page-list') {
+						// Page list might also need page_type
+						const site_id = $page.params.site
+						const pageTypes = PageTypes.list({ filter: `site = "${site_id}"` }) || []
+						const firstPageType = pageTypes[0]?.id || 'default'
+						defaultConfig = { page_type: firstPageType }
+					}
+					
+					onchange({ type: field_type_id, config: defaultConfig })
 				}}
 				placement="bottom-start"
 			/>
@@ -397,10 +416,14 @@
 			}} />
 		{/if}
 		{#if field.type === 'site-field'}
-			<SiteFieldField {field} oninput={onchange} />
+			<SiteFieldField {field} on:input={(event) => {
+				onchange(event.detail)
+			}} />
 		{/if}
 		{#if field.type === 'page'}
-			<PageField {field} on:input={onchange} />
+			<PageField {field} on:input={(event) => {
+				onchange(event.detail)
+			}} />
 		{/if}
 		{#if field.type === 'page-list'}
 			<PageListField {field} oninput={onchange} />

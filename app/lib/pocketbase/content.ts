@@ -2,7 +2,7 @@ import { find as _find, chain as _chain, flattenDeep as _flattenDeep } from 'lod
 import * as _ from 'lodash-es'
 import type { Entry } from '$lib/common/models/Entry.js'
 import type { locales } from '../common'
-import { SiteFields, Sites, Pages, SiteSymbolFields } from './collections'
+import { SiteFields, Sites, Pages, SiteSymbolFields, PageTypeFields, PageTypes } from './collections'
 import { LibrarySymbolEntry } from '../common/models/LibrarySymbolEntry'
 import type { models } from '$lib/common/models'
 import type { z } from 'zod'
@@ -101,32 +101,90 @@ export const getDirectEntries = <Collection extends keyof typeof ENTRY_MODELS>(e
 export const getResolvedEntries = <Collection extends keyof typeof ENTRY_MODELS>(entity: EntityOf<Collection>, field: Field, entries: EntryOf<Collection>[]): Entry[] => {
 	const fieldEntries = getDirectEntries(entity, field, entries)
 	if (field.type === 'page-field') {
-		return fieldEntries.flatMap((entry) => {
-			const page = Pages.one(entry.value.page)
-			const pageField = SiteSymbolFields.one(entry.value.field)
-			if (!page || !pageField) return []
-			// Get entries for the field from the page's entries
-			const pageEntries = page.entries()
-			return getResolvedEntries(page, pageField, pageEntries)
-		})
+		// For page-field, get the referenced field value directly from the page
+		if (!field.config?.field) {
+			console.log('page-field: no config.field')
+			return []
+		}
+		
+		const pageField = PageTypeFields.one(field.config.field)
+		if (!pageField) {
+			console.log('page-field: pageField not found for', field.config.field)
+			return []
+		}
+		
+		// Get the page entity and its entries
+		let pageEntity, pageEntries
+		if ('page' in entity) {
+			// This is a page section, get the page
+			pageEntity = Pages.one(entity.page)
+			pageEntries = pageEntity?.entries() || []
+		} else {
+			// This might be the page itself
+			pageEntity = entity
+			pageEntries = entries
+		}
+		
+		// Get entries for the referenced field from the page
+		const directEntries = getDirectEntries(pageEntity, pageField, pageEntries)
+		return directEntries
 	} else if (field.type === 'site-field') {
-		return fieldEntries.flatMap((entry) => {
-			const siteField = SiteFields.one(entry.value)
-			if (!siteField) return []
-			const site = Sites.one(siteField.site)
-			if (!site) return []
-			// Get entries for the site field from the site's entries
-			const siteEntries = site.entries()
-			return getResolvedEntries(site, siteField, siteEntries)
-		})
+		// For site-field, get the referenced field value directly from the site
+		if (!field.config?.field) return []
+		
+		const siteField = SiteFields.one(field.config.field)
+		if (!siteField) return []
+		
+		// Get the site entity and its entries
+		const site = Sites.one(siteField.site)
+		if (!site) return []
+		
+		const siteEntries = site.entries() || []
+		
+		// Get entries for the referenced field from the site
+		const directEntries = getDirectEntries(site, siteField, siteEntries)
+		return directEntries
 	} else if (field.type === 'page') {
-		return fieldEntries.flatMap((entry) => {
+		return fieldEntries.map((entry) => {
 			const page = Pages.one(entry.value)
-			if (!page) return []
+			if (!page) return null
+			
 			// Get all entries from all fields in the page
-			const pageEntries = page.entries()
-			return page.fields().flatMap((pageField) => getResolvedEntries(page, pageField, pageEntries))
-		})
+			const pageEntries = page.entries() || []
+			// Get fields from the page's page type
+			const pageType = PageTypes.one(page.page_type)
+			if (!pageType) return null
+			
+			// Build the page content object manually
+			const pageFields = pageType.fields() || []
+			const pageContentObject = {}
+			
+			for (const pageField of pageFields) {
+				const fieldEntries = pageEntries.filter(e => e.field === pageField.id)
+				if (fieldEntries.length > 0) {
+					// Use the last entry if there are multiple (same as getContent logic)
+					const fieldEntry = fieldEntries[fieldEntries.length - 1]
+					pageContentObject[pageField.key] = fieldEntry.value
+				}
+			}
+			
+			// Create the page field value with content and metadata
+			const pageValue = {
+				...pageContentObject,
+				_meta: {
+					created_at: page.created,
+					name: page.name,
+					slug: page.slug,
+					url: `/${page.slug}`
+				}
+			}
+			
+			// Return an entry with the structured page value
+			return {
+				...entry,
+				value: pageValue
+			}
+		}).filter(Boolean)
 	} else if (field.type === 'page-list') {
 		return fieldEntries.flatMap((entry) =>
 			entry.value.flatMap((page_id: string) => {
