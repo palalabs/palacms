@@ -1,7 +1,7 @@
 /// <reference path="../pb_data/types.d.ts" />
 migrate(
 	(app) => {
-		const collection = app.findCollectionByNameOrId('pbc_149684058')
+		const collection = app.findCollectionByNameOrId('pbc_1424058439')
 
 		// add field
 		collection.fields.addAt(
@@ -23,7 +23,7 @@ migrate(
 		return app.save(collection)
 	},
 	(app) => {
-		const collection = app.findCollectionByNameOrId('pbc_149684058')
+		const collection = app.findCollectionByNameOrId('pbc_1424058439')
 
 		// remove field
 		collection.fields.removeById('number2155046657')
