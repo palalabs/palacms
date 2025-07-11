@@ -73,15 +73,9 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 				if (!records.has(id)) {
 					untrack(() => {
 						records.set(id, undefined)
-						collection
-							.getOne(id)
-							.then((record) => {
-								records.set(id, record as unknown as T)
-							})
-							.catch((error) => {
-								// Record doesn't exist, remove from cache
-								records.delete(id)
-							})
+						collection.getOne(id).then((record) => {
+							records.set(id, record as unknown as T)
+						})
 					})
 				}
 				return undefined
@@ -109,7 +103,7 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 								fetchedRecords.map(({ id }) => id)
 							)
 						})
-						.catch((error) => {
+						.catch(() => {
 							lists.set(listId, [])
 						})
 				})
