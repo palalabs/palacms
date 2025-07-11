@@ -1,7 +1,6 @@
 import { find as _find, chain as _chain, flattenDeep as _flattenDeep } from 'lodash-es'
 import { processors } from './component.js'
 import { getContent } from '../pocketbase/content.js'
-import { design_tokens } from './constants.js'
 import { type locales } from '$lib/common/constants.js'
 import type { Site } from '$lib/common/models/Site.js'
 import type { Page } from '$lib/common/models/Page.js'
@@ -170,21 +169,6 @@ export async function page_html({
 			)
 			.join('\n')
 	}
-}
-
-export function site_design_css(values) {
-	return `
-		<link rel="preconnect" href="https://fonts.bunny.net">
-		<link href="https://fonts.bunny.net/css2?family=${values['heading_font'].replace(/ /g, '+')}:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=${values['body_font'].replace(
-			/ /g,
-			'+'
-		)}:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700" rel="stylesheet">
-	<style>
-	:root {\n${Object.entries(design_tokens)
-		.map(([token, { variable }]) => `--theme-${variable}: ${values[token]};`)
-		.join('\n')}}
-	</style>
-	`
 }
 
 const deduplicate =

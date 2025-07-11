@@ -118,7 +118,7 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 			}
 
 			const objects = list.map((id) => collectionMapping.one(id)).filter((object) => object !== undefined)
-			if (lists.get(listId) === undefined && objects.length === 0) {
+			if ((!lists.has(listId) || lists.get(listId) === undefined) && objects.length === 0) {
 				return undefined
 			} else {
 				return objects
@@ -203,11 +203,17 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 			}
 
 			await Promise.all(promises)
-			staged.clear()
-			lists.clear()
+			for (const id of [...staged.keys()]) {
+				staged.delete(id)
+			}
+			for (const id of [...lists.keys()]) {
+				lists.delete(id)
+			}
 		},
 		discard: () => {
-			staged.clear()
+			for (const id of [...staged.keys()]) {
+				staged.delete(id)
+			}
 		},
 		authWithPassword: async (usernameOrEmail, password) => {
 			const response = await collection.authWithPassword(usernameOrEmail, password)

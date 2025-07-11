@@ -3,16 +3,17 @@
 	import { createEventDispatcher } from 'svelte'
 	import type { PageFieldField } from '$lib/common/models/fields/PageFieldField.js'
 	import UI from '../../ui/index.js'
-	import { PageTypes, PageTypeFields } from '$lib/pocketbase/collections'
+	import { Sites } from '$lib/pocketbase/collections'
 
-	const site_id = page.params.site
+	const host = $derived(page.url.host)
+	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
 	const { field }: { entity_id: string; field: PageFieldField } = $props()
 
 	const dispatch = createEventDispatcher()
 
 	// Get page type fields
 	const allFields = $derived.by(() => {
-		const pageTypes = PageTypes.list({ filter: `site = "${site_id}"` }) || []
+		const pageTypes = site?.page_types() ?? []
 		console.log({ pageTypes })
 		return pageTypes.flatMap((pageType) => {
 			const fields = pageType.fields() || []

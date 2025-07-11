@@ -8,8 +8,8 @@
 	import { Sites, PageTypes } from '$lib/pocketbase/collections'
 	import type { PageType } from '$lib/common/models/PageType'
 
-	const site_id = $derived(page.params.site)
-	const site = $derived(Sites.one(site_id))
+	const host = $derived(page.url.host)
+	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
 
 	async function create_page_type(new_page_type) {
 		if (!site) return
@@ -17,7 +17,7 @@
 		// Add the site ID to the page type
 		const page_type_data = {
 			...new_page_type,
-			site: site_id
+			site: site.id
 		}
 
 		PageTypes.create(page_type_data)

@@ -5,9 +5,9 @@
 
 	onMount(async () => {
 		if (self.authStore.isValid) {
-			await goto('/dashboard/sites', { replaceState: true })
+			await goto('/admin/site', { replaceState: true })
 		} else {
-			await goto('/auth', { replaceState: true })
+			await goto('/admin/auth', { replaceState: true })
 		}
 	})
 </script>

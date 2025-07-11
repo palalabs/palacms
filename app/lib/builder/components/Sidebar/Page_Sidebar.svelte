@@ -13,23 +13,20 @@
 	import * as Tabs from '$lib/components/ui/tabs'
 	import { Cuboid, SquarePen } from 'lucide-svelte'
 	import { page as pageState } from '$app/state'
-	import { PageTypes, Sites, Pages, PageTypeSymbols, PageEntries } from '$lib/pocketbase/collections'
+	import { PageTypes, Sites, Pages, PageEntries } from '$lib/pocketbase/collections'
 	import { SiteSymbols } from '$lib/pocketbase/collections'
 
 	let active_tab = $state((browser && localStorage.getItem('page-tab')) || 'BLOCKS')
 
-	const site_id = $derived(pageState.params.site)
+	const host = $derived(pageState.url.host)
+	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
 	const slug = $derived(pageState.params.page)
-	const site = $derived(Sites.one(site_id))
-	// Use direct collection queries instead of broken site.pages()
-	const page = $derived(slug ? Pages.list({ filter: `site = "${site_id}" && slug = "${slug}"` })?.[0] : site?.homepage())
+	const page = $derived(site && slug ? Pages.list({ filter: `site = "${site.id}" && slug = "${slug}"` })?.[0] : site?.homepage())
 	const page_type = $derived(page && PageTypes.one(page.page_type))
 	const page_type_fields = $derived(page_type?.fields())
 	const page_entries = $derived(page?.entries())
-
-	// Get symbols directly instead of using page_type.symbols()
-	let page_type_symbols = $derived(page_type?.symbols() ?? [])
-	let has_symbols = $derived(!!page_type_symbols?.length)
+	const page_type_symbols = $derived(page_type?.symbols() ?? [])
+	const has_symbols = $derived(!!page_type_symbols?.length)
 
 	$effect(() => {
 		if (!has_symbols) active_tab = 'CONTENT'
@@ -172,7 +169,7 @@
 		{/if}
 		<!-- $userRole === 'DEV' -->
 		{#if true}
-			<button onclick={() => goto(`/${site?.id}/page-type--${page_type?.id}?t=p`)} class="footer-link mb-2 mr-2">Manage Fields</button>
+			<button onclick={() => goto(`/admin/site/page-type--${page_type?.id}?t=p`)} class="footer-link mb-2 mr-2">Manage Fields</button>
 		{/if}
 	{/if}
 </div>

@@ -10,24 +10,22 @@
 	import EmptyState from '$lib/components/EmptyState.svelte'
 	import { Separator } from '$lib/components/ui/separator'
 	import { Button } from '$lib/components/ui/button'
-	import { CirclePlus, Globe, Loader, ChevronDown, SquarePen, Trash2, EllipsisVertical, ArrowLeftRight, Download } from 'lucide-svelte'
-	import CreateSite from '$lib/components/CreateSite.svelte'
+	import { Globe, Loader, ChevronDown, SquarePen, Trash2, EllipsisVertical, ArrowLeftRight, Download, CirclePlus } from 'lucide-svelte'
 	import { useSidebar } from '$lib/components/ui/sidebar'
 	import { page } from '$app/state'
 	import type { Site } from '$lib/common/models/Site'
-	import { Sites, SiteGroups } from '$lib/pocketbase/collections'
+	import { Sites, SiteGroups, Pages } from '$lib/pocketbase/collections'
 	import { self as pb } from '$lib/pocketbase/PocketBase'
+
 	const sidebar = useSidebar()
 
 	const site_group_id = $derived(page.url.searchParams.get('group')!)
-	// Data will be loaded automatically by CollectionMapping system when accessed
 
 	const site_groups = $derived(SiteGroups.list() ?? [])
 	const active_site_group = $derived(site_group_id ? SiteGroups.one(site_group_id) : undefined)
 	const all_sites = $derived(Sites.list() ?? [])
 	const sites = $derived(site_group_id ? all_sites.filter((site) => site.group === site_group_id) : [])
-
-	let creating_site = $state(false)
+	const site = $derived(all_sites.find((site) => site.host === page.url.host))
 
 	let is_rename_group_open = $state(false)
 	let new_group_name = $state('')
@@ -85,15 +83,18 @@
 
 		try {
 			const siteId = current_site.id
-			
+
 			// Delete pages first to avoid cascade deletion conflicts
 			const pages = await pb.collection('pages').getList(1, 50, { filter: `site = "${siteId}"` })
 			for (const page of pages.items) {
-				await pb.collection('pages').delete(page.id)
+				Pages.delete(page.id)
 			}
-			
+			await Pages.commit()
+
 			// Delete the site - PocketBase will cascade delete remaining records
-			await pb.collection('sites').delete(siteId)
+			Sites.delete(siteId)
+			await Sites.commit()
+
 			is_delete_site_open = false
 		} catch (error) {
 			if (error.status === 404) {
@@ -145,17 +146,14 @@
 			</DropdownMenu.Content>
 		</DropdownMenu.Root>
 	</div>
-	<div class="ml-auto mr-4">
-		<Button size="sm" variant="outline" onclick={() => (creating_site = true)}>
-			<CirclePlus class="h-4 w-4" />
-			Create Site
-		</Button>
-		<Dialog.Root bind:open={creating_site}>
-			<Dialog.Content class="max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4">
-				<CreateSite onclose={() => (creating_site = false)} />
-			</Dialog.Content>
-		</Dialog.Root>
-	</div>
+	{#if !site}
+		<div class="ml-auto mr-4">
+			<Button size="sm" variant="outline" href="/admin/site">
+				<CirclePlus class="h-4 w-4" />
+				Create Site
+			</Button>
+		</div>
+	{/if}
 </header>
 <div class="flex flex-1 flex-col gap-4 px-4 pb-4">
 	{#if sites?.length}
@@ -169,15 +167,15 @@
 	{/if}
 </div>
 
-{#snippet SiteButton(site)}
+{#snippet SiteButton(site: Site)}
 	<div class="space-y-3 relative w-full bg-gray-900">
 		<div class="rounded-tl rounded-tr overflow-hidden">
-			<a data-sveltekit-prefetch href="/{site.id}">
+			<a data-sveltekit-prefetch href={`${page.url.protocol}//${site.host}/admin/site`}>
 				<SitePreview site_id={site.id} />
 			</a>
 		</div>
 		<div class="absolute -bottom-2 rounded-bl rounded-br w-full p-3 z-20 bg-gray-900 truncate flex items-center justify-between">
-			<a data-sveltekit-prefetch href="/{site.id}" class="text-sm font-medium leading-none">{site.name}</a>
+			<a data-sveltekit-prefetch href={`${page.url.protocol}//${site.host}/admin/site`} class="text-sm font-medium leading-none">{site.name}</a>
 			<DropdownMenu.Root>
 				<DropdownMenu.Trigger>
 					<EllipsisVertical size={14} />

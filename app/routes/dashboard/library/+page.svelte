@@ -2,19 +2,16 @@
 	import CreateBlock from '$lib/components/Modals/CreateBlock.svelte'
 	import * as Sidebar from '$lib/components/ui/sidebar'
 	import * as Dialog from '$lib/components/ui/dialog'
-	import CodeEditor from '$lib/builder/components/CodeEditor/CodeMirror.svelte'
-	import DesignFields from '$lib/components/Modals/DesignFields.svelte'
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
 	import * as AlertDialog from '$lib/components/ui/alert-dialog'
 	import { Input } from '$lib/components/ui/input'
-	import * as code_generators from '$lib/builder/code_generators'
 	import * as RadioGroup from '$lib/components/ui/radio-group'
 	import { Label } from '$lib/components/ui/label'
 	import { processCode } from '$lib/builder/utils.js'
 	import { Separator } from '$lib/components/ui/separator'
 	import { Button } from '$lib/components/ui/button'
 	import EmptyState from '$lib/components/EmptyState.svelte'
-	import { CirclePlus, Cuboid, Palette, Code, Upload, SquarePen, Trash2, ChevronDown, Loader, EllipsisVertical, ArrowLeftRight, Library } from 'lucide-svelte'
+	import { CirclePlus, Cuboid, Code, SquarePen, Trash2, ChevronDown, Loader, EllipsisVertical, ArrowLeftRight } from 'lucide-svelte'
 	import SymbolButton from '$lib/components/SymbolButton.svelte'
 	import { page } from '$app/state'
 	import { goto } from '$app/navigation'
@@ -32,7 +29,6 @@
 	const sidebar = useSidebar()
 
 	let editing_head = $state(false)
-	let editing_design = $state(false)
 	let creating_block = $state(false)
 
 	// Create a fresh symbol object for new blocks
@@ -49,11 +45,6 @@
 		if (!file) return
 		// TODO: Implement
 		throw new Error('Not implemented')
-	}
-
-	let design_variables_css = $state('')
-	function update_design_value(token, value) {
-		// TODO: Remove
 	}
 
 	// TODO: Remove?
@@ -77,7 +68,6 @@
 		loading = true
 
 		editing_head = false
-		editing_design = false
 		loading = false
 	}
 
@@ -103,7 +93,7 @@
 		if (!active_symbol_group_id) return
 		LibrarySymbolGroups.delete(active_symbol_group_id)
 		await LibrarySymbolGroups.commit()
-		await goto('/dashboard/library')
+		await goto('/admin/dashboard/library')
 		deleting = false
 		is_delete_open = false
 	}
@@ -294,7 +284,7 @@
 			<ul>
 				{#each group_symbols as symbol (symbol.id)}
 					<li>
-						<SymbolButton symbol_id={symbol.id} head={generated_head_code + design_variables_css} onclick={() => begin_symbol_edit(symbol)}>
+						<SymbolButton symbol_id={symbol.id} head={generated_head_code} onclick={() => begin_symbol_edit(symbol)}>
 							<DropdownMenu.Root>
 								<DropdownMenu.Trigger>
 									<EllipsisVertical size={14} />
@@ -353,13 +343,13 @@
 
 <Dialog.Root bind:open={creating_block}>
 	<Dialog.Content escapeKeydownBehavior="ignore" class="max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4 gap-0">
-		<CreateBlock bind:symbol={new_symbol} head={generated_head_code + design_variables_css} onsubmit={create_symbol} />
+		<CreateBlock bind:symbol={new_symbol} head={generated_head_code} onsubmit={create_symbol} />
 	</Dialog.Content>
 </Dialog.Root>
 
 <Dialog.Root bind:open={is_symbol_editor_open}>
 	<Dialog.Content escapeKeydownBehavior="ignore" class="max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4 gap-0">
-		<CreateBlock symbol={symbol_being_edited} head={generated_head_code + design_variables_css} onsubmit={save_symbol} />
+		<CreateBlock symbol={symbol_being_edited} head={generated_head_code} onsubmit={save_symbol} />
 	</Dialog.Content>
 </Dialog.Root>
 

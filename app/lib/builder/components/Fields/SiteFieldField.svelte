@@ -2,16 +2,17 @@
 	import { page } from '$app/state'
 	import { createEventDispatcher } from 'svelte'
 	import UI from '../../ui/index.js'
-	import { SiteFields } from '$lib/pocketbase/collections'
+	import { Sites } from '$lib/pocketbase/collections'
 
-	const site_id = page.params.site
+	const host = $derived(page.url.host)
+	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
 	let { field } = $props()
 
 	const dispatch = createEventDispatcher()
 
 	// Get site fields for the current site
 	const siteFields = $derived.by(() => {
-		const list = SiteFields.list({ filter: `site = "${site_id}"` })
+		const list = site?.fields()
 		return Array.isArray(list) ? list : []
 	})
 

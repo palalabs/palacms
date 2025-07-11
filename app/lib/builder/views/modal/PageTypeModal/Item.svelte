@@ -10,8 +10,8 @@
 
 	let { active, page_type }: { active: boolean; page_type: PageType } = $props()
 
-	const site_id = $derived(page.params.site)
-	const site = $derived(Sites.one(site_id))
+	const host = $derived(page.url.host)
+	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
 
 	let editing_page = $state(false)
 
@@ -21,7 +21,7 @@
 		new_page_url = validate_url(new_page_url)
 	})
 
-	const full_url = $derived(`/${site_id}/page-type--${page_type.id}`)
+	const full_url = $derived(`/admin/site/page-type--${page_type.id}`)
 </script>
 
 {#if editing_page}

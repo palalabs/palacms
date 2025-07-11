@@ -4,10 +4,10 @@
 	import { page as pageState } from '$app/state'
 	import { Sites } from '$lib/pocketbase/collections'
 
-	const site_id = $derived(pageState.params.site)
-
-	const site = $derived(Sites.one(site_id))
+	const host = $derived(pageState.url.host)
+	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
 	const page = $derived(site?.homepage())
+	$inspect({ page })
 </script>
 
 {#if $compilers_registered && page}

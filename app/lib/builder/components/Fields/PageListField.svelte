@@ -4,8 +4,8 @@
 	import { page } from '$app/state'
 	import { Sites } from '$lib/pocketbase/collections'
 
-	const site_id = page.params.site
-	const site = $derived(Sites.one(site_id))
+	const host = $derived(page.url.host)
+	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
 	const { field }: { entity_id: string; field: PageListField } = $props()
 </script>
 

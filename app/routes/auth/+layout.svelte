@@ -5,7 +5,7 @@
 
 	onMount(async () => {
 		if (self.authStore.isValid) {
-			await goto('/dashboard')
+			await goto('/admin/site')
 		}
 	})
 

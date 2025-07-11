@@ -1,16 +1,16 @@
 <script lang="ts">
-	import { page } from '$app/stores'
+	import { page } from '$app/state'
 	import { createEventDispatcher } from 'svelte'
 	import { Sites } from '$lib/pocketbase/collections'
 	import type { PageField } from '$lib/common/models/fields/PageField'
 	import UI from '../../ui/index.js'
 
-	const site_id = $page.params.site
-	const site = $derived(Sites.one(site_id))
+	const host = $derived(page.url.host)
+	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
 	const { field }: { entity_id: string; field: PageField } = $props()
-	
+
 	const dispatch = createEventDispatcher()
-	
+
 	const pageTypes = $derived.by(() => {
 		const types = site?.page_types() || []
 		return Array.isArray(types) ? types : []

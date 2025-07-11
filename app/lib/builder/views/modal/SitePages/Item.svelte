@@ -15,9 +15,9 @@
 	/** @type {Props} */
 	let { parent, page, active }: { parent?: ObjectOf<typeof Pages>; page: ObjectOf<typeof Pages>; active: boolean } = $props()
 
-	const site_id = $derived(pageState.params.site)
-	const full_url = $derived(`/${site_id}/${page.slug}`)
-	const site = $derived(Sites.one(site_id))
+	const host = $derived(pageState.url.host)
+	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
+	const full_url = $derived(`/admin/site/${page.slug}`)
 	const allPages = $derived(site?.pages() ?? [])
 	const page_type = $derived(PageTypes.one(page.page_type))
 
@@ -196,7 +196,7 @@
 					if (url_taken) {
 						alert(`That URL is already in use`)
 					} else {
-						Pages.create({ ...new_page, parent: page.id, site: site_id })
+						Pages.create({ ...new_page, parent: page.id, site: site.id })
 						Pages.commit()
 					}
 				}}

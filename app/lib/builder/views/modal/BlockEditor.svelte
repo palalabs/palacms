@@ -13,7 +13,7 @@
 	import { locale } from '$lib/builder/stores/app/misc.js'
 	import hotkey_events from '$lib/builder/stores/app/hotkey_events.js'
 	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
-	import { SiteSymbolEntries, SiteSymbolFields, SiteSymbols } from '$lib/pocketbase/collections'
+	import { Sites, SiteSymbolEntries, SiteSymbolFields, SiteSymbols } from '$lib/pocketbase/collections'
 	import { page } from '$app/state'
 	import { getContent } from '$lib/pocketbase/content'
 
@@ -33,8 +33,14 @@
 		}
 	}: { block?: ObjectOf<typeof SiteSymbols>; tab?: string; header?: any } = $props()
 
-	const site_id = $derived(page.params.site)
-	const new_block = () => SiteSymbols.create({ css: '', html: '', js: '', name: 'New Block', site: site_id })
+	const host = $derived(page.url.host)
+	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
+	const new_block = () => {
+		if (!site) {
+			throw new Error('Site not loaded')
+		}
+		return SiteSymbols.create({ css: '', html: '', js: '', name: 'New Block', site: site.id })
+	}
 	const block = $state(existing_block ?? new_block())
 
 	const fields = $derived(block.fields())

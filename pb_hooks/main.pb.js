@@ -1,7 +1,5 @@
 /// <reference path="../pb_data/types.d.ts" />
 
-routerAdd('GET', '/{path...}', $apis.static('./pb_public', true))
-
 onRecordValidate((e) => {
 	if (!e.record) {
 		e.next()
@@ -43,19 +41,24 @@ onRecordValidate((e) => {
 	e.next()
 })
 
-routerAdd('GET', '/sites/{site}/{path...}', (e) => {
+routerAdd('GET', '/admin/{path...}', $apis.static('./pb_public', true))
+
+routerAdd('GET', '/{path...}', (e) => {
 	// Handle missing trailing slash
 	if (e.request.url.path.slice(-1) !== '/') {
 		return e.redirect(301, e.request.url.path + '/')
 	}
 
-	const site_id = e.request.pathValue('site')
+	const host = e.request.host
 	const path = e.request.pathValue('path').slice(0, -1).split('/')
 	const finalSlug = path[path.length - 1]
 
 	// Find the target page by slug
-	const [page] = $app.findRecordsByFilter('pages', `site = {:site} && slug = {:slug}`, 'id', 1, 0, { site: site_id, slug: finalSlug || null })
-	if (!page) {
+	const [page] = $app.findRecordsByFilter('pages', `site.host = {:host} && slug = {:slug}`, 'id', 1, 0, { host, slug: finalSlug || null })
+	if (!page && !finalSlug) {
+		// Homepage not found, redirect to site editor
+		return e.redirect(302, '/admin')
+	} else if (!page) {
 		return e.notFoundError('Page not found')
 	}
 

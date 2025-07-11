@@ -59,7 +59,7 @@
 		is_creating_symbol_group = false
 	}
 
-	const path = $derived($page.url.pathname.split('/').slice(0, 3).join('/'))
+	const path = $derived($page.url.pathname.split('/').slice(0, 4).join('/'))
 </script>
 
 <Dialog.Root bind:open={is_creating_site_group}>
@@ -113,12 +113,12 @@
 					<Sidebar.Menu>
 						<Sidebar.MenuItem>
 							<Sidebar.MenuButton
-								isActive={$page.url.pathname.startsWith('/dashboard/sites')}
+								isActive={$page.url.pathname.startsWith('/admin/dashboard/sites')}
 								tooltipContentProps={{
 									hidden: false
 								}}
 								onclick={() => {
-									goto('/dashboard')
+									goto('/admin/dashboard')
 									sidebar.setOpen(true)
 								}}
 								class="px-2.5 md:px-2"
@@ -132,12 +132,12 @@
 						</Sidebar.MenuItem>
 						<Sidebar.MenuItem>
 							<Sidebar.MenuButton
-								isActive={$page.url.pathname.startsWith('/dashboard/library')}
+								isActive={$page.url.pathname.startsWith('/admin/dashboard/library')}
 								tooltipContentProps={{
 									hidden: false
 								}}
 								onclick={() => {
-									goto('/dashboard/library')
+									goto('/admin/dashboard/library')
 									sidebar.setOpen(true)
 								}}
 								class="px-2.5 md:px-2"
@@ -151,12 +151,12 @@
 						</Sidebar.MenuItem>
 						<Sidebar.MenuItem>
 							<Sidebar.MenuButton
-								isActive={$page.url.pathname.startsWith('/dashboard/marketplace')}
+								isActive={$page.url.pathname.startsWith('/admin/dashboard/marketplace')}
 								tooltipContentProps={{
 									hidden: false
 								}}
 								onclick={() => {
-									goto('/dashboard/marketplace')
+									goto('/admin/dashboard/marketplace')
 									sidebar.setOpen(true)
 								}}
 								class="px-2.5 md:px-2"
@@ -208,7 +208,7 @@
 							<DropdownMenu.Item
 								onclick={async () => {
 									self.authStore.clear()
-									await goto('/auth')
+									await goto('/admin/auth')
 								}}
 							>
 								<LogOut />
@@ -222,7 +222,7 @@
 	</Sidebar.Root>
 
 	<Sidebar.Root collapsible="none" class="flex-1 flex">
-		{#if path.startsWith('/dashboard/sites')}
+		{#if path.startsWith('/admin/dashboard/sites')}
 			<Sidebar.Header class="gap-3.5 border-b p-4">
 				<div class="flex w-full text-foreground text-base font-medium gap-2">
 					<Globe class="w-4" />
@@ -232,7 +232,7 @@
 			<Sidebar.Content class="p-2">
 				<Sidebar.Menu>
 					{#each SiteGroups.list() ?? [] as group}
-						{@const url = `/dashboard/sites?group=${group.id}`}
+						{@const url = `/admin/dashboard/sites?group=${group.id}`}
 						<Sidebar.MenuItem>
 							<Sidebar.MenuButton isActive={$page.url.pathname + $page.url.search === url}>
 								{#snippet child({ props })}
@@ -255,7 +255,7 @@
 					</Sidebar.MenuItem>
 				</Sidebar.Menu>
 			</Sidebar.Content>
-		{:else if path.startsWith('/dashboard/library')}
+		{:else if path.startsWith('/admin/dashboard/library')}
 			<Sidebar.Header class="gap-3.5 border-b p-4">
 				<div class="flex w-full text-foreground text-base font-medium gap-2">
 					<Library class="w-4" />
@@ -265,7 +265,7 @@
 			<Sidebar.Content class="p-2">
 				<Sidebar.Menu>
 					{#each LibrarySymbolGroups.list() ?? [] as group}
-						{@const url = `/dashboard/library?group=${group.id}`}
+						{@const url = `/admin/dashboard/library?group=${group.id}`}
 						<Sidebar.MenuItem>
 							<Sidebar.MenuButton isActive={$page.url.pathname + $page.url.search === url}>
 								{#snippet child({ props })}
@@ -288,7 +288,7 @@
 					</Sidebar.MenuItem>
 				</Sidebar.Menu>
 			</Sidebar.Content>
-		{:else if path.startsWith('/dashboard/marketplace')}
+		{:else if path.startsWith('/admin/dashboard/marketplace')}
 			<Sidebar.Header class="gap-3.5 border-b p-4">
 				<div class="flex w-full text-foreground text-base font-medium gap-2">
 					<Store class="w-4" />
@@ -299,9 +299,9 @@
 				<Sidebar.Menu>
 					<!-- Starters -->
 					<Sidebar.MenuItem>
-						<Sidebar.MenuButton class="font-medium" isActive={$page.url.pathname === '/dashboard/marketplace/starters'}>
+						<Sidebar.MenuButton class="font-medium" isActive={$page.url.pathname === '/admin/dashboard/marketplace/starters'}>
 							{#snippet child({ props })}
-								<a href="/dashboard/marketplace/starters" {...props}>
+								<a href="/admin/dashboard/marketplace/starters" {...props}>
 									<LayoutTemplate />
 									<span>Starters</span>
 								</a>
@@ -325,7 +325,7 @@
 									<Sidebar.GroupContent>
 										<Sidebar.Menu>
 											{#each LibrarySymbolGroups.from(marketplace).list() ?? [] as group}
-												{@const url = `/dashboard/marketplace/blocks?group=${group.id}`}
+												{@const url = `/admin/dashboard/marketplace/blocks?group=${group.id}`}
 												<Sidebar.MenuItem>
 													<Sidebar.MenuButton isActive={$page.url.pathname + $page.url.search === url}>
 														{#snippet child({ props })}

@@ -51,8 +51,8 @@
 		append = ''
 	} = $props()
 
-	const site_id = $derived(page.params.site)
-	const site = $derived(Sites.one(site_id))
+	const host = $derived(page.url.host)
+	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
 
 	$preview_updated = false
 

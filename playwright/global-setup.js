@@ -36,7 +36,7 @@ async function global_setup() {
 		console.log('Performing authentication...')
 		const browser = await chromium.launch({ headless: false })
 		const page = await browser.newPage()
-		await page.goto('http://localhost:5173/auth')
+		await page.goto('http://localhost:5173/admin/auth')
 
 		// Perform authentication
 		await page.fill('[data-test-id="email"]', import.meta.env.PLAWRIGHT_AUTH_EMAIL)

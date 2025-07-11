@@ -28,7 +28,6 @@
 	import { svelteCompletions, cssCompletions } from './extensions/autocomplete'
 	import { getLanguage } from './extensions'
 	import highlight_active_line from './extensions/inspector'
-	import { design_tokens } from '$lib/builder/constants.js'
 
 	const slowDebounce = createDebouncer(1000)
 
@@ -91,7 +90,7 @@
 	const language = getLanguage(mode)
 
 	const css_completions_compartment = new Compartment()
-	let css_variables = $state(Object.entries(design_tokens).map(([token, { variable }]) => `--theme-${variable}`))
+	let css_variables = $state([])
 
 	const editor_state = EditorState.create({
 		selection: {

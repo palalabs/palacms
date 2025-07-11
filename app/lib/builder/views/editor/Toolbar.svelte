@@ -23,15 +23,15 @@
 
 	let { children, currentPage } = $props()
 
-	const site_id = $derived(pageState.params.site)
+	const host = $derived(pageState.url.host)
+	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
 	const page_slug = $derived(pageState.params.page || '')
 	const page_type_id = $derived(pageState.params.page_type)
-	const site = $derived(Sites.one(site_id))
-	const page = $derived(currentPage ?? (page_slug ? Pages.list({ filter: `site = "${site_id}" && slug = "${page_slug}"` })?.[0] : undefined))
+	const page = $derived(currentPage ?? (site && page_slug ? Pages.list({ filter: `site = "${site.id}" && slug = "${page_slug}"` })?.[0] : undefined))
 	const page_type = $derived(page_type_id && PageTypes.one(page_type_id))
 	const page_page_type = $derived(page && PageTypes.one(page.page_type))
 
-	const publish = $derived(usePublishSite(site_id))
+	const publish = $derived(usePublishSite(site?.id))
 
 	let going_up = $state(false)
 	let going_down = $state(false)
@@ -46,14 +46,14 @@
 	function navigate_up() {
 		if (can_navigate_up) {
 			const prev_page = all_pages[current_page_index - 1]
-			goto(`/${site_id}/${prev_page.slug}`)
+			goto(`/admin/site/${prev_page.slug}`)
 		}
 	}
 
 	function navigate_down() {
 		if (can_navigate_down) {
 			const next_page = all_pages[current_page_index + 1]
-			goto(`/${site_id}/${next_page.slug}`)
+			goto(`/admin/site/${next_page.slug}`)
 		}
 	}
 

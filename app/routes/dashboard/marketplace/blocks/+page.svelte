@@ -19,8 +19,6 @@
 	const marketplace_symbols = $derived(marketplace_symbol_group?.symbols() ?? [])
 	const library_symbol_groups = $derived(LibrarySymbolGroups.list() ?? [])
 
-	let design_variables_css = ''
-
 	let head_code = $state('')
 	let generated_head_code = $state('')
 
@@ -70,7 +68,7 @@
 		<ul class="blocks">
 			{#each marketplace_symbols as symbol (symbol.id)}
 				<li>
-					<SymbolButton symbol={symbol.data} preview={symbol.preview} head={generated_head_code + design_variables_css}>
+					<SymbolButton symbol={symbol.data} preview={symbol.preview} head={generated_head_code}>
 						<Popover.Root bind:open={is_popover_open}>
 							<Popover.Trigger class={buttonVariants({ variant: 'ghost', class: 'h-4 p-0' })}>
 								{#if added_to_library}

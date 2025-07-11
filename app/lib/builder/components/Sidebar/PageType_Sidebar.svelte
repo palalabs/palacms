@@ -20,9 +20,9 @@
 	import { Sites, PageTypes, SiteSymbols, PageTypeSymbols, SiteSymbolFields, SiteSymbolEntries, PageTypeFields, PageTypeEntries } from '$lib/pocketbase/collections'
 	import { site_html } from '$lib/builder/stores/app/page.js'
 
-	const site_id = $derived(page.params.site)
+	const host = $derived(page.url.host)
+	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
 	const page_type_id = $derived(page.params.page_type)
-	const site = $derived(Sites.one(site_id))
 	const page_type = $derived(PageTypes.one(page_type_id))
 	const fields = $derived(page_type?.fields() ?? [])
 	const entries = $derived(page_type?.entries() ?? [])

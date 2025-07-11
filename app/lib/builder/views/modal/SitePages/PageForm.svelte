@@ -11,8 +11,8 @@
 
 	let { parent }: { parent?: ObjectOf<typeof Pages> } = $props()
 
-	const site_id = $derived(page.params.site)
-	const site = $derived(Sites.one(site_id))
+	const host = $derived(page.url.host)
+	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
 	const page_types = $derived(site?.page_types())
 
 	const dispatch = createEventDispatcher()

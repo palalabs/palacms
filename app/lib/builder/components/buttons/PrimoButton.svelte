@@ -4,7 +4,7 @@
 	import UI from '../../ui'
 </script>
 
-<a class="primo-button" aria-label="See all sites" href="/">
+<a class="primo-button" aria-label="See all sites" href="/admin/dashboard">
 	<!-- <a class="primo-button" aria-label="See all sites" href="/"> -->
 	{#if $loadingSite}
 		<UI.Spinner />

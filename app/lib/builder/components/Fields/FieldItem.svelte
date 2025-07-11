@@ -17,8 +17,8 @@
 	import { pluralize } from '../../field-types/RepeaterField.svelte'
 	import { getContext } from 'svelte'
 	import type { Field } from '$lib/common/models/Field'
-	import { PageTypes } from '$lib/pocketbase/collections'
-	import { page } from '$app/stores'
+	import { Sites } from '$lib/pocketbase/collections'
+	import { page } from '$app/state'
 
 	let {
 		field,
@@ -41,6 +41,10 @@
 		ondelete: () => void
 		onmove: (direction: 'up' | 'down') => void
 	} = $props()
+
+	const host = $derived(page.url.host)
+	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
+	const page_types = $derived(site?.page_types() ?? [])
 
 	const visible_field_types = getContext('hide_dynamic_field_types') ? $fieldTypes.filter((ft) => !dynamic_field_types.includes(ft.id)) : $fieldTypes
 
@@ -152,23 +156,19 @@
 				on:input={({ detail: field_type_id }) => {
 					field_type_changed = true
 					selected_field_type_id = field_type_id
-					
+
 					// Set default config based on field type
 					let defaultConfig = {}
 					if (field_type_id === 'page') {
 						// Page field requires page_type - get the first available page type
-						const site_id = $page.params.site
-						const pageTypes = PageTypes.list({ filter: `site = "${site_id}"` }) || []
-						const firstPageType = pageTypes[0]?.id || 'default'
+						const firstPageType = page_types[0]?.id || 'default'
 						defaultConfig = { page_type: firstPageType }
 					} else if (field_type_id === 'page-list') {
 						// Page list might also need page_type
-						const site_id = $page.params.site
-						const pageTypes = PageTypes.list({ filter: `site = "${site_id}"` }) || []
-						const firstPageType = pageTypes[0]?.id || 'default'
+						const firstPageType = page_types[0]?.id || 'default'
 						defaultConfig = { page_type: firstPageType }
 					}
-					
+
 					onchange({ type: field_type_id, config: defaultConfig })
 				}}
 				placement="bottom-start"
@@ -315,7 +315,7 @@
 						if (text.length > 0) {
 							is_new_field = false
 						}
-						
+
 						// only auto-set key and type on new fields
 						onchange({
 							label: text,
@@ -411,19 +411,28 @@
 			<ImageFieldOptions {field} on:input={onchange} />
 		{/if}
 		{#if field.type === 'page-field'}
-			<PageFieldField {field} on:input={(event) => {
-				onchange(event.detail)
-			}} />
+			<PageFieldField
+				{field}
+				on:input={(event) => {
+					onchange(event.detail)
+				}}
+			/>
 		{/if}
 		{#if field.type === 'site-field'}
-			<SiteFieldField {field} on:input={(event) => {
-				onchange(event.detail)
-			}} />
+			<SiteFieldField
+				{field}
+				on:input={(event) => {
+					onchange(event.detail)
+				}}
+			/>
 		{/if}
 		{#if field.type === 'page'}
-			<PageField {field} on:input={(event) => {
-				onchange(event.detail)
-			}} />
+			<PageField
+				{field}
+				on:input={(event) => {
+					onchange(event.detail)
+				}}
+			/>
 		{/if}
 		{#if field.type === 'page-list'}
 			<PageListField {field} oninput={onchange} />
@@ -444,21 +453,21 @@
 	{#if has_subfields}
 		<div class="children-container" style:padding-left="{level + 1}rem">
 			{#each child_fields.sort((a, b) => a.index - b.index) as subfield (subfield.id)}
-				<FieldItem 
-					field={cloneDeep(subfield)} 
-					{fields} 
-					{create_field} 
-					top_level={false} 
-					level={level + 1} 
-					{onduplicate} 
-					{ondelete} 
-					{onmove} 
+				<FieldItem
+					field={cloneDeep(subfield)}
+					{fields}
+					{create_field}
+					top_level={false}
+					level={level + 1}
+					{onduplicate}
+					{ondelete}
+					{onmove}
 					onchange={(data) => {
 						console.log('Subfield onchange called with:', data, 'for subfield:', subfield.id)
 						// The data parameter here could be either:
 						// 1. Direct field data (label, key, type, etc.) from the subfield itself
 						// 2. Nested onchange call with {id, data} structure from a sub-subfield
-						
+
 						if (data.id && data.data) {
 							// This is a nested onchange call, pass it through
 							onchange(data)
@@ -466,7 +475,7 @@
 							// This is direct field data from the subfield
 							onchange({ id: subfield.id, data })
 						}
-					}} 
+					}}
 				/>
 			{/each}
 			{#if field.type === 'repeater' || field.type === 'group'}

@@ -14,7 +14,7 @@
 			case 'sign_in':
 				loading = true
 				await Users.authWithPassword(email, password)
-					.then(() => goto('/dashboard'))
+					.then(() => goto('/admin/site'))
 					.catch(({ message }) => {
 						error = message
 					})

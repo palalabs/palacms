@@ -17,11 +17,10 @@
 
 	import { page } from '$app/state'
 
-	const site_id = $derived(page.params.site)
+	const host = $derived(page.url.host)
+	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
 	const page_type_id = $derived(page.params.page_type)
 	const page_type = $derived(PageTypes.one(page_type_id))
-
-	const site = $derived(Sites.one(site_id))
 	const site_symbols = $derived(site?.symbols() ?? [])
 	const page_type_sections = $derived(page_type?.sections() ?? [])
 	const page_type_symbols = $derived(page_type?.symbols() ?? [])

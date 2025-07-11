@@ -6,8 +6,8 @@
 	import { page } from '$app/state'
 	import { Sites, Pages } from '$lib/pocketbase/collections'
 
-	const site_id = $derived(page.params.site)
-	const site = $derived(Sites.one(site_id))
+	const host = $derived(page.url.host)
+	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
 	const all_pages = $derived(site?.pages() ?? [])
 	const home_page = $derived(site?.homepage())
 	const child_pages = $derived(home_page?.children() ?? [])
@@ -37,7 +37,7 @@
 					if (url_taken) {
 						alert(`That URL is already in use`)
 					} else {
-						Pages.create({ ...new_page, parent: home_page.id, site: site_id })
+						Pages.create({ ...new_page, parent: home_page.id, site: site.id })
 						Pages.commit()
 					}
 				}}

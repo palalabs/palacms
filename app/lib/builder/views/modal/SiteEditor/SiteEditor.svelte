@@ -11,8 +11,8 @@
 
 	let { onClose } = $props()
 
-	const site_id = page.params.site
-	const site = $derived(Sites.one(site_id))
+	const host = $derived(page.url.host)
+	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
 	const fields = $derived(site?.fields() ?? [])
 	const entries = $derived(site?.entries() ?? [])
 
@@ -30,9 +30,13 @@
 	let disableSave = $state(false)
 
 	async function saveComponent() {
+		if (!site) {
+			return
+		}
+
 		disableSave = true
 		try {
-			Sites.update(site_id, {
+			Sites.update(site.id, {
 				head,
 				foot
 			})
@@ -76,7 +80,7 @@
 								key: 'new_field',
 								label: 'New Field',
 								config: null,
-								site: site_id
+								site: site.id
 							})
 						}}
 						oninput={(values) => {

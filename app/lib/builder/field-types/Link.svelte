@@ -5,8 +5,8 @@
 	import { locale } from '../stores/app'
 	import type { LinkField } from '$lib/common/models/fields/LinkField'
 	import { page } from '$app/state'
-	import { Sites, Pages } from '$lib/pocketbase/collections'
-	import { getDirectEntries, type Entity } from '$lib/pocketbase/content'
+	import { Sites } from '$lib/pocketbase/collections'
+	import { type Entity } from '$lib/pocketbase/content'
 
 	const { entity, field, entry: passedEntry, onchange }: { entity: Entity; field: LinkField; entry?: any; onchange: (value: any) => void } = $props()
 
@@ -18,10 +18,10 @@
 
 	const default_entry = { value: default_value }
 
-	const site_id = $derived(page.params.site)
-	const site = $derived(Sites.one(site_id))
+	const host = $derived(page.url.host)
+	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
 	const entry = $derived(passedEntry || default_entry)
-	const selectable_pages = $derived(Pages.list({ filter: `site = "${site_id}"` }) ?? [])
+	const selectable_pages = $derived(site?.pages() ?? [])
 
 	let selected = $state('url')
 	let selected_page = $state(null)
@@ -65,7 +65,7 @@
 					value={selected_page?.id}
 					options={selectable_pages.map((p) => ({ ...p, label: p.name, value: p.id }))}
 					on:input={({ detail: pageId }) => {
-						const page = selectable_pages.find(p => p.id === pageId)
+						const page = selectable_pages.find((p) => p.id === pageId)
 						if (page) {
 							selected_page = page
 							onchange({ ...entry.value, page: page.id, url: get_page_url(page) })

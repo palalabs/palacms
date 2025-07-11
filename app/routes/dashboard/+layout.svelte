@@ -9,7 +9,7 @@
 
 	onMount(async () => {
 		if (!self.authStore.isValid) {
-			await goto('/auth')
+			await goto('/admin/auth')
 		}
 	})
 
@@ -17,31 +17,31 @@
 
 	const sidebar_menu = $derived.by(() => {
 		const pathname = page.url.pathname
-		const path = pathname.split('/').slice(0, 3).join('/')
+		const path = pathname.split('/').slice(0, 4).join('/')
 		return {
-			'/dashboard/sites': {
+			'/admin/dashboard/sites': {
 				title: 'Sites',
 				icon: Globe
 			},
-			'/dashboard/library': {
+			'/admin/dashboard/library': {
 				title: 'Block Library',
 				icon: Library
 			},
-			'/dashboard/marketplace': {
+			'/admin/dashboard/marketplace': {
 				title: 'Marketplace',
 				icon: Store,
 				buttons: [
 					{
 						icon: LayoutTemplate,
 						label: 'Starters',
-						url: '/dashboard/marketplace/starters',
-						isActive: pathname === '/dashboard/marketplace/starters'
+						url: '/admin/dashboard/marketplace/starters',
+						isActive: pathname === '/admin/dashboard/marketplace/starters'
 					},
 					{
 						icon: Cuboid,
 						label: 'Blocks',
-						url: '/dashboard/marketplace/blocks',
-						isActive: pathname === '/dashboard/marketplace/blocks'
+						url: '/admin/dashboard/marketplace/blocks',
+						isActive: pathname === '/admin/dashboard/marketplace/blocks'
 					}
 				]
 			}
