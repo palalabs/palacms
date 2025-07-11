@@ -9,6 +9,12 @@
     npm.enable = true;
     npm.install.enable = true;
   };
+  env = {
+    PALA_SUPERUSER_EMAIL = "admin@palacms.internal";
+    PALA_SUPERUSER_PASSWORD = "test1234";
+    PALA_USER_EMAIL = "user@palacms.internal";
+    PALA_USER_PASSWORD = "test1234";
+  };
   processes = {
     app-dev.exec = "vite --config app.config.js dev";
     common-build.exec = "vite --config common.config.js build --watch";
