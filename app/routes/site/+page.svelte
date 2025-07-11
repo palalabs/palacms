@@ -7,7 +7,6 @@
 	const host = $derived(pageState.url.host)
 	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
 	const page = $derived(site?.homepage())
-	$inspect({ page })
 </script>
 
 {#if $compilers_registered && page}

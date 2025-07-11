@@ -20,7 +20,6 @@
 	const site = $derived(sites?.[0])
 	const page_slug = $derived(page.params.page || '')
 	const current_page = $derived(site && Pages.list({ filter: `site = "${site.id}" && slug = "${page_slug}"` })?.[0])
-	$inspect({ site, current_page })
 
 	let creating_site = $state(false)
 	$effect(() => {
