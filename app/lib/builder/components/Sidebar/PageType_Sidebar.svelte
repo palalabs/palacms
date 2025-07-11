@@ -238,11 +238,11 @@
 						<Icon icon="mdi:code" />
 						<span>Create</span>
 					</button>
-					<label class="primo-button">
+					<!-- <label class="primo-button">
 						<input onchange={upload_block} type="file" accept=".json" />
 						<Icon icon="mdi:upload" />
 						<span>Upload</span>
-					</label>
+					</label> -->
 				</div>
 			{/if}
 		</Tabs.Content>
