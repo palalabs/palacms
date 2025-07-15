@@ -35,7 +35,7 @@
 		const n_sibling_entries = repeater_entries.length
 		repeater_item_just_created = n_sibling_entries
 		await tick()
-		dispatch('add', { parent: id, index: repeater_entries.length, subfields })
+		dispatch('add', { parent: field.id, index: repeater_entries.length, subfields })
 		visibleRepeaters[`${field.key}-${repeater_entries.length - 1}`] = true
 	}
 
@@ -61,7 +61,7 @@
 		<p class="primo--field-label">{field.label}</p>
 	{/if}
 	<ul class="fields">
-		{#each repeater_entries?.sort((a, b) => a.index - b.index) as repeater_item, index (repeater_item.id)}
+		{#each repeater_entries?.sort((a, b) => a.index - b.index) as repeater_item, index (repeater_item.id + '-' + index)}
 			{@const subfield_id = `${field.key}-${index}`}
 			{@const autofocus = index === repeater_item_just_created}
 			{@const hovering = hover_index === index}
@@ -118,8 +118,8 @@
 		align-items: center;
 		justify-content: center;
 		gap: 0.5rem;
-		font-size: var(--font-size-2);
-		padding: 0.5rem;
+		font-size: var(--font-size-1);
+		padding: 0.375rem;
 		border-radius: var(--primo-border-radius);
 		font-weight: 400;
 		border: 1px solid transparent;

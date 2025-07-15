@@ -8,6 +8,7 @@
 	import { setContext } from 'svelte'
 	import { page } from '$app/state'
 	import { Sites, SiteFields, SiteEntries } from '$lib/pocketbase/collections'
+	import { batchCommitWithDependencies } from '$lib/pocketbase/batchCommit'
 
 	let { onClose } = $props()
 
@@ -40,11 +41,15 @@
 				head,
 				foot
 			})
-			await Sites.commit()
-			await SiteFields.commit()
-			await SiteEntries.commit()
-			console.log('Site head and foot saved successfully')
-			// Close the modal after successful save
+			
+			// Use batch commit to handle dependencies properly
+			await batchCommitWithDependencies([
+				{ name: 'Sites', collection: Sites },
+				{ name: 'SiteFields', collection: SiteFields, dependsOn: ['Sites'] },
+				{ name: 'SiteEntries', collection: SiteEntries, dependsOn: ['SiteFields'] }
+			])
+			
+			console.log('Site saved successfully')
 			if (onClose) onClose()
 		} catch (error) {
 			console.error('Error saving site:', error)
@@ -74,13 +79,23 @@
 						entity={site}
 						{fields}
 						{entries}
-						create_field={() => {
-							SiteFields.create({
+						create_field={async (parentId) => {
+							// If this is a child field, commit parent fields first
+							if (parentId) {
+								try {
+									await SiteFields.commit()
+								} catch (error) {
+									console.warn('Failed to commit parent fields:', error)
+								}
+							}
+							
+							return SiteFields.create({
 								type: 'text',
-								key: 'new_field',
-								label: 'New Field',
+								key: '',
+								label: '',
 								config: null,
-								site: site.id
+								site: site.id,
+								parent: parentId || ''
 							})
 						}}
 						oninput={(values) => {
@@ -100,6 +115,18 @@
 						}}
 						onchange={({ id, data }) => {
 							SiteFields.update(id, data)
+						}}
+						ondelete={(field_id) => {
+							// PocketBase cascade deletion will automatically clean up all associated entries
+							SiteFields.delete(field_id)
+						}}
+						onadd={({ parent, index, subfields }) => {
+							// Create an entry for the repeater item
+							SiteEntries.create({
+								field: parent,
+								locale: 'en',
+								value: {}
+							})
 						}}
 					/>
 				</Pane>

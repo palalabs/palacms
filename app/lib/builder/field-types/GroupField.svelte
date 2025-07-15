@@ -4,7 +4,7 @@
 	import Icon from '@iconify/svelte'
 	import { fieldTypes } from '../stores/app'
 	import { is_regex } from '../utils'
-	import { PageTypeSectionEntries, PageSectionEntries } from '$lib/pocketbase/collections'
+	import { PageTypeSectionEntries, PageSectionEntries, SiteEntries } from '$lib/pocketbase/collections'
 
 	const dispatch = createEventDispatcher()
 
@@ -106,6 +106,13 @@
 											PageSectionEntries.update(entry.id, { value })
 										} else {
 											PageSectionEntries.create({ field: subfield.id, locale: 'en', value, section: entity.id })
+										}
+									} else {
+										// Handle site entries
+										if (entry) {
+											SiteEntries.update(entry.id, { value })
+										} else {
+											SiteEntries.create({ field: subfield.id, locale: 'en', value })
 										}
 									}
 									onchange(value)
