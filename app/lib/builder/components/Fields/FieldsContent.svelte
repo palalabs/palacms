@@ -16,7 +16,8 @@
 		create_field,
 		oninput,
 		onchange,
-		ondelete
+		ondelete,
+		onadd
 	}: {
 		entity: Entity
 		fields: Field[]
@@ -25,9 +26,10 @@
 		oninput: (values: Record<string, unknown>) => void
 		onchange: (details: { id: string; data: Partial<Field> }) => void
 		ondelete: (field_id: string) => void
+		onadd?: (details: { parent: string; index: number; subfields: Field[] }) => void
 	} = $props()
 
-	$inspect({ entries })
+	$inspect({ entries, fields })
 
 	function get_component(field: Field) {
 		const fieldType = $fieldTypes.find((ft) => ft.id === field.type)
@@ -180,14 +182,16 @@
 								{/if}
 							</div>
 							<Card {title} {icon}>
-								<Field_Component {entity} {field} {fields} {entries} entry={source_entry} onchange={(value) => oninput({ [field.key]: value })} />
+								<Field_Component {entity} {field} {fields} {entries} entry={source_entry} id={source_entry?.id} onchange={(value) => oninput({ [field.key]: value })} />
 							</Card>
 						{:else}
 							{@const content_entry = getDirectEntries(entity, field, entries)[0]}
 							{@const title = ['repeater', 'group'].includes(field.type) ? field.label : null}
 							{@const icon = undefined}
 							<Card {title} {icon}>
-								<Field_Component {entity} {field} {fields} {entries} entry={content_entry} onchange={(value) => oninput({ [field.key]: value })} />
+								<Field_Component {entity} {field} {fields} {entries} entry={content_entry} id={content_entry?.id} onchange={(value) => oninput({ [field.key]: value })} on:add={(event) => {
+								if (onadd) onadd(event.detail)
+							}} />
 							</Card>
 						{/if}
 						<!-- TODO: $userRole === 'DEV' -->
@@ -303,8 +307,8 @@
 		justify-content: center;
 		gap: 0.5rem;
 		/* font-size: 0.875rem; */
-		font-size: var(--font-size-2);
-		padding: 0.5rem;
+		font-size: var(--font-size-1);
+		padding: 0.375rem;
 		border-radius: 4px;
 		font-weight: 400;
 		border: 1px solid transparent;

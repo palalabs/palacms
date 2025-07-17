@@ -15,11 +15,15 @@
 	import { page as pageState } from '$app/state'
 	import { PageTypes, Sites, Pages, PageEntries } from '$lib/pocketbase/collections'
 	import { SiteSymbols } from '$lib/pocketbase/collections'
+	import { getContext } from 'svelte'
 
 	let active_tab = $state((browser && localStorage.getItem('page-tab')) || 'BLOCKS')
 
+	// Get site from context (preferred) or fallback to hostname lookup
+	const context_site = getContext('site')
 	const host = $derived(pageState.url.host)
-	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
+	const fallback_site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
+	const site = $derived(context_site || fallback_site)
 	const slug = $derived(pageState.params.page)
 	const page = $derived(site && slug ? Pages.list({ filter: `site = "${site.id}" && slug = "${slug}"` })?.[0] : site?.homepage())
 	const page_type = $derived(page && PageTypes.one(page.page_type))
@@ -169,7 +173,11 @@
 		{/if}
 		<!-- $userRole === 'DEV' -->
 		{#if true}
-			<button onclick={() => goto(`/admin/site/page-type--${page_type?.id}?t=p`)} class="footer-link mb-2 mr-2">Manage Fields</button>
+			<button onclick={() => {
+				const base_path = pageState.url.pathname.includes('/sites/') ? 
+					`/admin/sites/${site?.id}` : '/admin/site'
+				goto(`${base_path}/page-type--${page_type?.id}?t=p`)
+			}} class="footer-link mb-2 mr-2">Manage Fields</button>
 		{/if}
 	{/if}
 </div>

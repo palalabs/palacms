@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onDestroy, type Snippet } from 'svelte'
+	import { onDestroy, setContext, type Snippet } from 'svelte'
 	import * as _ from 'lodash-es'
 	import Icon, { loadIcons, enableCache } from '@iconify/svelte'
 	import { browser } from '$app/environment'
@@ -27,6 +27,9 @@
 		toolbar?: Snippet
 		children?: Snippet
 	} = $props()
+
+	// Set context so child components can access the site
+	setContext('site', site)
 
 	let showing_sidebar = $state(true)
 
@@ -150,7 +153,7 @@
 </script>
 
 <div class="h-screen flex flex-col">
-	<Toolbar {currentPage}>
+	<Toolbar {site} {currentPage}>
 		{@render toolbar?.()}
 	</Toolbar>
 	<PaneGroup direction="horizontal" autoSaveId="page-view" style="height:initial;flex:1;">

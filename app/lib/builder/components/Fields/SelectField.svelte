@@ -124,7 +124,7 @@
 		border-radius: 4px;
 		/* margin-top: 8px;
 		margin-bottom: 8px; */
-		font-size: var(--font-size-2);
+		font-size: var(--font-size-1);
 		background: var(--primo-color-codeblack);
 		color: var(--color-gray-2);
 		transition: var(--transition-colors);

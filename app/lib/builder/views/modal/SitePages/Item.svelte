@@ -9,15 +9,23 @@
 	import { page as pageState } from '$app/state'
 	import { Pages, PageTypes, Sites } from '$lib/pocketbase/collections'
 	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
+	import { getContext } from 'svelte'
 
 	let editing_page = $state(false)
 
 	/** @type {Props} */
 	let { parent, page, active }: { parent?: ObjectOf<typeof Pages>; page: ObjectOf<typeof Pages>; active: boolean } = $props()
 
+	// Get site from context (preferred) or fallback to hostname lookup
+	const context_site = getContext('site')
 	const host = $derived(pageState.url.host)
-	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
-	const full_url = $derived(`/admin/site/${page.slug}`)
+	const fallback_site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
+	const site = $derived(context_site || fallback_site)
+	const full_url = $derived(() => {
+		const base_path = pageState.url.pathname.includes('/sites/') ? 
+			`/admin/sites/${site?.id}` : '/admin/site'
+		return `${base_path}/${page.slug}`
+	})
 	const allPages = $derived(site?.pages() ?? [])
 	const page_type = $derived(PageTypes.one(page.page_type))
 
@@ -122,7 +130,7 @@
 					<span class="icon" style:background={page_type?.color}>
 						<Icon icon={page_type?.icon} />
 					</span>
-					<a class:active href={full_url} onclick={() => {}} class="name">{page.name}</a>
+					<a class:active href={full_url()} onclick={() => {}} class="name">{page.name}</a>
 					<span class="url">/{page.slug}</span>
 				</div>
 			{/if}

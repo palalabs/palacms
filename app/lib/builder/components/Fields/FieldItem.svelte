@@ -311,18 +311,18 @@
 					autofocus={is_new_field}
 					on:keydown
 					oninput={(text) => {
+						// Auto-generate key unless user has manually edited it
+						// Auto-suggest type only for new fields with empty initial label
+						onchange({
+							label: text,
+							key: key_edited ? field.key : validate_field_key(text),
+							type: field_type_changed || (!is_new_field && field.label !== '') ? field.type : update_field_type(text)
+						})
+						
 						// Mark as no longer new once user types something substantial
 						if (text.length > 0) {
 							is_new_field = false
 						}
-
-						// only auto-set key and type on new fields
-						onchange({
-							label: text,
-							key: key_edited || !is_new_field ? field.key : validate_field_key(text),
-							// type: field_type_changed || !is_new_field || field.label !== '' ? field.type : update_field_type(text)
-							type: field.type // Always preserve existing type
-						})
 					}}
 				/>
 			</div>
@@ -563,7 +563,7 @@
 		border-radius: 0.25rem;
 		/* margin-top: 10px; */
 		padding: 0.5rem 1rem;
-		font-size: var(--font-size-2);
+		font-size: var(--font-size-1);
 		/* background: var(--primo-color-codeblack); */
 		background: #292929;
 		color: var(--button-color);

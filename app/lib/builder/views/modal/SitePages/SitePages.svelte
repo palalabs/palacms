@@ -5,9 +5,13 @@
 	import Icon from '@iconify/svelte'
 	import { page } from '$app/state'
 	import { Sites, Pages } from '$lib/pocketbase/collections'
+	import { getContext } from 'svelte'
 
+	// Get site from context (preferred) or fallback to hostname lookup
+	const context_site = getContext('site')
 	const host = $derived(page.url.host)
-	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
+	const fallback_site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
+	const site = $derived(context_site || fallback_site)
 	const all_pages = $derived(site?.pages() ?? [])
 	const home_page = $derived(site?.homepage())
 	const child_pages = $derived(home_page?.children() ?? [])

@@ -7,11 +7,15 @@
 	import { Sites, PageTypes } from '$lib/pocketbase/collections'
 	import { page } from '$app/state'
 	import { goto } from '$app/navigation'
+	import { getContext } from 'svelte'
 
 	let { active, page_type }: { active: boolean; page_type: PageType } = $props()
 
+	// Get site from context (preferred) or fallback to hostname lookup
+	const context_site = getContext('site')
 	const host = $derived(page.url.host)
-	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
+	const fallback_site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
+	const site = $derived(context_site || fallback_site)
 
 	let editing_page = $state(false)
 
@@ -21,7 +25,11 @@
 		new_page_url = validate_url(new_page_url)
 	})
 
-	const full_url = $derived(`/admin/site/page-type--${page_type.id}`)
+	const full_url = $derived(() => {
+		const base_path = page.url.pathname.includes('/sites/') ? 
+			`/admin/sites/${site?.id}` : '/admin/site'
+		return `${base_path}/page-type--${page_type.id}`
+	})
 </script>
 
 {#if editing_page}
@@ -42,7 +50,7 @@
 		</span>
 		<div class="page-item-container" class:active>
 			<div class="left">
-				<a class="name" href={full_url}>
+				<a class="name" href={full_url()}>
 					{page_type.name}
 				</a>
 			</div>

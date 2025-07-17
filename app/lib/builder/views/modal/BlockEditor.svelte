@@ -118,13 +118,28 @@
 					entity={block}
 					{fields}
 					{entries}
-					create_field={() => {
-						SiteSymbolFields.create({
+					create_field={async (parentId) => {
+						// If this is a child field, commit parent fields first to get real database IDs
+						if (parentId) {
+							try {
+								await SiteSymbolFields.commit()
+							} catch (error) {
+								console.warn('Failed to commit parent fields:', error)
+							}
+						}
+						
+						// Get the highest index for fields at this level
+						const siblingFields = fields?.filter((f) => f.parent === parentId) || []
+						const nextIndex = Math.max(...siblingFields.map((f) => f.index || 0), -1) + 1
+
+						return SiteSymbolFields.create({
 							type: 'text',
 							key: '',
 							label: '',
 							config: null,
-							symbol: block.id
+							symbol: block.id,
+							...(parentId ? { parent: parentId } : {}),
+							index: nextIndex
 						})
 					}}
 					oninput={(values) => {
@@ -147,6 +162,14 @@
 					}}
 					ondelete={(field_id) => {
 						SiteSymbolFields.delete(field_id)
+					}}
+					onadd={({ parent, index, subfields }) => {
+						// Create an entry for the repeater item
+						SiteSymbolEntries.create({
+							field: parent,
+							locale: 'en',
+							value: {}
+						})
 					}}
 				/>
 			{/if}

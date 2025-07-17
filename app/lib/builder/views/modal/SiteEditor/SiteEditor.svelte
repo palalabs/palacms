@@ -8,7 +8,7 @@
 	import { setContext } from 'svelte'
 	import { page } from '$app/state'
 	import { Sites, SiteFields, SiteEntries } from '$lib/pocketbase/collections'
-	import { batchCommitWithDependencies } from '$lib/pocketbase/batchCommit'
+	import { batchCommitWithDependencies, commitFieldsWithDependencies } from '$lib/pocketbase/batchCommit'
 
 	let { onClose } = $props()
 
@@ -42,12 +42,10 @@
 				foot
 			})
 			
-			// Use batch commit to handle dependencies properly
-			await batchCommitWithDependencies([
-				{ name: 'Sites', collection: Sites },
-				{ name: 'SiteFields', collection: SiteFields, dependsOn: ['Sites'] },
-				{ name: 'SiteEntries', collection: SiteEntries, dependsOn: ['SiteFields'] }
-			])
+			// Commit in proper order: Sites first, then SiteFields with hierarchy, then SiteEntries
+			await Sites.commit()
+			await commitFieldsWithDependencies(SiteFields)
+			await SiteEntries.commit()
 			
 			console.log('Site saved successfully')
 			if (onClose) onClose()
@@ -80,7 +78,7 @@
 						{fields}
 						{entries}
 						create_field={async (parentId) => {
-							// If this is a child field, commit parent fields first
+							// If this is a child field, commit parent fields first to get real database IDs
 							if (parentId) {
 								try {
 									await SiteFields.commit()

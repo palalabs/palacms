@@ -21,23 +21,25 @@
 	import Collaboration from '$lib/builder/views/modal/Collaboration.svelte'
 	import { usePublishSite } from '$lib/Publish.svelte'
 
-	let { children, currentPage } = $props()
+	let { children, currentPage, site } = $props()
 
+	// Fallback to hostname lookup if no site prop provided (for backward compatibility)
 	const host = $derived(pageState.url.host)
-	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
+	const fallback_site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
+	const resolved_site = $derived(site || fallback_site)
 	const page_slug = $derived(pageState.params.page || '')
 	const page_type_id = $derived(pageState.params.page_type)
-	const page = $derived(currentPage ?? (site && page_slug ? Pages.list({ filter: `site = "${site.id}" && slug = "${page_slug}"` })?.[0] : undefined))
+	const page = $derived(currentPage ?? (resolved_site && page_slug ? Pages.list({ filter: `site = "${resolved_site.id}" && slug = "${page_slug}"` })?.[0] : undefined))
 	const page_type = $derived(page_type_id && PageTypes.one(page_type_id))
 	const page_page_type = $derived(page && PageTypes.one(page.page_type))
 
-	const publish = $derived(usePublishSite(site?.id))
+	const publish = $derived(usePublishSite(resolved_site?.id))
 
 	let going_up = $state(false)
 	let going_down = $state(false)
 
 	// Get all pages for navigation
-	const all_pages = $derived(site?.pages() ?? [])
+	const all_pages = $derived(resolved_site?.pages() ?? [])
 	const current_page_index = $derived(all_pages.findIndex((p) => p.id === page?.id))
 	const can_navigate_up = $derived(current_page_index > 0)
 	const can_navigate_down = $derived(current_page_index < all_pages.length - 1 && current_page_index !== -1)
@@ -46,14 +48,18 @@
 	function navigate_up() {
 		if (can_navigate_up) {
 			const prev_page = all_pages[current_page_index - 1]
-			goto(`/admin/site/${prev_page.slug}`)
+			const base_path = pageState.url.pathname.includes('/sites/') ? 
+				`/admin/sites/${resolved_site?.id}` : '/admin/site'
+			goto(`${base_path}/${prev_page.slug}`)
 		}
 	}
 
 	function navigate_down() {
 		if (can_navigate_down) {
 			const next_page = all_pages[current_page_index + 1]
-			goto(`/admin/site/${next_page.slug}`)
+			const base_path = pageState.url.pathname.includes('/sites/') ? 
+				`/admin/sites/${resolved_site?.id}` : '/admin/site'
+			goto(`${base_path}/${next_page.slug}`)
 		}
 	}
 
@@ -160,7 +166,7 @@
 			</div>
 		</div>
 		<div class="site-name">
-			<span class="site">{site?.name}</span>
+			<span class="site">{resolved_site?.name}</span>
 			{#if page_type}
 				<span class="separator">/</span>
 				<div class="page-type" style:background={page_type.color}>
@@ -173,7 +179,9 @@
 				{#if page_page_type}
 					<!-- $userRole === 'DEV' -->
 					{#if true}
-						<a class="page-type-badge" style="background-color: {page_page_type.color};" href="/{site?.id}/page-type--{page_page_type.id}">
+						{@const base_path = pageState.url.pathname.includes('/sites/') ? 
+							`/admin/sites/${resolved_site?.id}` : '/admin/site'}
+						<a class="page-type-badge" style="background-color: {page_page_type.color};" href="{base_path}/page-type--{page_page_type.id}">
 							<Icon icon={page_page_type.icon} />
 						</a>
 					{:else}

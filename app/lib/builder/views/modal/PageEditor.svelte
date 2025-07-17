@@ -62,13 +62,28 @@
 					entity={page_type}
 					{fields}
 					{entries}
-					create_field={() => {
-						PageTypeFields.create({
+					create_field={async (parentId) => {
+						// If this is a child field, commit parent fields first to get real database IDs
+						if (parentId) {
+							try {
+								await PageTypeFields.commit()
+							} catch (error) {
+								console.warn('Failed to commit parent fields:', error)
+							}
+						}
+						
+						// Get the highest index for fields at this level
+						const siblingFields = fields?.filter((f) => f.parent === parentId) || []
+						const nextIndex = Math.max(...siblingFields.map((f) => f.index || 0), -1) + 1
+
+						return PageTypeFields.create({
 							type: 'text',
 							key: '',
 							label: '',
 							config: null,
-							page_type: page_type.id
+							page_type: page_type.id,
+							...(parentId ? { parent: parentId } : {}),
+							index: nextIndex
 						})
 					}}
 					oninput={(values) => {
@@ -93,6 +108,14 @@
 					}}
 					ondelete={(field_id) => {
 						PageTypeFields.delete(field_id)
+					}}
+					onadd={({ parent, index, subfields }) => {
+						// Create an entry for the repeater item
+						PageTypeEntries.create({
+							field: parent,
+							locale: 'en',
+							value: {}
+						})
 					}}
 				/>
 			</Pane>
