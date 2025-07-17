@@ -10,7 +10,7 @@
 	</div>
 	<div class="space-y-2 text-center">
 		<h2 class="text-2xl font-bold tracking-tight">{title}</h2>
-		<p class="text-gray-500 dark:text-gray-400">
+		<p class="text-gray-500 dark:text-gray-400 text-balance">
 			{description}
 		</p>
 	</div>
