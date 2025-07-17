@@ -90,23 +90,19 @@
 
 <Sidebar.Root collapsible="icon" class="overflow-hidden *:data-[sidebar=sidebar]:flex-row">
 	<Sidebar.Root collapsible="none" class="w-[calc(var(--sidebar-width-icon)+1px)]! border-r">
-		<Sidebar.Header>
+		<!-- <Sidebar.Header>
 			<Sidebar.Menu>
 				<Sidebar.MenuItem>
 					<Sidebar.MenuButton size="lg" class="md:h-8 md:p-0">
 						{#snippet child({ props })}
-							<a href="##" {...props}>
-								<div class="bg-[var(--weave-primary-color)] text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">w</div>
-								<!-- <div class="grid flex-1 text-left text-sm leading-tight">
-									<span class="truncate font-semibold">Acme Inc</span>
-									<span class="truncate text-xs">Enterprise</span>
-								</div> -->
+							<a href="/" {...props}>
+								<div class="bg-[var(--weave-primary-color)] text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">p</div>
 							</a>
 						{/snippet}
 					</Sidebar.MenuButton>
 				</Sidebar.MenuItem>
 			</Sidebar.Menu>
-		</Sidebar.Header>
+		</Sidebar.Header> -->
 		<Sidebar.Content>
 			<Sidebar.Group>
 				<Sidebar.GroupContent class="px-1.5 md:px-0">
