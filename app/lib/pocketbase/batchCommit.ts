@@ -3,10 +3,11 @@ import type { CollectionMapping } from './CollectionMapping.svelte'
 /**
  * Commits field collections with dependency handling for parent-child relationships
  * 
- * Dependencies are resolved by committing parent fields at child field creation time:
- * - When a child field is created (has parentId), parent fields are committed first
- * - This ensures child fields reference actual database IDs, not staging IDs
- * - Final commit proceeds normally without dependency conflicts
+ * Current approach: Parent fields are committed immediately when child fields are created.
+ * This ensures child fields can reference actual database IDs rather than staging IDs.
+ * 
+ * Future enhancement: Could be extended to defer all commits until save, but would require
+ * modifications to CollectionMapping to support selective commits or ID mapping.
  */
 export async function commitFieldsWithDependencies(fieldCollection: CollectionMapping<any, any>) {
 	await fieldCollection.commit()
