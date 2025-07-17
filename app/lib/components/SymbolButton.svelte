@@ -33,7 +33,25 @@
 		try {
 			// Use the proper code generator like other preview components
 			const code = { html: symbol.html, css: symbol.css, js: symbol.js }
-			const data = {} // Empty data for preview
+			
+			// Get actual field data for preview
+			const fields = symbol.fields()
+			const entries = symbol.entries()
+			let data = {}
+			
+			if (fields && entries) {
+				// Build data object from fields and entries
+				for (const field of fields) {
+					const entry = entries.find(e => e.field === field.id && e.locale === 'en')
+					if (entry) {
+						data[field.key] = entry.value
+					} else {
+						// Provide default values for fields without entries
+						data[field.key] = field.type === 'text' ? `Sample ${field.label}` : ''
+					}
+				}
+			}
+			
 			const generated_code = await block_html({ code, data })
 			// static_iframe_srcdoc expects an object with head, html, css properties
 			generated_preview = static_iframe_srcdoc({

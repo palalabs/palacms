@@ -11,13 +11,15 @@
 	import { Separator } from '$lib/components/ui/separator'
 	import { Button } from '$lib/components/ui/button'
 	import EmptyState from '$lib/components/EmptyState.svelte'
-	import { CirclePlus, Cuboid, Code, SquarePen, Trash2, ChevronDown, Loader, EllipsisVertical, ArrowLeftRight } from 'lucide-svelte'
+	import DropZone from '$lib/components/DropZone.svelte'
+	import { CirclePlus, Cuboid, Code, Upload, Download, SquarePen, Trash2, ChevronDown, Loader, EllipsisVertical, ArrowLeftRight } from 'lucide-svelte'
 	import SymbolButton from '$lib/components/SymbolButton.svelte'
 	import { page } from '$app/state'
 	import { goto } from '$app/navigation'
 	import { useSidebar } from '$lib/components/ui/sidebar'
-	import { LibrarySymbolGroups, LibrarySymbols } from '$lib/pocketbase/collections'
+	import { LibrarySymbolGroups, LibrarySymbols, LibrarySymbolFields, LibrarySymbolEntries } from '$lib/pocketbase/collections'
 	import type { LibrarySymbol } from '$lib/common/models/LibrarySymbol'
+	import { exportSymbol, importLibrarySymbol } from '$lib/builder/utils/symbolImportExport'
 
 	const active_symbol_group_id = $derived(page.url.searchParams.get('group'))
 	const active_symbol_group = $derived(active_symbol_group_id ? LibrarySymbolGroups.one(active_symbol_group_id) : undefined)
@@ -40,11 +42,31 @@
 		creating_block = true
 	}
 
-	async function upload_block_file(event) {
-		const file = event.target.files[0]
+	async function upload_block_file(file) {
 		if (!file) return
-		// TODO: Implement
-		throw new Error('Not implemented')
+		if (!active_symbol_group_id) {
+			console.error('No active symbol group selected')
+			return
+		}
+		
+		try {
+			await importLibrarySymbol(file, active_symbol_group_id, {
+				LibrarySymbols,
+				LibrarySymbolFields,
+				LibrarySymbolEntries
+			})
+			upload_dialog_open = false
+			upload_file_invalid = false
+		} catch (error) {
+			console.error('Failed to import symbol:', error)
+			
+			// Show more detailed error message
+			if (error.response?.data) {
+				console.error('PocketBase error details:', error.response.data)
+			}
+			
+			upload_file_invalid = true
+		}
 	}
 
 	// TODO: Remove?
@@ -88,6 +110,52 @@
 
 	let is_delete_open = $state(false)
 	let deleting = $state(false)
+	
+	// Upload dialog state
+	let upload_dialog_open = $state(false)
+	let upload_file_invalid = $state(false)
+	
+	// Export symbol
+	async function export_symbol(symbol: LibrarySymbol) {
+		try {
+			const fields = symbol.fields()
+			const entries = symbol.entries()
+			
+			const symbolData = {
+				name: symbol.name,
+				html: symbol.html,
+				css: symbol.css,
+				js: symbol.js,
+				fields: fields?.map(field => ({
+					id: field.id,
+					key: field.key,
+					label: field.label,
+					type: field.type,
+					config: field.config,
+					parent: field.parent,
+					index: field.index
+				})) || [],
+				entries: entries?.map(entry => ({
+					id: entry.id,
+					locale: entry.locale,
+					field: entry.field,
+					value: entry.value
+				})) || []
+			}
+			
+			const blob = new Blob([JSON.stringify(symbolData, null, 2)], { type: 'application/json' })
+			const url = URL.createObjectURL(blob)
+			const a = document.createElement('a')
+			a.href = url
+			a.download = `${symbol.name.replace(/[^a-zA-Z0-9]/g, '_')}.json`
+			document.body.appendChild(a)
+			a.click()
+			document.body.removeChild(a)
+			URL.revokeObjectURL(url)
+		} catch (error) {
+			console.error('Failed to export symbol:', error)
+		}
+	}
 	async function handle_delete() {
 		deleting = true
 		if (!active_symbol_group_id) return
@@ -270,11 +338,17 @@
 			</DropdownMenu.Content>
 		</DropdownMenu.Root>
 	</div>
-	<div class="ml-auto mr-4">
-		<Button size="sm" variant="outline" onclick={open_create_block}>
-			<CirclePlus class="h-4 w-4" />
-			Create Block
-		</Button>
+	<div class="ml-auto mr-4 flex gap-2">
+		{#if active_symbol_group_id}
+			<Button size="sm" variant="outline" onclick={open_create_block}>
+				<CirclePlus class="h-4 w-4" />
+				Create Block
+			</Button>
+			<Button size="sm" variant="outline" onclick={() => (upload_dialog_open = true)}>
+				<Upload class="h-4 w-4" />
+				Import Block
+			</Button>
+		{/if}
 	</div>
 </header>
 
@@ -293,6 +367,10 @@
 									<DropdownMenu.Item onclick={() => begin_symbol_edit(symbol)}>
 										<Code class="h-4 w-4" />
 										<span>Edit</span>
+									</DropdownMenu.Item>
+									<DropdownMenu.Item onclick={() => export_symbol(symbol)}>
+										<Download class="h-4 w-4" />
+										<span>Export</span>
 									</DropdownMenu.Item>
 									<DropdownMenu.Item onclick={() => begin_symbol_move(symbol)}>
 										<ArrowLeftRight class="h-4 w-4" />
@@ -390,6 +468,28 @@
 		</AlertDialog.Footer>
 	</AlertDialog.Content>
 </AlertDialog.Root>
+
+<!-- Upload Symbol Dialog -->
+<Dialog.Root bind:open={upload_dialog_open}>
+	<Dialog.Content class="sm:max-w-[500px] pt-12 gap-0">
+		<h2 class="text-lg font-semibold leading-none tracking-tight">Import Block</h2>
+		<p class="text-muted-foreground text-sm mb-4">
+			Import a block from a JSON file exported from another site.
+		</p>
+		
+		<DropZone 
+			onupload={upload_block_file} 
+			invalid={upload_file_invalid}
+			drop_text="Drop your block file here or click to browse"
+			accept=".json"
+			class="mb-4"
+		/>
+		
+		<Dialog.Footer>
+			<Button type="button" variant="outline" onclick={() => { upload_dialog_open = false; upload_file_invalid = false; }}>Cancel</Button>
+		</Dialog.Footer>
+	</Dialog.Content>
+</Dialog.Root>
 
 <style lang="postcss">
 	.masonry {

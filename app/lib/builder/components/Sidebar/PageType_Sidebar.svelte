@@ -19,6 +19,9 @@
 	import { page } from '$app/state'
 	import { Sites, PageTypes, SiteSymbols, PageTypeSymbols, SiteSymbolFields, SiteSymbolEntries, PageTypeFields, PageTypeEntries } from '$lib/pocketbase/collections'
 	import { site_html } from '$lib/builder/stores/app/page.js'
+	import DropZone from '$lib/components/DropZone.svelte'
+	import { exportSymbol, importSiteSymbol } from '$lib/builder/utils/symbolImportExport'
+	import { Button } from '$lib/components/ui/button'
 
 	const host = $derived(page.url.host)
 	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
@@ -39,6 +42,37 @@
 
 	async function create_block() {
 		creating_block = true
+	}
+
+	// Import/Export functionality
+	let upload_dialog_open = $state(false)
+	let upload_file_invalid = $state(false)
+
+	async function upload_block(file: File) {
+		if (!file || !site) return
+		
+		try {
+			console.log('Importing file:', file.name, 'Size:', file.size)
+			const text = await file.text()
+			console.log('File content preview:', text.substring(0, 200))
+			
+			await importSiteSymbol(file, site.id, {
+				SiteSymbols,
+				SiteSymbolFields,
+				SiteSymbolEntries
+			})
+			upload_dialog_open = false
+			upload_file_invalid = false
+			console.log('Import successful!')
+		} catch (error) {
+			console.error('Failed to import symbol:', error)
+			console.error('Error details:', error.message, error.stack)
+			upload_file_invalid = true
+		}
+	}
+
+	function export_block(symbol) {
+		exportSymbol(symbol)
 	}
 
 	let active_block_id = $state(null)
@@ -185,12 +219,11 @@
 							<Icon icon="mdi:code" />
 							<span>Create</span>
 						</button>
+						<button class="primo-button" onclick={() => (upload_dialog_open = true)}>
+							<Icon icon="mdi:upload" />
+							<span>Import</span>
+						</button>
 					{/if}
-					<!-- <label class="primo-button">
-						<input onchange={upload_block} type="file" accept=".json" />
-						<Icon icon="mdi:upload" />
-						<span>Upload</span>
-					</label> -->
 				</div>
 				{#if $site_html !== null}
 					<div class="block-list">
@@ -238,11 +271,10 @@
 						<Icon icon="mdi:code" />
 						<span>Create</span>
 					</button>
-					<!-- <label class="primo-button">
-						<input onchange={upload_block} type="file" accept=".json" />
+					<button class="primo-button" onclick={() => (upload_dialog_open = true)}>
 						<Icon icon="mdi:upload" />
-						<span>Upload</span>
-					</label> -->
+						<span>Import</span>
+					</button>
 				</div>
 			{/if}
 		</Tabs.Content>
@@ -285,6 +317,28 @@
 		</Tabs.Content>
 	</Tabs.Root>
 </div>
+
+<!-- Import Symbol Dialog -->
+<Dialog.Root bind:open={upload_dialog_open}>
+	<Dialog.Content class="sm:max-w-[500px] pt-12 gap-0">
+		<h2 class="text-lg font-semibold leading-none tracking-tight">Import Block</h2>
+		<p class="text-muted-foreground text-sm mb-4">
+			Import a block from a JSON file exported from another site.
+		</p>
+		
+		<DropZone 
+			onupload={upload_block} 
+			invalid={upload_file_invalid}
+			drop_text="Drop your block file here or click to browse"
+			accept=".json"
+			class="mb-4"
+		/>
+		
+		<Dialog.Footer>
+			<Button type="button" variant="outline" onclick={() => { upload_dialog_open = false; upload_file_invalid = false; }}>Cancel</Button>
+		</Dialog.Footer>
+	</Dialog.Content>
+</Dialog.Root>
 
 <style lang="postcss">
 	.sidebar {

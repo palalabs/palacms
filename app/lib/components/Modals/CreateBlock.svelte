@@ -22,8 +22,23 @@
 		onsubmit: (data: any) => void
 	} = $props()
 
-	// Provide simple empty object for component props
-	let component_data = $derived({})
+	// Get field data for component props
+	let component_data = $derived.by(() => {
+		if (!symbol?.fields || !symbol?.entries) return {}
+		
+		const fields = symbol.fields()
+		const entries = symbol.entries()
+		let data = {}
+		
+		if (fields && entries) {
+			for (const field of fields) {
+				const entry = entries.find(e => e.field === field.id && e.locale === 'en')
+				data[field.key] = entry?.value || ''
+			}
+		}
+		
+		return data
+	})
 	// Create code object for ComponentPreview (matching SectionEditor pattern)
 	let code = $derived({
 		html: symbol?.html || '<!-- Add your HTML here -->',
@@ -97,7 +112,7 @@
 			{#if tab === 'code'}
 				<FullCodeEditor bind:html={symbol.html} bind:css={symbol.css} bind:js={symbol.js} data={component_data} on:save={onsave} on:mod-e={toggle_tab} />
 			{:else if tab === 'content'}
-				<Fields entity={symbol} fields={[]} onkeydown={handle_hotkey} />
+				<Fields entity={symbol} fields={symbol?.fields?.() || []} entries={symbol?.entries?.() || []} onkeydown={handle_hotkey} />
 			{/if}
 		</Pane>
 		<PaneResizer class="PaneResizer" />
