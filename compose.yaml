@@ -1,0 +1,28 @@
+services:
+  palacms:
+    image: ${DOCKER_IMAGE}
+    volumes:
+      - palacms-data:/app/pb_data
+    networks:
+      traefik-public: null
+    labels:
+      - traefik.docker.network=traefik-public
+      - traefik.enable=true
+      - traefik.http.services.${INSTANCE}-palacms.loadbalancer.server.port=8080
+      - traefik.http.routers.${INSTANCE}-http.entrypoints=http
+      - traefik.http.routers.${INSTANCE}-http.middlewares=https-redirect
+      - traefik.http.routers.${INSTANCE}-http.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.${INSTANCE}-http.service=${INSTANCE}-palacms
+      - traefik.http.routers.${INSTANCE}-https.entrypoints=https
+      - traefik.http.routers.${INSTANCE}-https.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.${INSTANCE}-https.service=${INSTANCE}-palacms
+      - traefik.http.routers.${INSTANCE}-https.tls=true
+      - traefik.http.routers.${INSTANCE}-https.tls.certresolver=le
+
+volumes:
+  palacms-data:
+
+networks:
+  traefik-public:
+    name: traefik-public
+    external: true
