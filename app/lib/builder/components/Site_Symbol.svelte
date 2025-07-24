@@ -70,8 +70,7 @@
 </script>
 
 <button class="sidebar-symbol" {onclick}>
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div class="symbol" {onmousedown} {onmouseup}>
+	<div class="symbol">
 		{#if checked}
 			<div class="check" in:fade={{ duration: 100 }}>
 				<Icon icon="material-symbols:check" />

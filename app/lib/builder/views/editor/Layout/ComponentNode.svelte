@@ -47,8 +47,6 @@
 	const entries = $derived('page_type' in section ? section.entries() : 'page' in section ? section.entries() : undefined)
 	const component_data = $derived(fields && entries && (getContent(section, fields, entries)[$locale] ?? {}))
 
-
-
 	let floating_menu = $state()
 	let bubble_menu = $state()
 	let image_editor = $state()
@@ -718,6 +716,9 @@
 <style lang="postcss">
 	iframe {
 		width: 100%;
+
+		/* Prevent background color leaking through from behind the IFrame. */
+		background-color: white;
 	}
 	pre {
 		margin: 0;

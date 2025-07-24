@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onDestroy, setContext, type Snippet } from 'svelte'
 	import * as _ from 'lodash-es'
-	import Icon, { loadIcons, enableCache } from '@iconify/svelte'
+	import Icon, { loadIcons } from '@iconify/svelte'
 	import { browser } from '$app/environment'
 	import IconButton from './ui/IconButton.svelte'
 	import Toolbar from './views/editor/Toolbar.svelte'
@@ -13,8 +13,9 @@
 	import { PaneGroup, Pane, PaneResizer } from 'paneforge'
 	import { site_html } from '$lib/builder/stores/app/page'
 	import { processCode } from '$lib/builder/utils.js'
-	import type { Site } from '$lib/common/models/Site'
 	import { page } from '$app/state'
+	import type { Pages, Sites } from '$lib/pocketbase/collections'
+	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
 
 	let {
 		site,
@@ -22,8 +23,8 @@
 		toolbar,
 		children
 	}: {
-		site: Site | null
-		currentPage?: any
+		site?: ObjectOf<typeof Sites>
+		currentPage?: ObjectOf<typeof Pages>
 		toolbar?: Snippet
 		children?: Snippet
 	} = $props()
@@ -71,7 +72,6 @@
 		'fluent:library-28-filled',
 		'lsicon:marketplace-filled'
 	])
-	enableCache('local')
 
 	// listen for Cmd/Ctrl key to show key hint
 	if (browser) {
@@ -119,7 +119,7 @@
 		})
 	}
 
-	let sidebar_pane = $state<any>()
+	let sidebar_pane = $state<ReturnType<typeof Pane>>()
 
 	// Generate <head> tag code
 	let previous
@@ -158,13 +158,13 @@
 	</Toolbar>
 	<PaneGroup direction="horizontal" autoSaveId="page-view" style="height:initial;flex:1;">
 		<Pane
-			bind:pane={sidebar_pane}
+			bind:this={sidebar_pane}
 			defaultSize={20}
 			minSize={2}
 			onResize={(size) => {
 				if (size < 10) {
 					showing_sidebar = false
-					sidebar_pane.resize(2)
+					sidebar_pane?.resize(2)
 				} else {
 					showing_sidebar = true
 				}

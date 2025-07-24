@@ -20,8 +20,10 @@
 	import PageTypeModal from '$lib/builder/views/modal/PageTypeModal/PageTypeModal.svelte'
 	import Collaboration from '$lib/builder/views/modal/Collaboration.svelte'
 	import { usePublishSite } from '$lib/Publish.svelte'
+	import type { Snippet } from 'svelte'
+	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
 
-	let { children, currentPage, site } = $props()
+	let { children, currentPage, site }: { children: Snippet; currentPage?: ObjectOf<typeof Pages>; site?: ObjectOf<typeof Sites> } = $props()
 
 	// Fallback to hostname lookup if no site prop provided (for backward compatibility)
 	const host = $derived(pageState.url.host)
@@ -48,8 +50,7 @@
 	function navigate_up() {
 		if (can_navigate_up) {
 			const prev_page = all_pages[current_page_index - 1]
-			const base_path = pageState.url.pathname.includes('/sites/') ? 
-				`/admin/sites/${resolved_site?.id}` : '/admin/site'
+			const base_path = pageState.url.pathname.includes('/sites/') ? `/admin/sites/${resolved_site?.id}` : '/admin/site'
 			goto(`${base_path}/${prev_page.slug}`)
 		}
 	}
@@ -57,8 +58,7 @@
 	function navigate_down() {
 		if (can_navigate_down) {
 			const next_page = all_pages[current_page_index + 1]
-			const base_path = pageState.url.pathname.includes('/sites/') ? 
-				`/admin/sites/${resolved_site?.id}` : '/admin/site'
+			const base_path = pageState.url.pathname.includes('/sites/') ? `/admin/sites/${resolved_site?.id}` : '/admin/site'
 			goto(`${base_path}/${next_page.slug}`)
 		}
 	}
@@ -179,8 +179,7 @@
 				{#if page_page_type}
 					<!-- $userRole === 'DEV' -->
 					{#if true}
-						{@const base_path = pageState.url.pathname.includes('/sites/') ? 
-							`/admin/sites/${resolved_site?.id}` : '/admin/site'}
+						{@const base_path = pageState.url.pathname.includes('/sites/') ? `/admin/sites/${resolved_site?.id}` : '/admin/site'}
 						<a class="page-type-badge" style="background-color: {page_page_type.color};" href="{base_path}/page-type--{page_page_type.id}">
 							<Icon icon={page_page_type.icon} />
 						</a>
