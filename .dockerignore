@@ -1,0 +1,21 @@
+.git
+.env 
+.DS_Store
+.vscode
+.svelte-kit
+node_modules
+
+# Devenv
+.devenv*
+devenv.local.nix
+
+# direnv
+.direnv
+
+# pre-commit
+.pre-commit-config.yaml
+
+# PocketBase
+/pb_data
+/pb_public
+/pb_hooks/common
