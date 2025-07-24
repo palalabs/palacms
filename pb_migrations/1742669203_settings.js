@@ -10,8 +10,8 @@ migrate((app) => {
 	if (superuserEmail && superuserPassword) {
 		const collection = app.findCollectionByNameOrId('_superusers')
 		const record = new Record(collection)
-		record.set('email', 'admin@palacms.internal')
-		record.set('password', 'test1234')
+		record.set('email', superuserEmail)
+		record.set('password', superuserPassword)
 		app.save(record)
 		superuserCreated = true
 	}
@@ -22,8 +22,8 @@ migrate((app) => {
 	if (userEmail && userPassword) {
 		const collection = app.findCollectionByNameOrId('users')
 		const record = new Record(collection)
-		record.set('email', 'user@palacms.internal')
-		record.set('password', 'test1234')
+		record.set('email', userEmail)
+		record.set('password', userPassword)
 		app.save(record)
 		userCreated = true
 	}
