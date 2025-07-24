@@ -1,4 +1,4 @@
-FROM node:23 AS builder
+FROM --platform=$BUILDPLATFORM node:23 AS builder
 
 # Copy all the files that are not in .dockerignore
 COPY . /app
@@ -10,11 +10,13 @@ RUN npx svelte-kit sync
 RUN npx vite --config common.config.js build
 RUN npx vite --config app.config.js build
 
-FROM alpine:3 AS downloader
+FROM --platform=$BUILDPLATFORM alpine:3 AS downloader
 
 # These arguments can be overridden on build
+ARG TARGETOS
+ARG TARGETARCH
 ARG PB_VERSION=0.26.6
-ARG PB_PLATFORM=linux_amd64
+ARG PB_PLATFORM=${TARGETOS}_${TARGETARCH}
 
 # Add dependencies needed from downloading and unzipping
 RUN apk add --no-cache \
