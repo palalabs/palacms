@@ -4,7 +4,6 @@ migrate((app) => {
 	settings.meta.appName = 'PalaCMS'
 	app.save(settings)
 
-	let superuserCreated = false
 	const superuserEmail = $os.getenv('PALA_SUPERUSER_EMAIL')
 	const superuserPassword = $os.getenv('PALA_SUPERUSER_PASSWORD')
 	if (superuserEmail && superuserPassword) {
@@ -13,10 +12,8 @@ migrate((app) => {
 		record.set('email', superuserEmail)
 		record.set('password', superuserPassword)
 		app.save(record)
-		superuserCreated = true
 	}
 
-	let userCreated = false
 	const userEmail = $os.getenv('PALA_USER_EMAIL')
 	const userPassword = $os.getenv('PALA_USER_PASSWORD')
 	if (userEmail && userPassword) {
@@ -25,10 +22,5 @@ migrate((app) => {
 		record.set('email', userEmail)
 		record.set('password', userPassword)
 		app.save(record)
-		userCreated = true
-	}
-
-	if (!superuserCreated || !userCreated) {
-		throw new Error('No initial user(s) created')
 	}
 })
