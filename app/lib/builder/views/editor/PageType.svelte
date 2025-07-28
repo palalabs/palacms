@@ -730,6 +730,7 @@
 		--Spinner-color-opaque: rgba(248, 68, 73, 0.2);
 	}
 	main {
+		padding: 0.5rem;
 		background-color: var(--color-gray-950);
 		transition: 0.2s opacity;
 		opacity: 0;
@@ -738,9 +739,6 @@
 		/* padding-top: 42px; */
 		overflow: auto;
 		box-sizing: border-box;
-		overflow: auto;
-		display: flex;
-		flex-direction: column;
 	}
 	main.fadein {
 		opacity: 1;
@@ -751,10 +749,7 @@
 		border: 2px dashed rgba(255, 255, 255, 0.1);
 		transition: all 0.2s ease;
 		overflow-y: auto;
-		max-height: 40vh; /* Limit each zone to 40% of viewport height */
 		border-radius: 8px;
-		padding: 12px;
-		margin: 0.5rem;
 	}
 
 	.page-zone.header-zone {
@@ -762,11 +757,8 @@
 	}
 
 	.page-zone.body-zone {
-		flex: 1;
 		border-style: solid;
-		min-height: 200px;
 		max-height: none; /* Override the general max-height for body zone */
-		overflow-y: visible; /* Let body zone expand naturally */
 	}
 
 	.page-zone.footer-zone {
@@ -793,7 +785,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		height: 100%;
+		width: 100%;
 		min-height: 80px;
 		color: rgba(107, 114, 128, 0.8);
 		font-size: 0.875rem;
@@ -804,7 +796,7 @@
 	}
 
 	.empty-zone.main-body {
-		min-height: 120px;
+		min-height: 60vh;
 		font-size: 1rem;
 	}
 
