@@ -74,6 +74,6 @@ jobs:
         env:
           DOCKER_HOST: ${{ secrets.TESTING_DOCKER_HOST }}
           DOCKER_IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
-          INSTANCE: palacms-testing
         run: |
-          docker compose -p palacms-$INSTANCE up
+          cd ./deployment/testing/
+          docker compose up

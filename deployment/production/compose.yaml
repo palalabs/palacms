@@ -1,0 +1,33 @@
+name: palacms-production
+
+services:
+  palacms:
+    image: ${DOCKER_IMAGE}
+    volumes:
+      - palacms-data:/app/pb_data
+    networks:
+      traefik-public: null
+    labels:
+      - traefik.docker.network=traefik-public
+      - traefik.enable=true
+      - traefik.http.services.production-palacms.loadbalancer.server.port=8080
+      - traefik.http.routers.production-palacms-http.entrypoints=http
+      - traefik.http.routers.production-palacms-http.middlewares=https-redirect
+      - traefik.http.routers.production-palacms-http.middlewares=production-palacms-marketplace-redirect
+      - traefik.http.routers.production-palacms-http.rule=Host(`palacms.org`) || Host(`marketplace.palacms.org`) || Host(`docs.palacms.org`)
+      - traefik.http.routers.production-palacms-https.entrypoints=https
+      - traefik.http.routers.production-palacms-https.rule=Host(`palacms.org`) || Host(`marketplace.palacms.org`) || Host(`docs.palacms.org`)
+      - traefik.http.routers.production-palacms-https.service=production-palacms
+      - traefik.http.routers.production-palacms-https.tls=true
+      - traefik.http.routers.production-palacms-https.tls.certresolver=le
+      - traefik.http.routers.production-palacms-https.middlewares=production-palacms-marketplace-redirect
+      - traefik.http.middlewares.production-palacms-marketplace-redirect.redirectregex.regex=^https?://marketplace.palacms.org/?$
+      - traefik.http.middlewares.production-palacms-marketplace-redirect.redirectregex.replacement=https://palacms.org
+
+volumes:
+  palacms-data:
+
+networks:
+  traefik-public:
+    name: traefik-public
+    external: true

@@ -1,4 +1,4 @@
-name: Build Docker image and deploy marketplace
+name: Build Docker image and deploy production
 
 on:
   push:
@@ -57,7 +57,7 @@ jobs:
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
 
-  deploy-marketplace:
+  deploy-production:
     runs-on: ubuntu-latest
 
     steps:    
@@ -67,14 +67,13 @@ jobs:
       - name: Set up SSH
         run: |
           install -m 600 -D /dev/null ~/.ssh/id
-          echo "${{ secrets.MARKETPLACE_SSH_PRIVATE_KEY }}" > ~/.ssh/id
-          echo "${{ secrets.MARKETPLACE_SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          echo "${{ secrets.PRODUCTION_SSH_PRIVATE_KEY }}" > ~/.ssh/id
+          echo "${{ secrets.PRODUCTION_SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
 
       - name: Deploy to server
         env:
-          DOCKER_HOST: ${{ secrets.MARKETPLACE_DOCKER_HOST }}
+          DOCKER_HOST: ${{ secrets.PRODUCTION_DOCKER_HOST }}
           DOCKER_IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
-          INSTANCE: palacms-marketplace
-          DOMAIN: marketplace.palacms.org
         run: |
-          docker compose -p palacms-$INSTANCE up
+          cd ./deployment/production/
+          docker compose up
