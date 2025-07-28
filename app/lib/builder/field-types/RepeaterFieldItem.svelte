@@ -69,13 +69,13 @@
 	}
 
 	function check_condition(field, entry) {
-		if (!field.options.condition) return true // has no condition
+		if (!field.config?.condition) return true // has no condition
 
-		const { field: field_id, value, comparison } = field.options.condition
+		const { field: field_id, value, comparison } = field.config.condition
 		const field_to_compare = fields.find((f) => f.id === field_id)
 		if (!field_to_compare) {
 			// field has been deleted, reset condition
-			field.options.condition = null
+			field.config.condition = null
 			return false
 		}
 

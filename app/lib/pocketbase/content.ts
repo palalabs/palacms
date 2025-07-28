@@ -95,6 +95,7 @@ export const getContent = <Collection extends keyof typeof ENTRY_MODELS>(entity:
 }
 
 export const getDirectEntries = <Collection extends keyof typeof ENTRY_MODELS>(entity: EntityOf<Collection>, field: Field, entries: EntryOf<Collection>[]): EntryOf<Collection>[] => {
+	if (!entries) return []
 	return entries.filter((entry) => entry.field === field.id && (!('section' in entry) || entry.section === entity.id))
 }
 

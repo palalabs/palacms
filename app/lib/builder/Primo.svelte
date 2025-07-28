@@ -36,7 +36,7 @@
 
 	function reset() {
 		showing_sidebar = true
-		sidebar_pane.resize(20)
+		// sidebar_pane?.resize(20)
 	}
 
 	// Preload icons

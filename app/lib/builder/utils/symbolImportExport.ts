@@ -1,6 +1,7 @@
 import type { LibrarySymbol } from '$lib/common/models/LibrarySymbol'
 import type { SiteSymbol } from '$lib/common/models/SiteSymbol'
 
+
 /**
  * Export a symbol (library or site) to JSON format
  */
@@ -261,10 +262,13 @@ async function createSymbolFieldsAndEntries(
 	// First pass: Create fields without parents
 	for (const field of parentFields) {
 		console.log('Creating parent field:', field)
+		// Use existing field type or default to text if missing
+		let fieldType = field.type || 'text'
+		
 		// Provide appropriate default config based on field type
 		let config = field.config || {}
 		if (!field.config) {
-			switch (field.type) {
+			switch (fieldType) {
 				case 'select':
 					config = { options: [] }
 					break
@@ -272,6 +276,48 @@ async function createSymbolFieldsAndEntries(
 					config = {}
 					break
 				case 'image':
+					config = {}
+					break
+				case 'url':
+					config = {}
+					break
+				case 'link':
+					config = {}
+					break
+				case 'icon':
+					config = {}
+					break
+				case 'number':
+					config = {}
+					break
+				case 'slider':
+					config = { min: 0, max: 100, step: 1 }
+					break
+				case 'switch':
+					config = {}
+					break
+				case 'group':
+					config = {}
+					break
+				case 'page':
+					config = {}
+					break
+				case 'page-list':
+					config = {}
+					break
+				case 'site-field':
+					config = {}
+					break
+				case 'page-field':
+					config = {}
+					break
+				case 'markdown':
+					config = {}
+					break
+				case 'info':
+					config = {}
+					break
+				case 'text':
 					config = {}
 					break
 				default:
@@ -282,7 +328,7 @@ async function createSymbolFieldsAndEntries(
 		const fieldData = {
 			key: field.key,
 			label: field.label,
-			type: field.type,
+			type: fieldType,
 			config,
 			parent: undefined,
 			index: field.index || 0,
@@ -334,10 +380,13 @@ async function createSymbolFieldsAndEntries(
 		const newParentId = fieldIdMap.get(field.parent)
 		
 		if (newParentId) {
+			// Use existing field type or default to text if missing
+			let fieldType = field.type || 'text'
+			
 			// Provide appropriate default config based on field type
 			let config = field.config || {}
 			if (!field.config) {
-				switch (field.type) {
+				switch (fieldType) {
 					case 'select':
 						config = { options: [] }
 						break
@@ -345,6 +394,48 @@ async function createSymbolFieldsAndEntries(
 						config = {}
 						break
 					case 'image':
+						config = {}
+						break
+					case 'url':
+						config = {}
+						break
+					case 'link':
+						config = {}
+						break
+					case 'icon':
+						config = {}
+						break
+					case 'number':
+						config = {}
+						break
+					case 'slider':
+						config = { min: 0, max: 100, step: 1 }
+						break
+					case 'switch':
+						config = {}
+						break
+					case 'group':
+						config = {}
+						break
+					case 'page':
+						config = {}
+						break
+					case 'page-list':
+						config = {}
+						break
+					case 'site-field':
+						config = {}
+						break
+					case 'page-field':
+						config = {}
+						break
+					case 'markdown':
+						config = {}
+						break
+					case 'info':
+						config = {}
+						break
+					case 'text':
 						config = {}
 						break
 					default:
@@ -355,7 +446,7 @@ async function createSymbolFieldsAndEntries(
 			const fieldData = {
 				key: field.key,
 				label: field.label,
-				type: field.type,
+				type: fieldType,
 				config,
 				parent: newParentId,
 				index: field.index || 0,

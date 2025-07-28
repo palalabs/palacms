@@ -14,6 +14,7 @@
 	import hotkey_events from '../../../stores/app/hotkey_events.js'
 	import { getContent } from '$lib/pocketbase/content'
 	import { PageSectionEntries, PageSections, PageEntries, PageTypeSectionEntries, SiteSymbolFields, SiteSymbols, SiteEntries } from '$lib/pocketbase/collections'
+	import { get_empty_value } from '$lib/builder/utils.js'
 	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
 	import type { PageTypeSection } from '$lib/common/models/PageTypeSection'
 
@@ -121,7 +122,7 @@
 						const siblingFields = fields?.filter((f) => f.parent === parentId) || []
 						const nextIndex = Math.max(...siblingFields.map((f) => f.index || 0), -1) + 1
 
-						SiteSymbolFields.create({
+						return SiteSymbolFields.create({
 							type: 'text',
 							key: '',
 							label: '',
@@ -159,10 +160,87 @@
 						console.log('Updating field:', id, 'with data:', data)
 						SiteSymbolFields.update(id, data)
 						console.log('Field after update:', SiteSymbolFields.one(id))
+
+						// If field type changed to repeater, create its root entry
+						if (data.type === 'repeater') {
+							const existing_entry = entries.find((entry) => entry.field === id && !entry.parent)
+							console.log('Repeater field created, checking for existing entry:', existing_entry)
+							if (!existing_entry) {
+								console.log('Creating repeater root entry for field:', id)
+								if ('page_type' in component) {
+									PageTypeSectionEntries.create({
+										field: id,
+										locale: 'en',
+										value: null,
+										parent: null,
+										section: component.id
+									})
+								} else if ('page' in component) {
+									PageSectionEntries.create({
+										field: id,
+										locale: 'en',
+										value: null,
+										parent: null,
+										section: component.id
+									})
+								}
+							} else {
+								console.log('Repeater root entry already exists, skipping creation')
+							}
+						}
 					}}
 					ondelete={(field_id) => {
 						// PocketBase cascade deletion will automatically clean up all associated entries
 						SiteSymbolFields.delete(field_id)
+					}}
+					onadd={({ parent, index, subfields }) => {
+						console.log('onadd called with:', { parent, index, subfields })
+
+						// Find the repeater's root entry
+						const repeater_entry = entries.find((entry) => entry.field === parent)
+						console.log('Found repeater_entry:', repeater_entry)
+						if (!repeater_entry) return
+
+						// Create the item entry with repeater entry as parent
+						let item_entry
+						const item_data = {
+							parent: repeater_entry.id, // Parent is the repeater entry
+							locale: 'en',
+							value: null,
+							index,
+							section: component.id
+						}
+						console.log('Creating item entry with data:', item_data)
+						
+						if ('page_type' in component) {
+							item_entry = PageTypeSectionEntries.create(item_data)
+						} else if ('page' in component) {
+							item_entry = PageSectionEntries.create(item_data)
+						}
+
+						console.log('Created item_entry:', item_entry)
+						if (!item_entry) return
+
+						// Create entries for each subfield with appropriate initial values
+						subfields.forEach((subfield) => {
+							const initial_value = get_empty_value(subfield)
+							const subfield_data = {
+								field: subfield.id,
+								locale: 'en',
+								value: initial_value,
+								parent: item_entry.id,
+								section: component.id
+							}
+							console.log('Creating subfield entry with data:', subfield_data)
+
+							if ('page_type' in component) {
+								const sub_entry = PageTypeSectionEntries.create(subfield_data)
+								console.log('Created subfield entry:', sub_entry)
+							} else if ('page' in component) {
+								const sub_entry = PageSectionEntries.create(subfield_data)
+								console.log('Created subfield entry:', sub_entry)
+							}
+						})
 					}}
 				/>
 			{/if}

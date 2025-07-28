@@ -102,25 +102,66 @@
 		selected_field_type_id = visible_field_types.find((ft) => ft.id === field.type)?.id
 	})
 
-	// auto-match field-type to entered label (e.g. [Plural], Icon, Image, Link)
+	// auto-match field-type to entered label (enhanced pattern matching)
 	let field_type_changed = $state(false) // but don't overwrite it if the user's already entered it
 	function update_field_type(label) {
-		label = label.toLowerCase()
+		if (!label) return 'text'
+		
+		const labelLower = label.toLowerCase()
+		const keyLower = field.key?.toLowerCase() || ''
+		const combined = `${labelLower} ${keyLower}`
+		
+		// Plurals/Arrays first (most specific)
 		if (label && $pluralize.isPlural(label)) {
 			return 'repeater'
-		} else if (label.includes('icon')) {
-			return 'icon'
-		} else if (label.includes('image')) {
-			return 'image'
-		} else if (label.includes('link')) {
-			return 'link'
-		} else if (label.includes('type')) {
-			return 'select'
-		} else if (label.includes('group')) {
-			return 'group'
-		} else if (label.includes('toggle')) {
-			return 'toggle'
-		} else return 'text'
+		}
+		
+		// URL/Link patterns  
+		if (/\b(url|href|website|domain)\b/.test(combined)) return 'url'
+		if (/\b(link)\b/.test(combined)) return 'link'
+		
+		// Image patterns
+		if (/\b(image|img|photo|picture|avatar|banner|logo)\b/.test(combined)) return 'image'
+		
+		// Icon patterns
+		if (/\b(icon|emoji)\b/.test(combined)) return 'icon'
+		
+		// Number patterns
+		if (/\b(number|num|count|quantity|amount|price|cost|age|weight|height|width)\b/.test(combined)) return 'number'
+		
+		// Slider patterns (ranges, ratings, percentages)
+		if (/\b(rating|range|percent|score|level|opacity|volume)\b/.test(combined)) return 'slider'
+		
+		// Boolean/Toggle patterns
+		if (/\b(is|has|show|hide|enable|disable|active|visible|featured|toggle)\b/.test(combined)) return 'switch'
+		
+		// Select/Choice patterns
+		if (/\b(type|category|status|state|option|choice|select)\b/.test(combined)) return 'select'
+		
+		// Group patterns (sections, groups)
+		if (/\b(group|section|block|area)\b/.test(combined)) return 'group'
+		
+		// Page patterns
+		if (/\b(page|pages)\b/.test(combined)) {
+			return /\b(list|multiple)\b/.test(combined) ? 'page-list' : 'page'
+		}
+		
+		// Site field patterns
+		if (/\b(site|global|config|setting)\b/.test(combined)) return 'site-field'
+		
+		// Page field patterns  
+		if (/\b(page-field|page-content)\b/.test(combined)) return 'page-field'
+		
+		// Markdown patterns
+		if (/\b(markdown|md|rich|formatted|wysiwyg|content|body|description|bio|about|summary|details)\b/.test(combined)) {
+			return /\b(markdown|md)\b/.test(combined) ? 'markdown' : 'text'
+		}
+		
+		// Info/Help patterns
+		if (/\b(info|help|note|tip|instruction)\b/.test(combined)) return 'info'
+		
+		// Default to text
+		return 'text'
 	}
 
 	function add_condition() {
@@ -316,7 +357,7 @@
 						onchange({
 							label: text,
 							key: key_edited ? field.key : validate_field_key(text),
-							type: field_type_changed || (!is_new_field && field.label !== '') ? field.type : update_field_type(text)
+							type: field.type
 						})
 						
 						// Mark as no longer new once user types something substantial
