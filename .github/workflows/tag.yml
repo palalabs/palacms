@@ -53,7 +53,7 @@ jobs:
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v2
         with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
 
@@ -74,7 +74,7 @@ jobs:
       - name: Deploy to server
         env:
           DOCKER_HOST: ${{ secrets.PRODUCTION_DOCKER_HOST }}
-          DOCKER_IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
+          DOCKER_IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref.name }}
         run: |
           cd ./deployment/production/
-          docker compose up
+          docker compose up --pull always
