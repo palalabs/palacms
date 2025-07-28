@@ -74,7 +74,7 @@ jobs:
       - name: Deploy to server
         env:
           DOCKER_HOST: ${{ secrets.TESTING_DOCKER_HOST }}
-          DOCKER_IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref.name }}
+          DOCKER_IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.head_ref || github.ref_name }}
         run: |
           cd ./deployment/testing/
           eval "$(ssh-agent -s)"
