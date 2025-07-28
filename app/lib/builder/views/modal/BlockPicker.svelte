@@ -13,9 +13,9 @@
 	const columns = $derived(
 		selected_symbol_group
 			? [
-					symbols.slice((selected_symbol_group.symbols.length / 3) * 2, (selected_symbol_group.symbols.length / 3) * 3),
-					symbols.slice(selected_symbol_group.symbols.length / 3, (selected_symbol_group.symbols.length / 3) * 2),
-					symbols.slice(0, selected_symbol_group.symbols.length / 3)
+					symbols.slice(Math.floor((symbols.length / 3) * 2), symbols.length),
+					symbols.slice(Math.floor(symbols.length / 3), Math.floor((symbols.length / 3) * 2)),
+					symbols.slice(0, Math.floor(symbols.length / 3))
 				]
 			: []
 	)
