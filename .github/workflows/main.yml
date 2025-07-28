@@ -79,4 +79,4 @@ jobs:
           cd ./deployment/testing/
           eval "$(ssh-agent -s)"
           ssh-add ~/.ssh/id
-          docker compose up --pull always
+          docker compose up --pull always --detach
