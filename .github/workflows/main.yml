@@ -3,7 +3,7 @@ name: Build Docker image and deploy testing
 on:
   push:
     branches:
-      - master
+      - main
 
 env:
   REGISTRY: ghcr.io
@@ -75,6 +75,5 @@ jobs:
           DOCKER_HOST: ${{ secrets.TESTING_DOCKER_HOST }}
           DOCKER_IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
           INSTANCE: palacms-testing
-          DOMAIN: testing.palacms.org
         run: |
           docker compose -p palacms-$INSTANCE up
