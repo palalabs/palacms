@@ -135,7 +135,7 @@
 
 <Dialog.Root bind:open={is_editor_open}>
 	<Dialog.Content escapeKeydownBehavior="ignore" class="max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4 gap-0">
-		<CreateBlock {symbol} {head} onsubmit={save_symbol} />
+		<CreateBlock {symbol} {head} onsubmit={save_symbol} symbol_type="library" />
 	</Dialog.Content>
 </Dialog.Root>
 

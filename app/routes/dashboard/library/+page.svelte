@@ -48,7 +48,7 @@
 			console.error('No active symbol group selected')
 			return
 		}
-		
+
 		try {
 			await importLibrarySymbol(file, active_symbol_group_id, {
 				LibrarySymbols,
@@ -59,12 +59,12 @@
 			upload_file_invalid = false
 		} catch (error) {
 			console.error('Failed to import symbol:', error)
-			
+
 			// Show more detailed error message
 			if (error.response?.data) {
 				console.error('PocketBase error details:', error.response.data)
 			}
-			
+
 			upload_file_invalid = true
 		}
 	}
@@ -110,39 +110,41 @@
 
 	let is_delete_open = $state(false)
 	let deleting = $state(false)
-	
+
 	// Upload dialog state
 	let upload_dialog_open = $state(false)
 	let upload_file_invalid = $state(false)
-	
+
 	// Export symbol
 	async function export_symbol(symbol: LibrarySymbol) {
 		try {
 			const fields = symbol.fields()
 			const entries = symbol.entries()
-			
+
 			const symbolData = {
 				name: symbol.name,
 				html: symbol.html,
 				css: symbol.css,
 				js: symbol.js,
-				fields: fields?.map(field => ({
-					id: field.id,
-					key: field.key,
-					label: field.label,
-					type: field.type,
-					config: field.config,
-					parent: field.parent,
-					index: field.index
-				})) || [],
-				entries: entries?.map(entry => ({
-					id: entry.id,
-					locale: entry.locale,
-					field: entry.field,
-					value: entry.value
-				})) || []
+				fields:
+					fields?.map((field) => ({
+						id: field.id,
+						key: field.key,
+						label: field.label,
+						type: field.type,
+						config: field.config,
+						parent: field.parent,
+						index: field.index
+					})) || [],
+				entries:
+					entries?.map((entry) => ({
+						id: entry.id,
+						locale: entry.locale,
+						field: entry.field,
+						value: entry.value
+					})) || []
 			}
-			
+
 			const blob = new Blob([JSON.stringify(symbolData, null, 2)], { type: 'application/json' })
 			const url = URL.createObjectURL(blob)
 			const a = document.createElement('a')
@@ -421,13 +423,13 @@
 
 <Dialog.Root bind:open={creating_block}>
 	<Dialog.Content escapeKeydownBehavior="ignore" class="max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4 gap-0">
-		<CreateBlock bind:symbol={new_symbol} head={generated_head_code} onsubmit={create_symbol} />
+		<CreateBlock bind:symbol={new_symbol} head={generated_head_code} onsubmit={create_symbol} symbol_type="library" />
 	</Dialog.Content>
 </Dialog.Root>
 
 <Dialog.Root bind:open={is_symbol_editor_open}>
 	<Dialog.Content escapeKeydownBehavior="ignore" class="max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4 gap-0">
-		<CreateBlock symbol={symbol_being_edited} head={generated_head_code} onsubmit={save_symbol} />
+		<CreateBlock symbol={symbol_being_edited} head={generated_head_code} onsubmit={save_symbol} symbol_type="library" />
 	</Dialog.Content>
 </Dialog.Root>
 
@@ -473,20 +475,21 @@
 <Dialog.Root bind:open={upload_dialog_open}>
 	<Dialog.Content class="sm:max-w-[500px] pt-12 gap-0">
 		<h2 class="text-lg font-semibold leading-none tracking-tight">Import Block</h2>
-		<p class="text-muted-foreground text-sm mb-4">
-			Import a block from a JSON file exported from another site.
-		</p>
-		
-		<DropZone 
-			onupload={upload_block_file} 
-			invalid={upload_file_invalid}
-			drop_text="Drop your block file here or click to browse"
-			accept=".json"
-			class="mb-4"
-		/>
-		
+		<p class="text-muted-foreground text-sm mb-4">Import a block from a JSON file exported from another site.</p>
+
+		<DropZone onupload={upload_block_file} invalid={upload_file_invalid} drop_text="Drop your block file here or click to browse" accept=".json" class="mb-4" />
+
 		<Dialog.Footer>
-			<Button type="button" variant="outline" onclick={() => { upload_dialog_open = false; upload_file_invalid = false; }}>Cancel</Button>
+			<Button
+				type="button"
+				variant="outline"
+				onclick={() => {
+					upload_dialog_open = false
+					upload_file_invalid = false
+				}}
+			>
+				Cancel
+			</Button>
 		</Dialog.Footer>
 	</Dialog.Content>
 </Dialog.Root>
