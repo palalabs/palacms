@@ -12,7 +12,7 @@
 	import { onNavigate, goto } from '$app/navigation'
 	import { active_users } from '$lib/builder/stores/app/misc'
 	import { page as pageState } from '$app/state'
-	import { Sites, PageTypes, SiteEntries, SiteFields, Pages } from '$lib/pocketbase/collections'
+	import { Sites, PageTypes, SiteEntries, SiteFields, Pages, manager } from '$lib/pocketbase/collections'
 	import hotkey_events from '$lib/builder/stores/app/hotkey_events'
 
 	import SiteEditor from '$lib/builder/views/modal/SiteEditor/SiteEditor.svelte'
@@ -21,7 +21,7 @@
 	import Collaboration from '$lib/builder/views/modal/Collaboration.svelte'
 	import { usePublishSite } from '$lib/Publish.svelte'
 	import type { Snippet } from 'svelte'
-	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
+	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
 
 	let { children, currentPage, site }: { children: Snippet; currentPage?: ObjectOf<typeof Pages>; site?: ObjectOf<typeof Sites> } = $props()
 
@@ -70,14 +70,6 @@
 	let editing_page_types = $state(false)
 	let editing_collaborators = $state(false)
 
-	$effect(() => {
-		if (!editing_site) {
-			Sites.discard()
-			SiteFields.discard()
-			SiteEntries.discard()
-		}
-	})
-
 	// Close all dialogs on navigation
 	onNavigate(() => {
 		editing_pages = false
@@ -102,7 +94,14 @@
 	})
 </script>
 
-<Dialog.Root bind:open={editing_site}>
+<Dialog.Root
+	bind:open={editing_site}
+	onOpenChange={(open) => {
+		if (!open) {
+			manager.discard()
+		}
+	}}
+>
 	<Dialog.Content class="z-[999] max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4">
 		<SiteEditor onClose={() => (editing_site = false)} />
 	</Dialog.Content>

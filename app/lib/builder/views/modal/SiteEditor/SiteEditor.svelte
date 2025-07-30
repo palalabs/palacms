@@ -7,8 +7,7 @@
 	import CodeEditor from '$lib/builder/components/CodeEditor/CodeMirror.svelte'
 	import { setContext } from 'svelte'
 	import { page } from '$app/state'
-	import { Sites, SiteFields, SiteEntries } from '$lib/pocketbase/collections'
-	import { batchCommitWithDependencies, commitFieldsWithDependencies } from '$lib/pocketbase/batchCommit'
+	import { Sites, SiteFields, SiteEntries, manager } from '$lib/pocketbase/collections'
 
 	let { onClose } = $props()
 
@@ -41,12 +40,9 @@
 				head,
 				foot
 			})
-			
-			// Commit in proper order: Sites first, then SiteFields with hierarchy, then SiteEntries
-			await Sites.commit()
-			await commitFieldsWithDependencies(SiteFields)
-			await SiteEntries.commit()
-			
+
+			await manager.commit()
+
 			console.log('Site saved successfully')
 			if (onClose) onClose()
 		} catch (error) {
@@ -78,15 +74,6 @@
 						{fields}
 						{entries}
 						create_field={async (parentId) => {
-							// If this is a child field, commit parent fields first to get real database IDs
-							if (parentId) {
-								try {
-									await SiteFields.commit()
-								} catch (error) {
-									console.warn('Failed to commit parent fields:', error)
-								}
-							}
-							
 							return SiteFields.create({
 								type: 'text',
 								key: '',

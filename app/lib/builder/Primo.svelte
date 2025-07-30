@@ -15,7 +15,7 @@
 	import { processCode } from '$lib/builder/utils.js'
 	import { page } from '$app/state'
 	import type { Pages, Sites } from '$lib/pocketbase/collections'
-	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
+	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
 
 	let {
 		site,

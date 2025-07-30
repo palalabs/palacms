@@ -29,8 +29,6 @@
 		onadd?: (details: { parent: string; index: number; subfields: Field[] }) => void
 	} = $props()
 
-	$inspect({ entries, fields })
-
 	function get_component(field: Field) {
 		const fieldType = $fieldTypes.find((ft) => ft.id === field.type)
 		if (fieldType) {
@@ -146,16 +144,7 @@
 							{field}
 							{fields}
 							{create_field}
-							onchange={(data) => {
-								// Check if this is already a properly structured onchange call
-								if (data.id && data.data) {
-									// This is from a subfield, pass it through as-is
-									onchange(data)
-								} else {
-									// This is from the root field itself
-									onchange({ id: field.id, data })
-								}
-							}}
+							{onchange}
 							ondelete={() => ondelete(field.id)}
 							onduplicate={() => {
 								// TODO: Implement duplicate
@@ -189,9 +178,18 @@
 							{@const title = ['repeater', 'group'].includes(field.type) ? field.label : null}
 							{@const icon = undefined}
 							<Card {title} {icon}>
-								<Field_Component {entity} {field} {fields} {entries} entry={content_entry} id={content_entry?.id} onchange={(value) => oninput({ [field.key]: value })} on:add={(event) => {
-								if (onadd) onadd(event.detail)
-							}} />
+								<Field_Component
+									{entity}
+									{field}
+									{fields}
+									{entries}
+									entry={content_entry}
+									id={content_entry?.id}
+									onchange={(value) => oninput({ [field.key]: value })}
+									on:add={(event) => {
+										if (onadd) onadd(event.detail)
+									}}
+								/>
 							</Card>
 						{/if}
 						<!-- TODO: $userRole === 'DEV' -->

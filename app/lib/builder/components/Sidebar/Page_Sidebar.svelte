@@ -13,7 +13,7 @@
 	import * as Tabs from '$lib/components/ui/tabs'
 	import { Cuboid, SquarePen } from 'lucide-svelte'
 	import { page as pageState } from '$app/state'
-	import { PageTypes, Sites, Pages, PageEntries } from '$lib/pocketbase/collections'
+	import { PageTypes, Sites, Pages, PageEntries, manager } from '$lib/pocketbase/collections'
 	import { SiteSymbols } from '$lib/pocketbase/collections'
 	import { getContext } from 'svelte'
 
@@ -106,11 +106,15 @@
 				</div>
 				<!-- $userRole === 'DEV' -->
 				{#if true}
-					<button onclick={() => {
-						const base_path = pageState.url.pathname.includes('/sites/') ? 
-							`/admin/sites/${site?.id}` : '/admin/site'
-						goto(`${base_path}/page-type--${page_type?.id}?t=b`)
-					}} class="footer-link">Manage Blocks</button>
+					<button
+						onclick={() => {
+							const base_path = pageState.url.pathname.includes('/sites/') ? `/admin/sites/${site?.id}` : '/admin/site'
+							goto(`${base_path}/page-type--${page_type?.id}?t=b`)
+						}}
+						class="footer-link"
+					>
+						Manage Blocks
+					</button>
 				{/if}
 			</Tabs.Content>
 			<Tabs.Content value="content">
@@ -136,7 +140,7 @@
 								}
 
 								clearTimeout(commit_task)
-								commit_task = setTimeout(() => PageEntries.commit(), 500)
+								commit_task = setTimeout(() => manager.commit(), 500)
 							}}
 						/>
 					</div>
@@ -170,18 +174,22 @@
 						}
 
 						clearTimeout(commit_task)
-						commit_task = setTimeout(() => PageEntries.commit(), 500)
+						commit_task = setTimeout(() => manager.commit(), 500)
 					}}
 				/>
 			</div>
 		{/if}
 		<!-- $userRole === 'DEV' -->
 		{#if true}
-			<button onclick={() => {
-				const base_path = pageState.url.pathname.includes('/sites/') ? 
-					`/admin/sites/${site?.id}` : '/admin/site'
-				goto(`${base_path}/page-type--${page_type?.id}?t=p`)
-			}} class="footer-link mb-2 mr-2">Manage Fields</button>
+			<button
+				onclick={() => {
+					const base_path = pageState.url.pathname.includes('/sites/') ? `/admin/sites/${site?.id}` : '/admin/site'
+					goto(`${base_path}/page-type--${page_type?.id}?t=p`)
+				}}
+				class="footer-link mb-2 mr-2"
+			>
+				Manage Fields
+			</button>
 		{/if}
 	{/if}
 </div>

@@ -17,7 +17,7 @@
 	import * as Tabs from '$lib/components/ui/tabs'
 	import { Cuboid, SquarePen } from 'lucide-svelte'
 	import { page } from '$app/state'
-	import { Sites, PageTypes, SiteSymbols, PageTypeSymbols, SiteSymbolFields, SiteSymbolEntries, PageTypeFields, PageTypeEntries } from '$lib/pocketbase/collections'
+	import { Sites, PageTypes, SiteSymbols, PageTypeSymbols, SiteSymbolFields, SiteSymbolEntries, PageTypeFields, PageTypeEntries, manager } from '$lib/pocketbase/collections'
 	import { site_html } from '$lib/builder/stores/app/page.js'
 	import DropZone from '$lib/components/DropZone.svelte'
 	import { exportSymbol, importSiteSymbol } from '$lib/builder/utils/symbolImportExport'
@@ -50,12 +50,12 @@
 
 	async function upload_block(file: File) {
 		if (!file || !site) return
-		
+
 		try {
 			console.log('Importing file:', file.name, 'Size:', file.size)
 			const text = await file.text()
 			console.log('File content preview:', text.substring(0, 200))
-			
+
 			await importSiteSymbol(file, site.id, {
 				SiteSymbols,
 				SiteSymbolFields,
@@ -122,27 +122,17 @@
 	let creating_block = $state(false)
 	let adding_block = $state(false)
 	let editing_page = $state(false)
-
-	$effect(() => {
-		if (!editing_block && !creating_block) {
-			SiteSymbols.discard()
-			SiteSymbolFields.discard()
-			SiteSymbolEntries.discard()
-		}
-	})
-
-	$effect(() => {
-		if (!editing_page) {
-			PageTypes.discard()
-			PageTypeFields.discard()
-			PageTypeEntries.discard()
-		}
-	})
-
 	let commit_task = $state<NodeJS.Timeout>()
 </script>
 
-<Dialog.Root bind:open={editing_block}>
+<Dialog.Root
+	bind:open={editing_block}
+	onOpenChange={(open) => {
+		if (!open) {
+			manager.discard()
+		}
+	}}
+>
 	<Dialog.Content class="z-[999] max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4">
 		<BlockEditor
 			block={active_block}
@@ -160,7 +150,14 @@
 	</Dialog.Content>
 </Dialog.Root>
 
-<Dialog.Root bind:open={creating_block}>
+<Dialog.Root
+	bind:open={creating_block}
+	onOpenChange={(open) => {
+		if (!open) {
+			manager.discard()
+		}
+	}}
+>
 	<Dialog.Content class="z-[999] max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4">
 		<BlockEditor
 			header={{
@@ -175,7 +172,14 @@
 	</Dialog.Content>
 </Dialog.Root>
 
-<Dialog.Root bind:open={adding_block}>
+<Dialog.Root
+	bind:open={adding_block}
+	onOpenChange={(open) => {
+		if (!open) {
+			manager.discard()
+		}
+	}}
+>
 	<Dialog.Content class="z-[999] max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4">
 		<BlockPicker
 			{site}
@@ -188,7 +192,14 @@
 	</Dialog.Content>
 </Dialog.Root>
 
-<Dialog.Root bind:open={editing_page}>
+<Dialog.Root
+	bind:open={editing_page}
+	onOpenChange={(open) => {
+		if (!open) {
+			manager.discard()
+		}
+	}}
+>
 	<Dialog.Content class="z-[999] max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4">
 		<PageEditor onClose={() => (editing_page = false)} />
 	</Dialog.Content>
@@ -240,16 +251,16 @@
 										if (!page_type || detail === toggled) return // dispatches on creation for some reason
 										if (toggled) {
 											PageTypeSymbols.delete(relation.id)
-											PageTypeSymbols.commit()
+											manager.commit()
 										} else {
 											PageTypeSymbols.create({ page_type: page_type.id, symbol: symbol.id })
-											PageTypeSymbols.commit()
+											manager.commit()
 										}
 									}}
 									on:edit={() => edit_block(symbol, symbol.id)}
 									on:delete={() => {
 										SiteSymbols.delete(symbol.id)
-										SiteSymbols.commit()
+										manager.commit()
 									}}
 								/>
 							</div>
@@ -309,7 +320,7 @@
 							}
 
 							clearTimeout(commit_task)
-							commit_task = setTimeout(() => PageTypeEntries.commit(), 500)
+							commit_task = setTimeout(() => manager.commit(), 500)
 						}}
 					/>
 				{/if}
@@ -322,20 +333,21 @@
 <Dialog.Root bind:open={upload_dialog_open}>
 	<Dialog.Content class="sm:max-w-[500px] pt-12 gap-0">
 		<h2 class="text-lg font-semibold leading-none tracking-tight">Import Block</h2>
-		<p class="text-muted-foreground text-sm mb-4">
-			Import a block from a JSON file exported from another site.
-		</p>
-		
-		<DropZone 
-			onupload={upload_block} 
-			invalid={upload_file_invalid}
-			drop_text="Drop your block file here or click to browse"
-			accept=".json"
-			class="mb-4"
-		/>
-		
+		<p class="text-muted-foreground text-sm mb-4">Import a block from a JSON file exported from another site.</p>
+
+		<DropZone onupload={upload_block} invalid={upload_file_invalid} drop_text="Drop your block file here or click to browse" accept=".json" class="mb-4" />
+
 		<Dialog.Footer>
-			<Button type="button" variant="outline" onclick={() => { upload_dialog_open = false; upload_file_invalid = false; }}>Cancel</Button>
+			<Button
+				type="button"
+				variant="outline"
+				onclick={() => {
+					upload_dialog_open = false
+					upload_file_invalid = false
+				}}
+			>
+				Cancel
+			</Button>
 		</Dialog.Footer>
 	</Dialog.Content>
 </Dialog.Root>

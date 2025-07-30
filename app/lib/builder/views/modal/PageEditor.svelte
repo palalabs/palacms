@@ -6,7 +6,7 @@
 	import * as _ from 'lodash-es'
 	import CodeEditor from '$lib/builder/components/CodeEditor/CodeMirror.svelte'
 	import { page } from '$app/state'
-	import { PageTypeEntries, PageTypeFields, PageTypes } from '$lib/pocketbase/collections'
+	import { manager, PageTypeEntries, PageTypeFields, PageTypes } from '$lib/pocketbase/collections'
 
 	let { onClose }: { onClose?: () => void } = $props()
 
@@ -34,9 +34,7 @@
 				head,
 				foot
 			})
-			await PageTypes.commit()
-			await PageTypeFields.commit()
-			await PageTypeEntries.commit()
+			await manager.commit()
 			if (onClose) onClose()
 		} finally {
 			disableSave = false
@@ -63,15 +61,6 @@
 					{fields}
 					{entries}
 					create_field={async (parentId) => {
-						// If this is a child field, commit parent fields first to get real database IDs
-						if (parentId) {
-							try {
-								await PageTypeFields.commit()
-							} catch (error) {
-								console.warn('Failed to commit parent fields:', error)
-							}
-						}
-						
 						// Get the highest index for fields at this level
 						const siblingFields = fields?.filter((f) => f.parent === parentId) || []
 						const nextIndex = Math.max(...siblingFields.map((f) => f.index || 0), -1) + 1

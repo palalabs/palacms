@@ -17,9 +17,10 @@
 	import { page } from '$app/state'
 	import { goto } from '$app/navigation'
 	import { useSidebar } from '$lib/components/ui/sidebar'
-	import { LibrarySymbolGroups, LibrarySymbols, LibrarySymbolFields, LibrarySymbolEntries } from '$lib/pocketbase/collections'
+	import { LibrarySymbolGroups, LibrarySymbols, LibrarySymbolFields, LibrarySymbolEntries, manager, SiteSymbols } from '$lib/pocketbase/collections'
 	import type { LibrarySymbol } from '$lib/common/models/LibrarySymbol'
 	import { exportSymbol, importLibrarySymbol } from '$lib/builder/utils/symbolImportExport'
+	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
 
 	const active_symbol_group_id = $derived(page.url.searchParams.get('group'))
 	const active_symbol_group = $derived(active_symbol_group_id ? LibrarySymbolGroups.one(active_symbol_group_id) : undefined)
@@ -104,7 +105,7 @@
 		e.preventDefault()
 		if (!active_symbol_group_id) return
 		LibrarySymbolGroups.update(active_symbol_group_id, { name: new_name })
-		LibrarySymbolGroups.commit()
+		await manager.commit()
 		is_rename_open = false
 	}
 
@@ -116,7 +117,7 @@
 	let upload_file_invalid = $state(false)
 
 	// Export symbol
-	async function export_symbol(symbol: LibrarySymbol) {
+	async function export_symbol(symbol: ObjectOf<typeof SiteSymbols>) {
 		try {
 			const fields = symbol.fields()
 			const entries = symbol.entries()
@@ -162,7 +163,7 @@
 		deleting = true
 		if (!active_symbol_group_id) return
 		LibrarySymbolGroups.delete(active_symbol_group_id)
-		await LibrarySymbolGroups.commit()
+		await manager.commit()
 		await goto('/admin/dashboard/library')
 		deleting = false
 		is_delete_open = false
@@ -226,7 +227,7 @@
 		if (!symbol_being_deleted) return
 		deleting = true
 		LibrarySymbols.delete(symbol_being_deleted.id)
-		await LibrarySymbols.commit()
+		await manager.commit()
 		is_delete_symbol_open = false
 		symbol_being_deleted = null
 		deleting = false
@@ -236,7 +237,7 @@
 		if (!symbol_being_edited) return
 		// preview = data.preview
 		LibrarySymbols.update(symbol_being_edited.id, data)
-		LibrarySymbols.commit()
+		await manager.commit()
 		is_symbol_editor_open = false
 		// Give the modal time to close before nullifying the symbol
 		setTimeout(() => {
@@ -260,7 +261,7 @@
 			}
 			console.log('Creating symbol with data:', createData)
 			LibrarySymbols.create(createData)
-			await LibrarySymbols.commit()
+			await manager.commit()
 			creating_block = false
 			// Reset the new_symbol after modal closes
 			setTimeout(() => {

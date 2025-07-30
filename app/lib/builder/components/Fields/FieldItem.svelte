@@ -36,7 +36,7 @@
 		level?: number
 		top_level?: boolean
 		create_field?: (parentId?: string) => void
-		onchange: (values: Partial<Field>) => void
+		onchange: (details: { id: string; data: Partial<Field> }) => void
 		onduplicate: () => void
 		ondelete: () => void
 		onmove: (direction: 'up' | 'down') => void
@@ -106,60 +106,60 @@
 	let field_type_changed = $state(false) // but don't overwrite it if the user's already entered it
 	function update_field_type(label) {
 		if (!label) return 'text'
-		
+
 		const labelLower = label.toLowerCase()
 		const keyLower = field.key?.toLowerCase() || ''
 		const combined = `${labelLower} ${keyLower}`
-		
+
 		// Plurals/Arrays first (most specific)
 		if (label && $pluralize.isPlural(label)) {
 			return 'repeater'
 		}
-		
-		// URL/Link patterns  
+
+		// URL/Link patterns
 		if (/\b(url|href|website|domain)\b/.test(combined)) return 'url'
 		if (/\b(link)\b/.test(combined)) return 'link'
-		
+
 		// Image patterns
 		if (/\b(image|img|photo|picture|avatar|banner|logo)\b/.test(combined)) return 'image'
-		
+
 		// Icon patterns
 		if (/\b(icon|emoji)\b/.test(combined)) return 'icon'
-		
+
 		// Number patterns
 		if (/\b(number|num|count|quantity|amount|price|cost|age|weight|height|width)\b/.test(combined)) return 'number'
-		
+
 		// Slider patterns (ranges, ratings, percentages)
 		if (/\b(rating|range|percent|score|level|opacity|volume)\b/.test(combined)) return 'slider'
-		
+
 		// Boolean/Toggle patterns
 		if (/\b(is|has|show|hide|enable|disable|active|visible|featured|toggle)\b/.test(combined)) return 'switch'
-		
+
 		// Select/Choice patterns
 		if (/\b(type|category|status|state|option|choice|select)\b/.test(combined)) return 'select'
-		
+
 		// Group patterns (sections, groups)
 		if (/\b(group|section|block|area)\b/.test(combined)) return 'group'
-		
+
 		// Page patterns
 		if (/\b(page|pages)\b/.test(combined)) {
 			return /\b(list|multiple)\b/.test(combined) ? 'page-list' : 'page'
 		}
-		
+
 		// Site field patterns
 		if (/\b(site|global|config|setting)\b/.test(combined)) return 'site-field'
-		
-		// Page field patterns  
+
+		// Page field patterns
 		if (/\b(page-field|page-content)\b/.test(combined)) return 'page-field'
-		
+
 		// Markdown patterns
 		if (/\b(markdown|md|rich|formatted|wysiwyg|content|body|description|bio|about|summary|details)\b/.test(combined)) {
 			return /\b(markdown|md)\b/.test(combined) ? 'markdown' : 'text'
 		}
-		
+
 		// Info/Help patterns
 		if (/\b(info|help|note|tip|instruction)\b/.test(combined)) return 'info'
-		
+
 		// Default to text
 		return 'text'
 	}
@@ -210,7 +210,7 @@
 						defaultConfig = { page_type: firstPageType }
 					}
 
-					onchange({ type: field_type_id, config: defaultConfig })
+					onchange({ id: field.id, data: { type: field_type_id, config: defaultConfig } })
 				}}
 				placement="bottom-start"
 			/>
@@ -280,9 +280,12 @@
 					placeholder="Something important about the following fields..."
 					oninput={(text) => {
 						onchange({
-							config: {
-								...field.config,
-								info: text
+							id: field.id,
+							data: {
+								config: {
+									...field.config,
+									info: text
+								}
 							}
 						})
 					}}
@@ -355,11 +358,14 @@
 						// Auto-generate key unless user has manually edited it
 						// Auto-suggest type only for new fields with empty initial label
 						onchange({
-							label: text,
-							key: key_edited ? field.key : validate_field_key(text),
-							type: field.type
+							id: field.id,
+							data: {
+								label: text,
+								key: key_edited ? field.key : validate_field_key(text),
+								type: field.type
+							}
 						})
-						
+
 						// Mark as no longer new once user types something substantial
 						if (text.length > 0) {
 							is_new_field = false
@@ -377,7 +383,10 @@
 					oninput={(text) => {
 						key_edited = true
 						onchange({
-							key: validate_field_key(text)
+							id: field.id,
+							data: {
+								key: validate_field_key(text)
+							}
 						})
 					}}
 				/>
@@ -444,7 +453,7 @@
 				{field}
 				{level}
 				on:input={(event) => {
-					onchange(event.detail)
+					onchange({ id: field.id, data: event.detail })
 				}}
 			/>
 		{/if}
@@ -455,7 +464,7 @@
 			<PageFieldField
 				{field}
 				on:input={(event) => {
-					onchange(event.detail)
+					onchange({ id: field.id, data: event.detail })
 				}}
 			/>
 		{/if}
@@ -463,7 +472,7 @@
 			<SiteFieldField
 				{field}
 				on:input={(event) => {
-					onchange(event.detail)
+					onchange({ id: field.id, data: event.detail })
 				}}
 			/>
 		{/if}
@@ -471,7 +480,7 @@
 			<PageField
 				{field}
 				on:input={(event) => {
-					onchange(event.detail)
+					onchange({ id: field.id, data: event.detail })
 				}}
 			/>
 		{/if}
@@ -494,30 +503,7 @@
 	{#if has_subfields}
 		<div class="children-container" style:padding-left="{level + 1}rem">
 			{#each child_fields.sort((a, b) => a.index - b.index) as subfield (subfield.id)}
-				<FieldItem
-					field={cloneDeep(subfield)}
-					{fields}
-					{create_field}
-					top_level={false}
-					level={level + 1}
-					{onduplicate}
-					{ondelete}
-					{onmove}
-					onchange={(data) => {
-						console.log('Subfield onchange called with:', data, 'for subfield:', subfield.id)
-						// The data parameter here could be either:
-						// 1. Direct field data (label, key, type, etc.) from the subfield itself
-						// 2. Nested onchange call with {id, data} structure from a sub-subfield
-
-						if (data.id && data.data) {
-							// This is a nested onchange call, pass it through
-							onchange(data)
-						} else {
-							// This is direct field data from the subfield
-							onchange({ id: subfield.id, data })
-						}
-					}}
-				/>
+				<FieldItem field={cloneDeep(subfield)} {fields} {create_field} top_level={false} level={level + 1} {onduplicate} {ondelete} {onmove} {onchange} />
 			{/each}
 			{#if field.type === 'repeater' || field.type === 'group'}
 				<button

@@ -13,8 +13,8 @@
 	import { dropTargetForElements } from '$lib/builder/libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
 	import { attachClosestEdge, extractClosestEdge } from '$lib/builder/libraries/pragmatic-drag-and-drop-hitbox/closest-edge.js'
 	import { beforeNavigate } from '$app/navigation'
-	import { Pages, Sites, SiteSymbols, PageSections, PageTypes, PageTypeSections, PageSectionEntries, PageTypeSectionEntries, SiteSymbolFields } from '$lib/pocketbase/collections'
-	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
+	import { Pages, Sites, SiteSymbols, PageSections, PageTypes, PageTypeSections, PageSectionEntries, PageTypeSectionEntries, SiteSymbolFields, manager } from '$lib/pocketbase/collections'
+	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
 
 	let { page }: { page: ObjectOf<typeof Pages> } = $props()
 
@@ -64,13 +64,12 @@
 		// Create default sections from page type
 		const copied_sections: ObjectOf<typeof PageSections>[] = []
 		for (const section of page_type_body_sections) {
-			console.log(section.id)
 			const copied_section = PageSections.create({
 				page: page.id,
 				symbol: section.symbol,
 				index: section.index
 			})
-			for (const entry of section.entries()) {
+			for (const entry of section.entries() ?? []) {
 				PageSectionEntries.create({
 					section: copied_section.id,
 					field: entry.field,
@@ -80,8 +79,7 @@
 			}
 			copied_sections.push(copied_section)
 		}
-		await PageSections.commit()
-		await PageSectionEntries.commit()
+		await manager.commit()
 		return copied_sections
 	}
 
@@ -109,7 +107,7 @@
 			symbol: symbol.id,
 			index: position
 		})
-		await PageSections.commit()
+		await manager.commit()
 
 		// Add to newly added sections for animation
 		newly_added_sections.add(new_section.id)
@@ -134,7 +132,7 @@
 
 		// Delete the section
 		PageSections.delete(section_id)
-		await PageSections.commit()
+		await manager.commit()
 	}
 
 	let page_el = $state()
@@ -483,18 +481,17 @@
 	let hovered_section_id: string | null = $state(null)
 	let hovered_section = $derived(sections.find((s) => s.id === hovered_section_id) ?? page_type_body_sections.find((s) => s.id === hovered_section_id))
 	let editing_section = $state(false)
-	$effect(() => {
-		if (!editing_section) {
-			SiteSymbols.discard()
-			SiteSymbolFields.discard()
-			PageTypeSectionEntries.discard()
-			PageSectionEntries.discard()
-		}
-	})
 </script>
 
 {#if hovered_section}
-	<Dialog.Root bind:open={editing_section}>
+	<Dialog.Root
+		bind:open={editing_section}
+		onOpenChange={(open) => {
+			if (!open) {
+				manager.discard()
+			}
+		}}
+	>
 		<Dialog.Content class="z-[999] max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4">
 			<SectionEditor
 				component={hovered_section}
@@ -587,7 +584,7 @@
 
 				PageSections.update(section_to_move.id, { index: section_to_move.index - 1 })
 				PageSections.update(section_above.id, { index: section_to_move.index })
-				await PageSections.commit()
+				await manager.commit()
 
 				setTimeout(() => {
 					moving = false
@@ -614,7 +611,7 @@
 
 				PageSections.update(section_to_move.id, { index: section_to_move.index + 1 })
 				PageSections.update(section_below.id, { index: section_to_move.index })
-				await PageSections.commit()
+				await manager.commit()
 
 				setTimeout(() => {
 					moving = false

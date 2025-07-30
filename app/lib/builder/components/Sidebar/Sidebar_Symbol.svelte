@@ -12,7 +12,7 @@
 	import { getContent } from '$lib/pocketbase/content'
 	import { createEventDispatcher, onMount } from 'svelte'
 	import { block_html } from '$lib/builder/code_generators'
-	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
+	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
 	import { SiteSymbols, SiteSymbolFields, SiteSymbolEntries } from '$lib/pocketbase/collections'
 
 	const dispatch = createEventDispatcher()
@@ -45,7 +45,7 @@
 
 	async function save_rename() {
 		if (!symbol || !new_name.trim()) return
-		
+
 		try {
 			// Update the symbol name directly in the database
 			await symbol.collection.instance.collection('site_symbols').update(symbol.id, { name: new_name.trim() })
@@ -110,29 +110,31 @@
 		try {
 			const fields = symbol.fields()
 			const entries = symbol.entries()
-			
+
 			const symbolData = {
 				name: symbol.name,
 				html: symbol.html,
 				css: symbol.css,
 				js: symbol.js,
-				fields: fields?.map(field => ({
-					id: field.id,
-					key: field.key,
-					label: field.label,
-					type: field.type,
-					config: field.config,
-					parent: field.parent,
-					index: field.index
-				})) || [],
-				entries: entries?.map(entry => ({
-					id: entry.id,
-					locale: entry.locale,
-					field: entry.field,
-					value: entry.value
-				})) || []
+				fields:
+					fields?.map((field) => ({
+						id: field.id,
+						key: field.key,
+						label: field.label,
+						type: field.type,
+						config: field.config,
+						parent: field.parent,
+						index: field.index
+					})) || [],
+				entries:
+					entries?.map((entry) => ({
+						id: entry.id,
+						locale: entry.locale,
+						field: entry.field,
+						value: entry.value
+					})) || []
 			}
-			
+
 			const blob = new Blob([JSON.stringify(symbolData, null, 2)], { type: 'application/json' })
 			const url = URL.createObjectURL(blob)
 			const a = document.createElement('a')

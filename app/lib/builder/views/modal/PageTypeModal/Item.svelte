@@ -4,7 +4,7 @@
 	import PageForm from './PageTypeForm.svelte'
 	import MenuPopup from '$lib/builder/ui/Dropdown.svelte'
 	import type { PageType } from '$lib/common/models/PageType'
-	import { Sites, PageTypes } from '$lib/pocketbase/collections'
+	import { Sites, PageTypes, manager } from '$lib/pocketbase/collections'
 	import { page } from '$app/state'
 	import { goto } from '$app/navigation'
 	import { getContext } from 'svelte'
@@ -26,8 +26,7 @@
 	})
 
 	const full_url = $derived(() => {
-		const base_path = page.url.pathname.includes('/sites/') ? 
-			`/admin/sites/${site?.id}` : '/admin/site'
+		const base_path = page.url.pathname.includes('/sites/') ? `/admin/sites/${site?.id}` : '/admin/site'
 		return `${base_path}/page-type--${page_type.id}`
 	})
 </script>
@@ -96,7 +95,7 @@
 				if (!site) return
 				creating_page = false
 				PageTypes.create(page)
-				PageTypes.commit()
+				manager.commit()
 				// TODO: test & configure navigating to new page type
 				// site.data.page_types.push(page)
 				// const [created_page_type] = site.data.page_types.slice(-1)

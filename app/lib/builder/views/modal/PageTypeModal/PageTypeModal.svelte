@@ -5,7 +5,7 @@
 	import Button from '$lib/builder/ui/Button.svelte'
 	import PageForm from './PageTypeForm.svelte'
 	import { page } from '$app/state'
-	import { Sites, PageTypes } from '$lib/pocketbase/collections'
+	import { Sites, PageTypes, manager } from '$lib/pocketbase/collections'
 	import type { PageType } from '$lib/common/models/PageType'
 	import { getContext } from 'svelte'
 
@@ -25,7 +25,7 @@
 		}
 
 		PageTypes.create(page_type_data)
-		PageTypes.commit()
+		manager.commit()
 	}
 
 	let creating_page_type = $state(false)

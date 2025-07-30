@@ -31,8 +31,6 @@
 			value: f.id
 		}))
 	})
-
-	$inspect({ allFields, field_list, fieldConfig: field.config })
 </script>
 
 <div class="PageFieldField">

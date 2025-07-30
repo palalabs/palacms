@@ -1,4 +1,4 @@
-import type { ObjectOf } from './pocketbase/CollectionMapping.svelte'
+import type { ObjectOf } from './pocketbase/CollectionMapping'
 import { Pages, PageTypes, Sites, SiteSymbols } from './pocketbase/collections'
 
 export const usePageData = (site?: ObjectOf<typeof Sites>, pages?: ObjectOf<typeof Pages>[]) => {
