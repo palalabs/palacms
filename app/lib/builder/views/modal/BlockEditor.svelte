@@ -12,8 +12,8 @@
 	import Fields from '$lib/builder/components/Fields/FieldsContent.svelte'
 	import { locale } from '$lib/builder/stores/app/misc.js'
 	import hotkey_events from '$lib/builder/stores/app/hotkey_events.js'
-	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
-	import { Sites, SiteSymbolEntries, SiteSymbolFields, SiteSymbols } from '$lib/pocketbase/collections'
+	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
+	import { manager, Sites, SiteSymbolEntries, SiteSymbolFields, SiteSymbols } from '$lib/pocketbase/collections'
 	import { page } from '$app/state'
 	import { getContent } from '$lib/pocketbase/content'
 
@@ -70,9 +70,7 @@
 
 	async function save_component() {
 		if (!$has_error) {
-			await SiteSymbols.commit()
-			await SiteSymbolFields.commit()
-			await SiteSymbolEntries.commit()
+			await manager.commit()
 			header.button.onclick(block)
 		}
 	}
@@ -119,15 +117,6 @@
 					{fields}
 					{entries}
 					create_field={async (parentId) => {
-						// If this is a child field, commit parent fields first to get real database IDs
-						if (parentId) {
-							try {
-								await SiteSymbolFields.commit()
-							} catch (error) {
-								console.warn('Failed to commit parent fields:', error)
-							}
-						}
-						
 						// Get the highest index for fields at this level
 						const siblingFields = fields?.filter((f) => f.parent === parentId) || []
 						const nextIndex = Math.max(...siblingFields.map((f) => f.index || 0), -1) + 1

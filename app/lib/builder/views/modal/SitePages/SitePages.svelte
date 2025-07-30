@@ -4,7 +4,7 @@
 	import PageForm from './PageForm.svelte'
 	import Icon from '@iconify/svelte'
 	import { page } from '$app/state'
-	import { Sites, Pages } from '$lib/pocketbase/collections'
+	import { Sites, Pages, manager } from '$lib/pocketbase/collections'
 	import { getContext } from 'svelte'
 
 	// Get site from context (preferred) or fallback to hostname lookup
@@ -42,7 +42,7 @@
 						alert(`That URL is already in use`)
 					} else {
 						Pages.create({ ...new_page, parent: home_page.id, site: site.id })
-						Pages.commit()
+						manager.commit()
 					}
 				}}
 			/>

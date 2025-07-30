@@ -13,9 +13,9 @@
 	import { locale } from '../../../stores/app/misc.js'
 	import hotkey_events from '../../../stores/app/hotkey_events.js'
 	import { getContent } from '$lib/pocketbase/content'
-	import { PageSectionEntries, PageSections, PageEntries, PageTypeSectionEntries, SiteSymbolFields, SiteSymbols, SiteEntries } from '$lib/pocketbase/collections'
+	import { PageSectionEntries, PageSections, PageEntries, PageTypeSectionEntries, SiteSymbolFields, SiteSymbols, SiteEntries, manager } from '$lib/pocketbase/collections'
 	import { get_empty_value } from '$lib/builder/utils.js'
-	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
+	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
 	import type { PageTypeSection } from '$lib/common/models/PageTypeSection'
 
 	let {
@@ -41,8 +41,6 @@
 	const entries = $derived('page_type' in component ? component.entries() : 'page' in component ? component.entries() : undefined)
 	const component_data = $derived(fields && entries && (getContent(component, fields, entries)[$locale] ?? {}))
 
-	// $inspect({entries, component_data})
-
 	let loading = false
 
 	hotkey_events.on('e', toggle_tab)
@@ -58,18 +56,7 @@
 
 		if (!$has_error && symbol) {
 			SiteSymbols.update(symbol.id, { html, css, js })
-			await SiteSymbols.commit()
-			await SiteSymbolFields.commit()
-
-			// Commit any existing entry changes made through the UI
-			if ('page_type' in component) {
-				await PageTypeSectionEntries.commit()
-			} else if ('page' in component) {
-				await PageSectionEntries.commit()
-			}
-
-			await PageEntries.commit()
-			await SiteEntries.commit()
+			await manager.commit()
 
 			header.button.onclick()
 		}
@@ -211,7 +198,7 @@
 							section: component.id
 						}
 						console.log('Creating item entry with data:', item_data)
-						
+
 						if ('page_type' in component) {
 							item_entry = PageTypeSectionEntries.create(item_data)
 						} else if ('page' in component) {

@@ -1,27 +1,26 @@
 import type { default as PocketBase, RecordAuthResponse } from 'pocketbase'
 import type { z } from 'zod'
 import { self } from './PocketBase'
-import { SvelteMap } from 'svelte/reactivity'
 import { customAlphabet } from 'nanoid'
 import { untrack } from 'svelte'
+import type { ObjectWithId } from './Object'
+import type { CollectionManager } from './CollectionManager'
+
+export type ObjectOf<T> = T extends CollectionMapping<infer Object, infer Options> ? MappedObject<Object, Options> : never
+
+export type MappedObject<T extends ObjectWithId, Options extends CollectionMappingOptions<T>> = T & NonNullable<Options['links']> & { collection: CollectionMapping<T, CollectionMappingOptions<T>> }
+
+export type MappedObjectList<T extends ObjectWithId, Options extends CollectionMappingOptions<T>> = MappedObject<T, Options>[]
 
 export type ListOptions = {
 	sort?: string
 	filter?: string
 }
 
-export type ObjectOf<T> = T extends CollectionMapping<infer Object, infer Options> ? MappedObject<Object, Options> : never
-
-export type ObjectWithId = { id: string }
-
 export type CollectionMappingOptions<T extends ObjectWithId> = {
 	instance?: PocketBase
 	links?: Record<string, (this: MappedObject<T, { links: {} }>) => unknown>
 }
-
-export type MappedObject<T extends ObjectWithId, Options extends CollectionMappingOptions<T>> = T & NonNullable<Options['links']> & { collection: CollectionMapping<T, CollectionMappingOptions<T>> }
-
-export type MappedObjectList<T extends ObjectWithId, Options extends CollectionMappingOptions<T>> = MappedObject<T, Options>[]
 
 export type StagedOperation<T extends ObjectWithId> =
 	| { operation: 'create'; processed: boolean; data: Omit<T, 'id'> }
@@ -34,8 +33,6 @@ export type CollectionMapping<T extends ObjectWithId, Options extends Collection
 	create: (values: Omit<T, 'id'> & { id?: string }) => MappedObject<T, Options>
 	update: (id: string, values: Partial<T>) => MappedObject<T, Options>
 	delete: (id: string) => void
-	commit: () => Promise<void>
-	discard: () => void
 	authWithPassword: (usernameOrEmail: string, password: string) => Promise<RecordAuthResponse<MappedObject<T, Options>>>
 	requestPasswordReset: (email: string) => Promise<void>
 	confirmPasswordReset: (passwordResetToken: string, password: string, passwordConfirm: string) => Promise<void>
@@ -45,13 +42,16 @@ export type CollectionMapping<T extends ObjectWithId, Options extends Collection
 
 const generateId = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789', 15)
 
-export const createCollectionMapping = <T extends ObjectWithId, Options extends CollectionMappingOptions<T>>(name: string, model: z.ZodType<T>, options?: Options): CollectionMapping<T, Options> => {
+export const createCollectionMapping = <T extends ObjectWithId, Options extends CollectionMappingOptions<T>>(
+	name: string,
+	model: z.ZodType<T>,
+	manager: CollectionManager,
+	options?: Options
+): CollectionMapping<T, Options> => {
 	const instance = options?.instance ?? self
 	const instanceCache = new Map<PocketBase, CollectionMapping<T, Options>>()
 	const collection = instance.collection(name)
-	const staged = new SvelteMap<string, StagedOperation<T>>()
-	const records = new SvelteMap<string, T | undefined>()
-	const lists = new SvelteMap<string, string[] | undefined>()
+	const { staged, records, lists } = manager
 
 	const mapObject = (record: unknown): MappedObject<T, Options> => {
 		const object = model.parse(record)
@@ -84,7 +84,7 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 			return mapObject(data)
 		},
 		list: (options) => {
-			const listId = JSON.stringify(options ?? {})
+			const listId = name + JSON.stringify(options ?? {})
 
 			// If no cached list exists, start loading it
 			if (!lists.has(listId)) {
@@ -111,6 +111,11 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 
 			const list = [...(lists.get(listId) ?? [])]
 			for (const [id, value] of staged) {
+				if (value.collection !== collection) {
+					// The operation is not for this collection
+					continue
+				}
+
 				// Only add non-deleted staged items to the list
 				if (value !== null && !list.includes(id)) {
 					list.push(id)
@@ -127,7 +132,7 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 		create: (values) => {
 			const id = generateId()
 			const data = { ...values, id }
-			staged.set(id, { operation: 'create', processed: false, data })
+			staged.set(id, { collection, operation: 'create', processed: false, data })
 			return mapObject(data)
 		},
 		update: (id, values) => {
@@ -138,18 +143,20 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 					// Separate (duplicate) cases for each operation type to satify TypeScript
 					operation.operation == 'create'
 						? {
+								collection,
 								operation: operation.operation,
 								processed: false,
 								data: { ...operation.data, ...values }
 							}
 						: {
+								collection,
 								operation: operation.operation,
 								processed: false,
 								data: { ...operation.data, ...values }
 							}
 				staged.set(id, updatedOperation)
 			} else {
-				operation = { operation: 'update', processed: false, data: values }
+				operation = { collection, operation: 'update', processed: false, data: values }
 				staged.set(id, operation)
 			}
 
@@ -162,57 +169,7 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 			if (operation?.operation === 'create' && !operation.processed) {
 				staged.delete(id)
 			} else {
-				staged.set(id, { operation: 'delete', processed: false })
-			}
-		},
-		commit: async () => {
-			const promises: Promise<void>[] = []
-			for (const [id, operation] of staged) {
-				// Avoid redoing operation if commit is done twice in a row
-				if (operation.processed) {
-					continue
-				} else {
-					operation.processed = true
-				}
-
-				switch (operation.operation) {
-					case 'create':
-						promises.push(
-							collection.create(operation.data).then((record) => {
-								records.set(id, record as unknown as T)
-							})
-						)
-						break
-
-					case 'update':
-						promises.push(
-							collection.update(id, operation.data).then((record) => {
-								records.set(id, record as unknown as T)
-							})
-						)
-						break
-
-					case 'delete':
-						promises.push(
-							collection.delete(id).then(() => {
-								records.delete(id)
-							})
-						)
-						break
-				}
-			}
-
-			await Promise.all(promises)
-			for (const id of [...staged.keys()]) {
-				staged.delete(id)
-			}
-			for (const id of [...lists.keys()]) {
-				lists.delete(id)
-			}
-		},
-		discard: () => {
-			for (const id of [...staged.keys()]) {
-				staged.delete(id)
+				staged.set(id, { collection, operation: 'delete', processed: false })
 			}
 		},
 		authWithPassword: async (usernameOrEmail, password) => {
@@ -231,7 +188,7 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 			if (cachedCollectionMapping) {
 				return cachedCollectionMapping
 			}
-			const collectionMapping = createCollectionMapping(name, model, { ...options, instance })
+			const collectionMapping = createCollectionMapping(name, model, manager, { ...options, instance })
 			instanceCache.set(instance, collectionMapping)
 			return collectionMapping
 		},

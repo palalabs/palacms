@@ -32,7 +32,7 @@
 	import MarkdownButton from './MarkdownButton.svelte'
 	import { component_iframe_srcdoc } from '$lib/builder/components/misc'
 	import { getContent } from '$lib/pocketbase/content'
-	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
+	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
 	import { SiteSymbolFields, SiteSymbols, type PageSections, type PageTypeSections } from '$lib/pocketbase/collections'
 
 	const lowlight = createLowlight(all)

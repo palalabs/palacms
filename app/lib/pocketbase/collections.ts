@@ -20,9 +20,12 @@ import { SiteSymbol } from '$lib/common/models/SiteSymbol'
 import { SiteSymbolEntry } from '$lib/common/models/SiteSymbolEntry'
 import { SiteSymbolField } from '$lib/common/models/SiteSymbolField'
 import { User } from '$lib/common/models/User'
-import { createCollectionMapping, type ObjectOf } from './CollectionMapping.svelte'
+import { createCollectionManager } from './CollectionManager'
+import { createCollectionMapping } from './CollectionMapping'
 
-export const Users = createCollectionMapping('users', User, {
+export const manager = createCollectionManager()
+
+export const Users = createCollectionMapping('users', User, manager, {
 	links: {
 		site_groups() {
 			return SiteGroups.list({ filter: `owner = "${this.id}"` })
@@ -30,7 +33,7 @@ export const Users = createCollectionMapping('users', User, {
 	}
 })
 
-export const LibrarySymbolGroups = createCollectionMapping('library_symbol_groups', LibrarySymbolGroup, {
+export const LibrarySymbolGroups = createCollectionMapping('library_symbol_groups', LibrarySymbolGroup, manager, {
 	links: {
 		symbols() {
 			return LibrarySymbols.from(this.collection.instance).list({ filter: `group = "${this.id}"` })
@@ -38,7 +41,7 @@ export const LibrarySymbolGroups = createCollectionMapping('library_symbol_group
 	}
 })
 
-export const LibrarySymbols = createCollectionMapping('library_symbols', LibrarySymbol, {
+export const LibrarySymbols = createCollectionMapping('library_symbols', LibrarySymbol, manager, {
 	links: {
 		fields() {
 			return LibrarySymbolFields.from(this.collection.instance).list({ filter: `symbol = "${this.id}"` })
@@ -55,7 +58,7 @@ export const LibrarySymbols = createCollectionMapping('library_symbols', Library
 	}
 })
 
-export const LibrarySymbolFields = createCollectionMapping('library_symbol_fields', LibrarySymbolField, {
+export const LibrarySymbolFields = createCollectionMapping('library_symbol_fields', LibrarySymbolField, manager, {
 	links: {
 		entries() {
 			return LibrarySymbolEntries.from(this.collection.instance).list({ filter: `field = "${this.id}"` })
@@ -63,11 +66,11 @@ export const LibrarySymbolFields = createCollectionMapping('library_symbol_field
 	}
 })
 
-export const LibrarySymbolEntries = createCollectionMapping('library_symbol_entries', LibrarySymbolEntry, {
+export const LibrarySymbolEntries = createCollectionMapping('library_symbol_entries', LibrarySymbolEntry, manager, {
 	links: {}
 })
 
-export const SiteGroups = createCollectionMapping('site_groups', SiteGroup, {
+export const SiteGroups = createCollectionMapping('site_groups', SiteGroup, manager, {
 	links: {
 		sites() {
 			return Sites.from(this.collection.instance).list({ filter: `group = "${this.id}"` })
@@ -75,7 +78,7 @@ export const SiteGroups = createCollectionMapping('site_groups', SiteGroup, {
 	}
 })
 
-export const Sites = createCollectionMapping('sites', Site, {
+export const Sites = createCollectionMapping('sites', Site, manager, {
 	links: {
 		symbols() {
 			return SiteSymbols.from(this.collection.instance).list({ filter: `site = "${this.id}"` })
@@ -104,7 +107,7 @@ export const Sites = createCollectionMapping('sites', Site, {
 	}
 })
 
-export const SiteFields = createCollectionMapping('site_fields', SiteField, {
+export const SiteFields = createCollectionMapping('site_fields', SiteField, manager, {
 	links: {
 		entries() {
 			return SiteEntries.from(this.collection.instance).list({ filter: `field = "${this.id}"` })
@@ -112,11 +115,11 @@ export const SiteFields = createCollectionMapping('site_fields', SiteField, {
 	}
 })
 
-export const SiteEntries = createCollectionMapping('site_entries', SiteEntry, {
+export const SiteEntries = createCollectionMapping('site_entries', SiteEntry, manager, {
 	links: {}
 })
 
-export const SiteSymbols = createCollectionMapping('site_symbols', SiteSymbol, {
+export const SiteSymbols = createCollectionMapping('site_symbols', SiteSymbol, manager, {
 	links: {
 		fields() {
 			return SiteSymbolFields.from(this.collection.instance).list({ filter: `symbol = "${this.id}"` })
@@ -133,7 +136,7 @@ export const SiteSymbols = createCollectionMapping('site_symbols', SiteSymbol, {
 	}
 })
 
-export const SiteSymbolFields = createCollectionMapping('site_symbol_fields', SiteSymbolField, {
+export const SiteSymbolFields = createCollectionMapping('site_symbol_fields', SiteSymbolField, manager, {
 	links: {
 		entries() {
 			return SiteSymbolEntries.from(this.collection.instance).list({ filter: `field = "${this.id}"` })
@@ -141,11 +144,11 @@ export const SiteSymbolFields = createCollectionMapping('site_symbol_fields', Si
 	}
 })
 
-export const SiteSymbolEntries = createCollectionMapping('site_symbol_entries', SiteSymbolEntry, {
+export const SiteSymbolEntries = createCollectionMapping('site_symbol_entries', SiteSymbolEntry, manager, {
 	links: {}
 })
 
-export const PageTypes = createCollectionMapping('page_types', PageType, {
+export const PageTypes = createCollectionMapping('page_types', PageType, manager, {
 	links: {
 		symbols() {
 			return PageTypeSymbols.from(this.collection.instance).list({ filter: `page_type = "${this.id}"` })
@@ -168,7 +171,7 @@ export const PageTypes = createCollectionMapping('page_types', PageType, {
 	}
 })
 
-export const PageTypeFields = createCollectionMapping('page_type_fields', PageTypeField, {
+export const PageTypeFields = createCollectionMapping('page_type_fields', PageTypeField, manager, {
 	links: {
 		entries() {
 			return PageTypeEntries.from(this.collection.instance).list({ filter: `field = "${this.id}"` })
@@ -176,15 +179,15 @@ export const PageTypeFields = createCollectionMapping('page_type_fields', PageTy
 	}
 })
 
-export const PageTypeEntries = createCollectionMapping('page_type_entries', PageTypeEntry, {
+export const PageTypeEntries = createCollectionMapping('page_type_entries', PageTypeEntry, manager, {
 	links: {}
 })
 
-export const PageTypeSymbols = createCollectionMapping('page_type_symbols', PageTypeSymbol, {
+export const PageTypeSymbols = createCollectionMapping('page_type_symbols', PageTypeSymbol, manager, {
 	links: {}
 })
 
-export const PageTypeSections = createCollectionMapping('page_type_sections', PageTypeSection, {
+export const PageTypeSections = createCollectionMapping('page_type_sections', PageTypeSection, manager, {
 	links: {
 		entries() {
 			return PageTypeSectionEntries.from(this.collection.instance).list({ filter: `section = "${this.id}"` })
@@ -192,11 +195,11 @@ export const PageTypeSections = createCollectionMapping('page_type_sections', Pa
 	}
 })
 
-export const PageTypeSectionEntries = createCollectionMapping('page_type_section_entries', PageTypeSectionEntry, {
+export const PageTypeSectionEntries = createCollectionMapping('page_type_section_entries', PageTypeSectionEntry, manager, {
 	links: {}
 })
 
-export const Pages = createCollectionMapping('pages', Page, {
+export const Pages = createCollectionMapping('pages', Page, manager, {
 	links: {
 		children() {
 			return this.collection.list({ filter: `parent = "${this.id}"` })
@@ -210,11 +213,11 @@ export const Pages = createCollectionMapping('pages', Page, {
 	}
 })
 
-export const PageEntries = createCollectionMapping('page_entries', PageEntry, {
+export const PageEntries = createCollectionMapping('page_entries', PageEntry, manager, {
 	links: {}
 })
 
-export const PageSections = createCollectionMapping('page_sections', PageSection, {
+export const PageSections = createCollectionMapping('page_sections', PageSection, manager, {
 	links: {
 		entries() {
 			return PageSectionEntries.from(this.collection.instance).list({ filter: `section = "${this.id}"` })
@@ -222,6 +225,6 @@ export const PageSections = createCollectionMapping('page_sections', PageSection
 	}
 })
 
-export const PageSectionEntries = createCollectionMapping('page_section_entries', PageSectionEntry, {
+export const PageSectionEntries = createCollectionMapping('page_section_entries', PageSectionEntry, manager, {
 	links: {}
 })

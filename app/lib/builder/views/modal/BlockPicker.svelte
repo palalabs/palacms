@@ -4,7 +4,7 @@
 	import Symbol from '../../components/Site_Symbol.svelte'
 	import type { LibrarySymbol as SymbolModel } from '$lib/common/models/LibrarySymbol'
 	import { LibrarySymbolGroups } from '$lib/pocketbase/collections'
-	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
+	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
 
 	let { site, onsave } = $props()
 

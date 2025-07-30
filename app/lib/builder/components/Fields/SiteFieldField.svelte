@@ -23,8 +23,6 @@
 			value: sf.id
 		}))
 	})
-
-	$inspect({ siteFields, field_list })
 </script>
 
 <div class="PageFieldField">

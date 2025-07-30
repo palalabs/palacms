@@ -7,8 +7,8 @@
 	import PageForm from './PageForm.svelte'
 	import MenuPopup from '$lib/builder/ui/Dropdown.svelte'
 	import { page as pageState } from '$app/state'
-	import { Pages, PageTypes, Sites } from '$lib/pocketbase/collections'
-	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
+	import { manager, Pages, PageTypes, Sites } from '$lib/pocketbase/collections'
+	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
 	import { getContext } from 'svelte'
 
 	let editing_page = $state(false)
@@ -22,8 +22,7 @@
 	const fallback_site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
 	const site = $derived(context_site || fallback_site)
 	const full_url = $derived(() => {
-		const base_path = pageState.url.pathname.includes('/sites/') ? 
-			`/admin/sites/${site?.id}` : '/admin/site'
+		const base_path = pageState.url.pathname.includes('/sites/') ? `/admin/sites/${site?.id}` : '/admin/site'
 		return `${base_path}/${page.slug}`
 	})
 	const allPages = $derived(site?.pages() ?? [])
@@ -175,7 +174,7 @@
 									icon: 'ic:outline-delete',
 									on_click: () => {
 										Pages.delete(page.id)
-										Pages.commit()
+										manager.commit()
 									}
 								}
 							]
@@ -205,7 +204,7 @@
 						alert(`That URL is already in use`)
 					} else {
 						Pages.create({ ...new_page, parent: page.id, site: site.id })
-						Pages.commit()
+						manager.commit()
 					}
 				}}
 			/>

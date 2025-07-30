@@ -10,7 +10,7 @@
 	import * as Dialog from '$lib/components/ui/dialog'
 	import { Input } from '$lib/components/ui/input'
 	import * as AlertDialog from '$lib/components/ui/alert-dialog'
-	import { LibrarySymbolGroups, LibrarySymbols } from '$lib/pocketbase/collections'
+	import { LibrarySymbolGroups, LibrarySymbols, manager } from '$lib/pocketbase/collections'
 
 	/**
 	 * @typedef {Object} Props
@@ -48,7 +48,7 @@
 	async function save_symbol(data) {
 		preview = data.preview
 		LibrarySymbols.update(symbol_id, data)
-		LibrarySymbols.commit()
+		await manager.commit()
 		is_editor_open = false
 	}
 
@@ -63,7 +63,7 @@
 		if (!symbol || !original_group_id) return
 		is_move_open = false
 		LibrarySymbols.update(symbol_id, { group: selected_group_id })
-		LibrarySymbols.commit()
+		await manager.commit()
 	}
 
 	let deleting = $state(false)
@@ -71,7 +71,7 @@
 		if (!symbol_id) return
 		is_delete_open = false
 		LibrarySymbols.delete(symbol_id)
-		LibrarySymbols.commit()
+		await manager.commit()
 	}
 </script>
 

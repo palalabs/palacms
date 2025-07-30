@@ -23,8 +23,6 @@
 
 	// track focused value inputs to auto-fill values when unedited
 	const clicked_value_inputs = new Set()
-
-	$inspect('FIELD UPDATED:', field)
 </script>
 
 <!-- <div class="SelectField" style="margin-left: {1.5 + level}rem"> -->
@@ -79,10 +77,7 @@
 			</div>
 		</div>
 	{/each}
-	<button
-		class="field-button subfield-button"
-		onclick={addOption}
-	>
+	<button class="field-button subfield-button" onclick={addOption}>
 		<Icon icon="ic:baseline-plus" />
 		Create Option
 	</button>

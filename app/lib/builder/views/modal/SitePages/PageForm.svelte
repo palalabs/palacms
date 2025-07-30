@@ -7,7 +7,7 @@
 	import { Page } from '$lib/common/models/Page'
 	import { page } from '$app/state'
 	import { Sites, PageTypes, Pages } from '$lib/pocketbase/collections'
-	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
+	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
 
 	let { parent }: { parent?: ObjectOf<typeof Pages> } = $props()
 

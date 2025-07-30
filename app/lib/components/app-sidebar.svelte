@@ -12,7 +12,7 @@
 	import { useSidebar } from '$lib/components/ui/sidebar/index.js'
 	import { marketplace, self, user } from '$lib/pocketbase/PocketBase'
 	import type { Component } from 'svelte'
-	import { LibrarySymbolGroups, SiteGroups } from '$lib/pocketbase/collections'
+	import { LibrarySymbolGroups, manager, SiteGroups } from '$lib/pocketbase/collections'
 
 	const sidebar = useSidebar()
 
@@ -44,7 +44,7 @@
 		const userId = user()?.id
 		if (!userId) return
 		SiteGroups.create({ name: new_site_group_name, owner: userId, index: 0 })
-		await SiteGroups.commit()
+		await manager.commit()
 		is_creating_site_group = false
 	}
 
@@ -55,7 +55,7 @@
 		const userId = user()?.id
 		if (!userId) return
 		LibrarySymbolGroups.create({ name: new_symbol_group_name, owner: userId, index: 0 })
-		await LibrarySymbolGroups.commit()
+		await manager.commit()
 		is_creating_symbol_group = false
 	}
 

@@ -14,7 +14,7 @@
 	import { useSidebar } from '$lib/components/ui/sidebar'
 	import { page } from '$app/state'
 	import type { Site } from '$lib/common/models/Site'
-	import { Sites, SiteGroups, Pages } from '$lib/pocketbase/collections'
+	import { Sites, SiteGroups, Pages, manager } from '$lib/pocketbase/collections'
 	import { self as pb } from '$lib/pocketbase/PocketBase'
 
 	const sidebar = useSidebar()
@@ -38,7 +38,7 @@
 		e.preventDefault()
 		if (!active_site_group) return
 		SiteGroups.update(active_site_group.id, { name: new_group_name })
-		await SiteGroups.commit()
+		await manager.commit()
 		is_rename_group_open = false
 	}
 
@@ -48,7 +48,7 @@
 		deleting_group = true
 		if (!active_site_group) return
 		SiteGroups.delete(active_site_group.id)
-		await SiteGroups.commit()
+		await manager.commit()
 		deleting_group = false
 		is_delete_group_open = false
 	}
@@ -71,7 +71,7 @@
 	async function handle_rename() {
 		if (!current_site) return
 		Sites.update(current_site.id, { name: new_site_name })
-		await Sites.commit()
+		await manager.commit()
 		is_rename_site_open = false
 	}
 
@@ -89,11 +89,10 @@
 			for (const page of pages.items) {
 				Pages.delete(page.id)
 			}
-			await Pages.commit()
 
 			// Delete the site - PocketBase will cascade delete remaining records
 			Sites.delete(siteId)
-			await Sites.commit()
+			await manager.commit()
 
 			is_delete_site_open = false
 		} catch (error) {
@@ -113,7 +112,7 @@
 	async function move_site() {
 		if (!current_site) return
 		Sites.update(current_site.id, { group: selected_group_id })
-		await Sites.commit()
+		await manager.commit()
 		is_move_site_open = false
 	}
 </script>

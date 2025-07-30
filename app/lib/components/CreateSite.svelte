@@ -6,7 +6,7 @@
 	import { Input } from '$lib/components/ui/input/index.js'
 	import { Label } from '$lib/components/ui/label/index.js'
 	import { Site } from '$lib/common/models/Site'
-	import { Sites, PageTypes, Pages, SiteSymbols, PageSections, PageTypeSections, SiteGroups } from '$lib/pocketbase/collections'
+	import { Sites, PageTypes, Pages, SiteSymbols, PageSections, PageTypeSections, SiteGroups, manager } from '$lib/pocketbase/collections'
 	import { page as pageState } from '$app/state'
 	import type { PageType } from '$lib/common/models/PageType'
 	import type { Page } from '$lib/common/models/Page'
@@ -33,7 +33,7 @@
 			index: 0,
 			owner: currentUser.id
 		})
-		SiteGroups.commit()
+		manager.commit()
 	})
 
 	const starter_sites = $derived(Sites.list() ?? [])
@@ -108,12 +108,7 @@
 				zone: 'body'
 			})
 
-			await Sites.commit()
-			await PageTypes.commit()
-			await Pages.commit()
-			await SiteSymbols.commit()
-			await PageTypeSections.commit()
-			await PageSections.commit()
+			await manager.commit()
 			oncreated?.()
 		}
 	}

@@ -13,7 +13,7 @@
 	import { locale } from '../../stores/app/misc.js'
 	import { dropTargetForElements } from '$lib/builder/libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
 	import { attachClosestEdge, extractClosestEdge } from '$lib/builder/libraries/pragmatic-drag-and-drop-hitbox/closest-edge.js'
-	import { PageTypes, PageTypeSectionEntries, PageTypeSections, PageTypeSymbols, Sites, SiteSymbolFields, SiteSymbols } from '$lib/pocketbase/collections'
+	import { manager, PageTypes, PageTypeSectionEntries, PageTypeSections, PageTypeSymbols, Sites, SiteSymbolFields, SiteSymbols } from '$lib/pocketbase/collections'
 
 	import { page } from '$app/state'
 
@@ -247,7 +247,7 @@
 					index: zone_target_index,
 					zone: zone
 				})
-				await PageTypeSections.commit()
+				await manager.commit()
 			}
 		})
 	}
@@ -304,7 +304,7 @@
 					index: body_target_index,
 					zone: 'body'
 				})
-				await PageTypeSections.commit()
+				await manager.commit()
 				reset_drag()
 				active_drop_zone = null
 
@@ -362,7 +362,7 @@
 					index: target_index,
 					zone: section_zone
 				})
-				await PageTypeSections.commit()
+				await manager.commit()
 			}
 		})
 	}
@@ -373,16 +373,16 @@
 	})
 
 	let editing_section = $state(false)
-	$effect(() => {
-		if (!editing_section) {
-			SiteSymbols.discard()
-			SiteSymbolFields.discard()
-			PageTypeSectionEntries.discard()
-		}
-	})
 </script>
 
-<Dialog.Root bind:open={editing_section}>
+<Dialog.Root
+	bind:open={editing_section}
+	onOpenChange={(open) => {
+		if (!open) {
+			manager.discard()
+		}
+	}}
+>
 	<Dialog.Content class="z-[999] max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4">
 		<SectionEditor
 			component={hovered_section}
@@ -432,7 +432,7 @@
 			on:delete={async () => {
 				if (!hovered_section_id) return
 				PageTypeSections.delete(hovered_section_id)
-				await PageTypeSections.commit()
+				await manager.commit()
 			}}
 			on:edit-code={() => edit_component('code')}
 			on:edit-content={() => edit_component('content')}
@@ -453,7 +453,7 @@
 					const section_above = zone_sections[current_index - 1]
 					PageTypeSections.update(section.id, { index: current_index - 1 })
 					PageTypeSections.update(section_above.id, { index: current_index })
-					await PageTypeSections.commit()
+					await manager.commit()
 				}
 
 				setTimeout(() => {
@@ -477,7 +477,7 @@
 					const section_below = zone_sections[current_index + 1]
 					PageTypeSections.update(section.id, { index: current_index + 1 })
 					PageTypeSections.update(section_below.id, { index: current_index })
-					await PageTypeSections.commit()
+					await manager.commit()
 				}
 
 				setTimeout(() => {

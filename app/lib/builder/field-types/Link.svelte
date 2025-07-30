@@ -34,8 +34,6 @@
 			return parent_urls.length ? prefix + parent_urls.join('/') + '/' + page.slug : prefix + page.slug
 		}
 	}
-
-	$inspect({ selectable_pages, selected_page })
 </script>
 
 <div class="Link">
