@@ -301,6 +301,7 @@
 				{/if}
 				{#if page_type}
 					<Content
+						minimal={true}
 						entity={page_type}
 						{fields}
 						{entries}

@@ -12,6 +12,8 @@
 	import { fade } from 'svelte/transition'
 	import * as Dialog from '$lib/components/ui/dialog'
 	import ImageModal from '$lib/builder/views/modal/ImageModal.svelte'
+	import ImageField from '$lib/builder/field-types/ImageField.svelte'
+	import LinkField from '$lib/builder/field-types/Link.svelte'
 	import LinkModal from '$lib/builder/views/modal/LinkModal.svelte'
 	import VideoModal from '$lib/builder/views/modal/VideoModal.svelte'
 	import Icon from '@iconify/svelte'
@@ -33,7 +35,7 @@
 	import { component_iframe_srcdoc } from '$lib/builder/components/misc'
 	import { getContent } from '$lib/pocketbase/content'
 	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
-	import { SiteSymbolFields, SiteSymbols, type PageSections, type PageTypeSections } from '$lib/pocketbase/collections'
+	import { SiteSymbolFields, SiteSymbols, type PageSections, type PageTypeSections, PageSectionEntries, PageTypeSectionEntries, manager } from '$lib/pocketbase/collections'
 
 	const lowlight = createLowlight(all)
 
@@ -86,6 +88,7 @@
 	const markdown_classes = {}
 
 	async function make_content_editable() {
+		console.log('starting')
 		if (!node?.contentDocument) return
 
 		const doc = node.contentDocument
@@ -242,8 +245,8 @@
 							dispatch('unlock')
 						},
 						onUpdate: async ({ editor }) => {
-							// TODO: Implement
-							throw new Error('Not implemented')
+							const html = editor.getHTML()
+							save_edited_value({ id, value: { html } })
 						}
 					})
 				],
@@ -286,28 +289,20 @@
 					}
 				}
 				image_editor.onclick = () => {
-					// TODO
-					// modal.show('DIALOG', {
-					// 	component: 'IMAGE',
-					// 	onSubmit: ({ url, alt }) => {
-					// 		element.src = url
-					// 		save_edited_value({ id, value: { url, alt } })
-					// 		image_editor_is_visible = false
-					// 		modal.hide()
-					// 	},
-					// 	props: {
-					// 		value: {
-					// 			url: element.src,
-					// 			alt: element.alt
-					// 		},
-					// 		fieldOptions: options
-					// 	}
-					// })
+					current_image_element = element
+					current_image_id = id
+					current_image_value = {
+						url: element.src || '',
+						alt: element.alt || ''
+					}
+					editing_image = true
+					image_editor_is_visible = false
 				}
 			}
 		}
 
 		async function set_editable_link({ element, id, url }) {
+			console.log('set_editable_link', { element, id, url })
 			element.style.outline = '0'
 			element.setAttribute(`data-entry`, id)
 			element.contentEditable = true
@@ -327,45 +322,23 @@
 					})
 				}
 			}
-			element.onclick = (e) => {
+			element.addEventListener('click', (e) => {
 				e.preventDefault()
-			}
-			element.addEventListener('click', async () => {
-				const iframe_rect = node.getBoundingClientRect()
-				rect = element.getBoundingClientRect()
-
-				link_editor_is_visible = true
-				await tick()
-				link_editor.style.left = `${rect.left + iframe_rect.left}px`
-				link_editor.style.top = `${rect.top + rect.height + iframe_rect.top}px`
-
-				const input = link_editor.querySelector('input')
-				input.value = url
-
-				const form = link_editor.querySelector('form')
-				form.onsubmit = (e) => {
-					e.preventDefault()
-					element.href = input.value
-					updated_url = input.value
-					save_edited_value({
-						id,
-						value: {
-							url: updated_url,
-							label: element.innerText
-						}
-					})
-					// set_editable_link({ element, key, url: updated_url })
-					link_editor_is_visible = false
+				e.stopPropagation()
+				current_link_element = element
+				current_link_id = id
+				current_link_value = {
+					url: element.href || '',
+					label: element.innerText || '',
+					active: true
 				}
-
-				const button = link_editor.querySelector('button[data-link]')
-				button.onclick = () => {
-					window.open(element.href, '_blank')
-				}
-			})
+				editing_link = true
+			}, { capture: true })
 		}
 
 		async function set_editable_text({ id, element }) {
+			console.log('set_editable_text')
+
 			element.style.outline = '0'
 			element.setAttribute(`data-entry`, id)
 			element.onkeydown = (e) => {
@@ -379,11 +352,34 @@
 				save_edited_value({ id, value: e.target.innerText })
 			}
 			element.onfocus = () => {
+				console.log('focus')
 				dispatch('lock')
 			}
 			element.contentEditable = true
 		}
 	}
+
+	async function save_edited_value({ id, value }) {
+		// Find the entry by ID
+		const entry = entries?.find((entry) => entry.id === id)
+		if (!entry) {
+			console.error('Entry not found for ID:', id)
+			return
+		}
+
+		// Update the entry based on section type
+		if ('page_type' in section) {
+			PageTypeSectionEntries.update(entry.id, { value })
+		} else if ('page' in section) {
+			PageSectionEntries.update(entry.id, { value })
+		}
+
+		// Commit changes with a delay to batch multiple edits
+		clearTimeout(commit_task)
+		commit_task = setTimeout(() => manager.commit(), 500)
+	}
+
+	let commit_task = $state<NodeJS.Timeout>()
 
 	let mounted = false
 	function dispatch_mount() {
@@ -400,6 +396,11 @@
 		const [site] = pathname.split('/').slice(1)
 		const site_url = `${origin}/${site}`
 		node.contentDocument.querySelectorAll('a').forEach((link) => {
+			// Skip editable links - they have their own handlers
+			if (link.dataset.entry || link.dataset.key) {
+				return
+			}
+			
 			link.onclick = (e) => {
 				e.preventDefault()
 			}
@@ -433,7 +434,7 @@
 			}
 
 			function openLinkInNewWindow(link) {
-				if (link.dataset.key) return // is editable
+				if (link.dataset.key || link.dataset.entry) return // is editable
 				link.addEventListener('click', () => {
 					window.open(link.href, '_blank')
 				})
@@ -583,7 +584,7 @@
 	async function send_component_to_iframe(js, data) {
 		try {
 			node.contentWindow.postMessage({ type: 'component', payload: { js, data } }, '*')
-			// setTimeout(make_content_editable, 200) // wait for component to mount within iframe
+			setTimeout(make_content_editable, 200) // wait for component to mount within iframe
 		} catch (e) {
 			console.error(e)
 			error = e
@@ -609,27 +610,81 @@
 	let editing_image = $state(false)
 	let editing_link = $state(false)
 	let editing_video = $state(false)
+	let current_image_element = $state(null)
+	let current_image_id = $state(null)
+	let current_image_value = $state({ url: '', alt: '' })
+	let current_link_element = $state(null)
+	let current_link_id = $state(null)
+	let current_link_value = $state({ url: '', label: '', active: true })
 </script>
 
 <Dialog.Root bind:open={editing_image}>
-	<Dialog.Content class="z-[999] max-w-[60px]">
-		<ImageModal
-			onsave={({ url, alt }) => {
-				active_editor.chain().focus().setImage({ src: url, alt }).run()
-				editing_image = false
+	<Dialog.Content class="z-[999] sm:max-w-[500px] pt-12">
+		<ImageField
+			entity={section}
+			field={fields?.find(f => entries?.find(e => e.id === current_image_id)?.field === f.id) || { label: 'Image', key: 'image', type: 'image', config: {} }}
+			entry={{
+				value: current_image_value
+			}}
+			onchange={(value) => {
+				// Only update local state, don't save yet
+				current_image_value = value
 			}}
 		/>
+		<div class="flex justify-end gap-2 mt-2">
+			<button 
+				onclick={() => {
+					if (active_editor) {
+						// Handle TipTap editor images
+						active_editor.chain().focus().setImage({ src: current_image_value.url, alt: current_image_value.alt }).run()
+					} else if (current_image_element && current_image_id) {
+						// Handle direct image editing
+						current_image_element.src = current_image_value.url
+						current_image_element.alt = current_image_value.alt
+						save_edited_value({ id: current_image_id, value: current_image_value })
+					}
+					editing_image = false
+				}}
+				class="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-md"
+			>
+				Done
+			</button>
+		</div>
 	</Dialog.Content>
 </Dialog.Root>
 
 <Dialog.Root bind:open={editing_link}>
-	<Dialog.Content class="z-[999] max-w-[60px]">
-		<LinkModal
-			onsave={(value) => {
-				active_editor.chain().focus().setLink({ href: value }).run()
-				editing_link = false
+	<Dialog.Content class="z-[999] sm:max-w-[500px] pt-12 overflow-visible">
+		<LinkField
+			entity={section}
+			field={fields?.find(f => entries?.find(e => e.id === current_link_id)?.field === f.id) || { label: 'Link', key: 'link', type: 'link', config: {} }}
+			entry={{
+				value: current_link_value
+			}}
+			onchange={(value) => {
+				// Only update local state, don't save yet
+				current_link_value = value
 			}}
 		/>
+		<div class="flex justify-end gap-2 mt-2">
+			<button 
+				onclick={() => {
+					if (active_editor) {
+						// Handle TipTap editor links
+						active_editor.chain().focus().setLink({ href: current_link_value.url }).run()
+					} else if (current_link_element && current_link_id) {
+						// Handle direct link editing
+						current_link_element.href = current_link_value.url
+						current_link_element.innerText = current_link_value.label
+						save_edited_value({ id: current_link_id, value: current_link_value })
+					}
+					editing_link = false
+				}}
+				class="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-md"
+			>
+				Done
+			</button>
+		</div>
 	</Dialog.Content>
 </Dialog.Root>
 

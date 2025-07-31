@@ -63,8 +63,7 @@
 	}
 </script>
 
-<div>
-	<div class="image-info">
+<div class="image-modal">
 		{#if loading}
 			<UI.Spinner />
 		{:else}
@@ -112,56 +111,59 @@
 				</label>
 				<label class="image-input">
 					<span>Description</span>
-					<input type="text" value={local_value.alt} />
+					<input 
+						type="text" 
+						value={local_value.alt}
+						oninput={({ target }) => {
+							local_value = {
+								...local_value,
+								alt: target.value
+							}
+						}}
+					/>
 				</label>
 			</div>
 			<footer>
 				<Button type="submit" label="Add Image" />
 			</footer>
 		</form>
-	</div>
 </div>
 
 <style lang="postcss">
-	.image-info {
+	.image-modal {
 		display: flex;
 		flex-direction: column;
-		overflow: hidden;
-		background: #1a1a1a;
-		padding: 0.25rem 0.75rem 0.75rem 0.75rem;
+		gap: 1rem;
 		--Spinner-padding: 3rem;
-	}
-	input {
-		background: var(--color-gray-8);
 	}
 	.image-preview {
 		width: 100%;
-		padding-top: 50%;
+		height: 200px;
 		position: relative;
-		margin-bottom: 0.25rem;
+		border: 2px dashed hsl(var(--border));
+		border-radius: var(--radius);
+		margin-bottom: 1rem;
 
 		.image-upload {
 			flex: 1 1 0%;
 			padding: 1rem;
 			cursor: pointer;
-			position: relative;
+			position: absolute;
+			inset: 0;
 			width: 100%;
 			display: flex;
 			flex-direction: column;
 			align-items: center;
 			justify-content: center;
-			color: var(--color-gray-2);
-			background: var(--color-gray-9);
-			font-weight: 600;
+			color: hsl(var(--muted-foreground));
+			background: transparent;
+			font-weight: 500;
 			text-align: center;
-			position: absolute;
-			inset: 0;
-			opacity: 0.5;
-			transition: opacity, background;
-			transition-duration: 0.1s;
+			transition: all 0.2s;
+			border-radius: var(--radius);
 
 			&:hover {
-				opacity: 0.95;
+				background: hsl(var(--muted) / 0.5);
 			}
 
 			span {
@@ -201,26 +203,36 @@
 	.inputs {
 		display: flex;
 		flex-direction: column;
+		gap: 1rem;
 		width: 100%;
 
 		.image-input {
 			display: flex;
-			align-items: center;
-			font-size: var(--font-size-1);
+			flex-direction: column;
+			gap: 0.5rem;
 			width: 100%;
-			margin-bottom: 0.25rem;
 
 			span {
-				font-weight: 600;
-				padding: 0 0.5rem;
+				font-weight: 500;
+				font-size: 0.875rem;
+				color: hsl(var(--foreground));
 			}
 
 			input {
-				font-size: inherit;
 				flex: 1;
-				padding: 0 0.25rem;
-				outline: 0;
-				border: 0;
+				padding: 0.5rem 0.75rem;
+				border: 1px solid hsl(var(--border));
+				border-radius: var(--radius);
+				background: hsl(var(--background));
+				color: hsl(var(--foreground));
+				font-size: 0.875rem;
+				transition: border-color 0.2s;
+
+				&:focus {
+					outline: none;
+					border-color: hsl(var(--ring));
+					box-shadow: 0 0 0 2px hsl(var(--ring) / 0.2);
+				}
 			}
 		}
 	}

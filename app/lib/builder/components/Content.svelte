@@ -6,7 +6,7 @@
 	import { getDirectEntries, type Entity } from '$lib/pocketbase/content'
 	import type { Entry } from '$lib/common/models/Entry'
 
-	const { entity, fields, entries, oninput }: { entity: Entity; entries: Entry[]; fields: Field[]; oninput: (values: Record<string, unknown>) => void } = $props()
+	const { minimal, entity, fields, entries, oninput }: { minimal: boolean; entity: Entity; entries: Entry[]; fields: Field[]; oninput: (values: Record<string, unknown>) => void } = $props()
 
 	function check_condition(field: Field) {
 		// TODO: Implement
@@ -41,11 +41,11 @@
 		{@const has_child_fields = field.type === 'repeater' || field.type === 'group'}
 		{@const content_entry = getDirectEntries(entity, field, entries)[0]}
 		{#if is_valid && is_visible}
-			<Card title={has_child_fields ? field.label : null} icon={field_type?.icon}>
+			<Card {minimal} title={has_child_fields ? field.label : null} icon={field_type?.icon}>
 				<div class="field-item" id="field-{field.key}" class:repeater={field.key === 'repeater'}>
 					<Field_Component
 						{entity}
-						field={{ ...field, label: `${field.label} (PAGE FIELD)` }}
+						field={{ ...field, label: field.label }}
 						entry={content_entry}
 						onchange={(value) => {
 							oninput({ [field.key]: value })
@@ -54,7 +54,7 @@
 				</div>
 			</Card>
 		{:else if is_valid && is_visible}
-			<Card title={has_child_fields ? field.label : null} icon={field_type?.icon}>
+			<Card {minimal} title={has_child_fields ? field.label : null} icon={field_type?.icon}>
 				<div class="field-item" id="field-{field.key}" class:repeater={field.key === 'repeater'}>
 					<Field_Component
 						{entity}
