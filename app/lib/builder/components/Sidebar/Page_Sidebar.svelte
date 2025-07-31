@@ -70,7 +70,7 @@
 		})
 	}
 
-	let commit_task = $state<NodeJS.Timeout>()
+	let commit_task
 </script>
 
 <div class="sidebar primo-reset">
@@ -109,7 +109,7 @@
 					<button
 						onclick={() => {
 							const base_path = pageState.url.pathname.includes('/sites/') ? `/admin/sites/${site?.id}` : '/admin/site'
-							goto(`${base_path}/page-type--${page_type?.id}?t=b`)
+							goto(`${base_path}/page-type--${page_type?.id}?tab=blocks`)
 						}}
 						class="footer-link"
 					>
@@ -151,7 +151,7 @@
 					<button
 						onclick={() => {
 							const base_path = pageState.url.pathname.startsWith('/admin/sites/') ? `/admin/sites/${site?.id}` : '/admin/site'
-							goto(`${base_path}/page-type--${page_type?.id}?t=p`)
+							goto(`${base_path}/page-type--${page_type?.id}?tab=fields`)
 						}}
 						class="footer-link"
 					>
@@ -194,7 +194,7 @@
 			<button
 				onclick={() => {
 					const base_path = pageState.url.pathname.includes('/sites/') ? `/admin/sites/${site?.id}` : '/admin/site'
-					goto(`${base_path}/page-type--${page_type?.id}?t=p`)
+					goto(`${base_path}/page-type--${page_type?.id}?tab=fields`)
 				}}
 				class="footer-link mb-2 mr-2"
 			>

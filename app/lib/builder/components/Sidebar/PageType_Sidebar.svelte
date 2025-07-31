@@ -32,11 +32,11 @@
 	const page_type_symbols = $derived(page_type?.symbols() ?? [])
 	const site_symbols = $derived(site?.symbols() ?? [])
 
-	// get the query param to set the tab when navigating from page (i.e. 'Edit Fields')
-	let active_tab = $state(page.url.searchParams.get('t') === 'p' ? 'CONTENT' : 'BLOCKS')
+	// get the query param to set the tab when navigating from page (i.e. 'Manage Fields')
+	let active_tab = $state(page.url.searchParams.get('tab') === 'fields' ? 'CONTENT' : 'BLOCKS')
 	if (browser) {
 		const url = new URL(page.url)
-		url.searchParams.delete('t')
+		url.searchParams.delete('tab')
 		goto(url, { replaceState: true })
 	}
 
@@ -206,7 +206,7 @@
 </Dialog.Root>
 
 <div class="sidebar primo-reset">
-	<Tabs.Root value="blocks" class="p-2">
+	<Tabs.Root value={active_tab === 'CONTENT' ? 'content' : 'blocks'} class="p-2">
 		<Tabs.List class="w-full mb-2">
 			<Tabs.Trigger value="blocks" class="flex-1 flex gap-1">
 				<Cuboid class="w-3" />

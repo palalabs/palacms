@@ -378,7 +378,7 @@
 		commit_task = setTimeout(() => manager.commit(), 500)
 	}
 
-	let commit_task = $state<NodeJS.Timeout>()
+	let commit_task
 
 	let mounted = false
 	function dispatch_mount() {
