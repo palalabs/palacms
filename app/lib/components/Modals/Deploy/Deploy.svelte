@@ -1,42 +1,82 @@
 <script>
 	import Icon from '@iconify/svelte'
 
-	let { stage = $bindable() } = $props()
+	let { stage = $bindable(), publish_fn, loading, site_host, onClose } = $props()
 
 	let error = $state(null)
-	async function publish_site() {
-		// TODO: Implement
+
+	async function handle_publish() {
+		try {
+			error = null
+			await publish_fn()
+			stage = 'PUBLISHED'
+		} catch (err) {
+			error = err.message || 'Failed to publish site'
+			stage = 'ERROR'
+		}
 	}
 
-	stage = 'INITIAL'
-
-	let loading = $state(false)
+	stage = stage || 'INITIAL'
 </script>
 
-<!-- <ModalHeader title="Publish" icon="entypo:publish" /> -->
 <div class="Deploy primo-reset">
 	{#if stage === 'INITIAL'}
 		<div class="container">
-			<p class="description">
-				<!-- TODO: Implement -->
-				Your website is live at
-				<a href="#" target="blank">TODO</a>
-			</p>
+			<h3 class="title">Publish Site</h3>
+			{#if site_host}
+				<p class="description">
+					Your website will be published to
+					<a href="https://{site_host}" target="_blank">{site_host}</a>
+				</p>
+			{:else}
+				<p class="description">Ready to publish your website changes?</p>
+			{/if}
 			<div class="buttons">
-				<button class="primo-button primary" onclick={publish_site}>
+				<button class="primo-button" onclick={onClose}>
+					<span>Cancel</span>
+				</button>
+				<button class="primo-button primary" onclick={handle_publish} disabled={loading}>
 					<Icon icon={loading ? 'line-md:loading-twotone-loop' : 'entypo:publish'} />
-					<span>Publish Changes</span>
+					<span>{loading ? 'Publishing...' : 'Publish Changes'}</span>
 				</button>
 			</div>
 		</div>
 	{:else if stage === 'PUBLISHED'}
-		<p class="description">
-			<!-- TODO: Implement -->
-			Your website changes have been published to
-			<a href="#" target="blank">TODO</a>
-		</p>
+		<div class="container">
+			<h3 class="title">Published Successfully!</h3>
+			<p class="description">
+				Your website changes have been published to
+				{#if site_host}
+					<a href="https://{site_host}" target="_blank">{site_host}</a>
+				{:else}
+					your live site
+				{/if}
+			</p>
+			<div class="buttons">
+				<button class="primo-button primary" onclick={onClose}>
+					<span>Done</span>
+				</button>
+				{#if site_host}
+					<a href="https://{site_host}" target="_blank" class="primo-button">
+						<Icon icon="lucide:external-link" />
+						<span>View Site</span>
+					</a>
+				{/if}
+			</div>
+		</div>
 	{:else if stage === 'ERROR'}
-		<p class="error">{error}</p>
+		<div class="container">
+			<h3 class="title">Publishing Failed</h3>
+			<p class="error">{error}</p>
+			<div class="buttons">
+				<button class="primo-button" onclick={onClose}>
+					<span>Close</span>
+				</button>
+				<button class="primo-button primary" onclick={() => (stage = 'INITIAL')}>
+					<span>Try Again</span>
+				</button>
+			</div>
+		</div>
 	{/if}
 </div>
 
@@ -44,70 +84,79 @@
 	.Deploy.primo-reset {
 		color: white;
 		background: var(--primo-color-black);
-		padding: 1.125rem 1.25rem;
+		padding: 3rem 1.25rem 1.125rem 1.25rem;
 		display: grid;
 		gap: 1rem;
 		width: 100%;
 	}
 	.container {
 		display: grid;
-		gap: 1rem;
 	}
 
-	/* .dns-record {
-		background: var(--color-gray-9);
-		border-radius: var(--primo-border-radius);
-		margin-bottom: 1rem;
-
-		.label {
-			padding-left: 1rem;
-			padding-top: 0.75rem;
-			font-size: 0.875rem;
-			border-bottom: 1px solid #121212;
-			padding-bottom: 0.5rem;
-			display: flex;
-			align-items: center;
-			gap: 0.5rem;
-		}
-
-		.contents {
-			display: grid;
-			grid-template-columns: 1fr 3fr 3fr;
-			gap: 0.5rem;
-			padding: 1rem;
-		}
-	} */
+	.title {
+		font-size: 1.125rem;
+		font-weight: 600;
+		color: white;
+	}
 
 	.error {
 		padding: 0.5rem;
 		background: var(--primo-color-danger);
+		border-radius: 0.25rem;
+		margin: 0.5rem 0;
 	}
 
 	.description {
+		margin-bottom: 2rem;
+		line-height: 1.5;
 		a {
 			text-decoration: underline;
+			color: #70809e;
+		}
+		a:hover {
+			color: white;
 		}
 	}
 
 	.buttons {
 		display: flex;
 		flex-wrap: wrap;
-		align-items: flex-end;
-		gap: 1rem;
+		align-items: center;
+		justify-content: flex-end;
+		gap: 0.75rem;
 	}
 	.primo-button {
 		display: flex;
 		align-items: center;
 		gap: 0.25rem;
-		padding: 7px 16px;
+		padding: 8px 16px;
 		background: var(--primo-color-codeblack);
+		border: 1px solid #333;
 		border-radius: 0.25rem;
-		justify-self: start;
-		/* height: 100%; */
+		color: white;
+		cursor: pointer;
+		text-decoration: none;
+		transition: all 0.2s;
+	}
+	.primo-button:hover {
+		background: #333;
+		border-color: #555;
+	}
+	.primo-button:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+	.primo-button:disabled:hover {
+		background: var(--primo-color-codeblack);
+		border-color: #333;
 	}
 	.primo-button.primary {
 		border: 1px solid #70809e;
 		background: transparent;
+	}
+	.primo-button.primary:hover {
+		background: #70809e;
+		border-color: #70809e;
 	}
 	:global(form > label) {
 		flex: 1;
