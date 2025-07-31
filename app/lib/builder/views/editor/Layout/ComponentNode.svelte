@@ -88,7 +88,6 @@
 	const markdown_classes = {}
 
 	async function make_content_editable() {
-		console.log('starting')
 		if (!node?.contentDocument) return
 
 		const doc = node.contentDocument
@@ -302,7 +301,6 @@
 		}
 
 		async function set_editable_link({ element, id, url }) {
-			console.log('set_editable_link', { element, id, url })
 			element.style.outline = '0'
 			element.setAttribute(`data-entry`, id)
 			element.contentEditable = true
@@ -322,23 +320,25 @@
 					})
 				}
 			}
-			element.addEventListener('click', (e) => {
-				e.preventDefault()
-				e.stopPropagation()
-				current_link_element = element
-				current_link_id = id
-				current_link_value = {
-					url: element.href || '',
-					label: element.innerText || '',
-					active: true
-				}
-				editing_link = true
-			}, { capture: true })
+			element.addEventListener(
+				'click',
+				(e) => {
+					e.preventDefault()
+					e.stopPropagation()
+					current_link_element = element
+					current_link_id = id
+					current_link_value = {
+						url: element.href || '',
+						label: element.innerText || '',
+						active: true
+					}
+					editing_link = true
+				},
+				{ capture: true }
+			)
 		}
 
 		async function set_editable_text({ id, element }) {
-			console.log('set_editable_text')
-
 			element.style.outline = '0'
 			element.setAttribute(`data-entry`, id)
 			element.onkeydown = (e) => {
@@ -352,7 +352,6 @@
 				save_edited_value({ id, value: e.target.innerText })
 			}
 			element.onfocus = () => {
-				console.log('focus')
 				dispatch('lock')
 			}
 			element.contentEditable = true
@@ -400,7 +399,7 @@
 			if (link.dataset.entry || link.dataset.key) {
 				return
 			}
-			
+
 			link.onclick = (e) => {
 				e.preventDefault()
 			}
@@ -622,7 +621,7 @@
 	<Dialog.Content class="z-[999] sm:max-w-[500px] pt-12">
 		<ImageField
 			entity={section}
-			field={fields?.find(f => entries?.find(e => e.id === current_image_id)?.field === f.id) || { label: 'Image', key: 'image', type: 'image', config: {} }}
+			field={fields?.find((f) => entries?.find((e) => e.id === current_image_id)?.field === f.id) || { label: 'Image', key: 'image', type: 'image', config: {} }}
 			entry={{
 				value: current_image_value
 			}}
@@ -632,7 +631,7 @@
 			}}
 		/>
 		<div class="flex justify-end gap-2 mt-2">
-			<button 
+			<button
 				onclick={() => {
 					if (active_editor) {
 						// Handle TipTap editor images
@@ -657,7 +656,7 @@
 	<Dialog.Content class="z-[999] sm:max-w-[500px] pt-12 overflow-visible">
 		<LinkField
 			entity={section}
-			field={fields?.find(f => entries?.find(e => e.id === current_link_id)?.field === f.id) || { label: 'Link', key: 'link', type: 'link', config: {} }}
+			field={fields?.find((f) => entries?.find((e) => e.id === current_link_id)?.field === f.id) || { label: 'Link', key: 'link', type: 'link', config: {} }}
 			entry={{
 				value: current_link_value
 			}}
@@ -667,7 +666,7 @@
 			}}
 		/>
 		<div class="flex justify-end gap-2 mt-2">
-			<button 
+			<button
 				onclick={() => {
 					if (active_editor) {
 						// Handle TipTap editor links
