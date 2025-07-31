@@ -150,7 +150,7 @@
 				{#if true}
 					<button
 						onclick={() => {
-							const base_path = pageState.url.pathname.includes('/sites/') ? `/admin/sites/${site?.id}` : '/admin/site'
+							const base_path = pageState.url.pathname.startsWith('/admin/sites/') ? `/admin/sites/${site?.id}` : '/admin/site'
 							goto(`${base_path}/page-type--${page_type?.id}?t=p`)
 						}}
 						class="footer-link"
