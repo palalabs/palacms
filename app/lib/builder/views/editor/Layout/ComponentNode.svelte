@@ -118,7 +118,7 @@
 					key: field.key,
 					value: entry.value,
 					type: field.type,
-					options: field.options
+					config: field.config
 				})
 			}
 		}

@@ -8,7 +8,7 @@
 
 	let { field, field_to_compare, comparable_fields, collapsed } = $props()
 
-	let condition = $derived(field.options.condition)
+	let condition = $derived(field.config?.condition)
 
 	const comparisons = [
 		{ icon: 'ph:equals-bold', label: 'Equals', value: '=' },
@@ -34,7 +34,7 @@
 				let default_value = ''
 				const selected_field = comparable_fields.find((f) => f.id === field_id)
 				if (selected_field.type === 'select') {
-					default_value = selected_field.options.options[0]?.value
+					default_value = selected_field.config?.options?.[0]?.value
 				} else {
 					default_value = selected_field.value
 				}
@@ -45,14 +45,14 @@
 				icon: $fieldTypes.find((t) => t.id === f.type).icon,
 				label: f.label,
 				value: f.id,
-				disabled: f.options.condition
+				disabled: f.config?.condition
 			}))}
 		/>
 		<!-- Comparison -->
 		<UI.Select on:input={({ detail: comparison }) => dispatch_update({ comparison })} value={condition.comparison} options={comparisons} />
 		<!-- Value -->
 		{#if field_to_compare?.type === 'select'}
-			<UI.Select fullwidth={true} value={condition.value} on:input={({ detail: value }) => dispatch_update({ value })} options={field_to_compare.options?.options || []} />
+			<UI.Select fullwidth={true} value={condition.value} on:input={({ detail: value }) => dispatch_update({ value })} options={field_to_compare.config?.options || []} />
 		{:else if field_to_compare?.type === 'switch'}
 			<UI.Toggle
 				toggled={condition.value}

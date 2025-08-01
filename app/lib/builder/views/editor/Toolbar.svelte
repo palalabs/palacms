@@ -230,9 +230,9 @@
 				<ToolbarButton id="redo" title="Redo" icon="material-symbols:redo" style="border: 0; font-size: 1.5rem;" on:click={redo_change} />
 			{/if} -->
 			<!-- $userRole === 'DEV' -->
-			<!-- {#if true}
+			{#if true}
 				<ToolbarButton icon="clarity:users-solid" on:click={() => (editing_collaborators = true)} />
-			{/if} -->
+			{/if}
 			{@render children?.()}
 			<!-- <LocaleSelector /> -->
 			<ToolbarButton type="primo" icon="entypo:publish" label="Publish" loading={publish.status !== 'standby'} on:click={() => publishing = true} />
