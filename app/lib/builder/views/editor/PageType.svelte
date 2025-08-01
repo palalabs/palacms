@@ -10,6 +10,7 @@
 	import BlockToolbar from './Layout/BlockToolbar-simple.svelte'
 	import DropIndicator from './Layout/DropIndicator.svelte'
 	import LockedOverlay from './Layout/LockedOverlay.svelte'
+	import CodeEditor from '$lib/builder/components/CodeEditor/CodeMirror.svelte'
 	import { locale } from '../../stores/app/misc.js'
 	import { dropTargetForElements } from '$lib/builder/libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
 	import { attachClosestEdge, extractClosestEdge } from '$lib/builder/libraries/pragmatic-drag-and-drop-hitbox/closest-edge.js'
@@ -29,6 +30,39 @@
 	const header_sections = $derived(page_type_sections.filter((s) => s.zone === 'header'))
 	const body_sections = $derived(page_type_sections.filter((s) => s.zone === 'body'))
 	const footer_sections = $derived(page_type_sections.filter((s) => s.zone === 'footer'))
+
+	// Page type head and foot editors
+	let head = $state('')
+	let foot = $state('')
+	let save_timeout = null
+
+	$effect.pre(() => {
+		if (page_type) {
+			head = page_type.head || ''
+			foot = page_type.foot || ''
+		}
+	})
+
+	async function save_page_type_code() {
+		if (!page_type) return
+		PageTypes.update(page_type.id, { head, foot })
+		await manager.commit()
+	}
+
+	// Auto-save with delay
+	function debounced_save() {
+		if (save_timeout) {
+			clearTimeout(save_timeout)
+		}
+		save_timeout = setTimeout(save_page_type_code, 1000) // 1 second delay
+	}
+
+	// Watch for changes to head and foot values
+	$effect(() => {
+		if (page_type && (head !== page_type.head || foot !== page_type.foot)) {
+			debounced_save()
+		}
+	})
 
 	// Check if page type is static (no symbols toggled)
 	// Note: This relationship call might need to be replaced with direct collection access if it causes issues
@@ -490,6 +524,12 @@
 
 <!-- Page Type Layout -->
 <main id="#Page" data-test bind:this={page_el} class:fadein={page_mounted} lang={$locale}>
+	<!-- Head Zone -->
+	<div class="zone-label">Head</div>
+	<section class="code-zone head-zone">
+		<CodeEditor mode="html" bind:value={head} on:save={save_page_type_code} />
+	</section>
+
 	<!-- Header Zone -->
 	<div class="zone-label">Header</div>
 	<section class="page-zone header-zone" data-zone="header" use:drag_zone={'header'}>
@@ -710,6 +750,12 @@
 			</div>
 		{/if}
 	</section>
+
+	<!-- Foot Zone -->
+	<div class="zone-label">Foot</div>
+	<section class="code-zone foot-zone">
+		<CodeEditor mode="html" bind:value={foot} on:save={save_page_type_code} />
+	</section>
 </main>
 
 <!-- {@html html_below || ''} -->
@@ -796,7 +842,7 @@
 	}
 
 	.empty-zone.main-body {
-		min-height: 60vh;
+		min-height: 45vh;
 		font-size: 1rem;
 	}
 
@@ -811,5 +857,20 @@
 
 	[data-section]:hover {
 		border-color: rgba(255, 255, 255, 0.1);
+	}
+
+	.code-zone {
+		position: relative;
+		border: 2px solid rgba(255, 255, 255, 0.2);
+		margin-bottom: 1rem;
+		background: var(--color-gray-900);
+	}
+
+	.code-zone.head-zone {
+		border-color: rgba(76, 175, 80, 0.3);
+	}
+
+	.code-zone.foot-zone {
+		border-color: rgba(255, 152, 0, 0.3);
 	}
 </style>

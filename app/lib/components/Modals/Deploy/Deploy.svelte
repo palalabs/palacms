@@ -11,7 +11,8 @@
 			await publish_fn()
 			stage = 'PUBLISHED'
 		} catch (err) {
-			error = err.message || 'Failed to publish site'
+			console.error('Publish error:', err)
+			error = err.message || err.toString() || 'Failed to publish site'
 			stage = 'ERROR'
 		}
 	}
