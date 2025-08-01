@@ -59,7 +59,6 @@
 			})
 			.sort((a, b) => (a.index || 0) - (b.index || 0))
 	)
-	$inspect({ fields, comparable_fields })
 
 	function validate_field_key(key) {
 		// replace dash and space with underscore
@@ -96,12 +95,6 @@
 	// enable condition if field has previous siblings without their own condition
 	let condition_enabled = $derived(comparable_fields.length > 0)
 
-	// Debug: temporarily log when condition_enabled changes
-	$effect(() => {
-		if (field.label) {
-			console.log(`Field "${field.label}": condition_enabled=${condition_enabled}, comparable=${comparable_fields.length}`)
-		}
-	})
 
 	let selected_field_type_id = $state<string>()
 	$effect.pre(() => {
@@ -171,15 +164,10 @@
 	}
 
 	function add_condition() {
-		console.log('add_condition called for field:', field.label)
-
 		const default_field = comparable_fields[0]
 		if (!default_field) {
-			console.log('No comparable fields available')
 			return
 		}
-
-		console.log('Creating condition with default field:', default_field.label)
 
 		onchange({
 			id: field.id,
