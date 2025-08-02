@@ -22,7 +22,7 @@
 		entity: Entity
 		fields: Field[]
 		entries: Entry[]
-		create_field: (parentId?: string) => void
+		create_field: (params: { parentId?: string; field?: Field }) => void
 		oninput: (values: Record<string, unknown>) => void
 		onchange: (details: { id: string; data: Partial<Field> }) => void
 		ondelete: (field_id: string) => void
@@ -40,31 +40,26 @@
 	}
 
 	function check_condition(field: Field) {
-		return true // TODO: Implement
+		if (!field.config?.condition) return true // has no condition
 
-		// if (!field.condition) return true // has no condition
+		const { field: field_to_check, value, comparison } = field.config.condition
 
-		// const { field: field_to_check, value, comparison } = field.condition
+		// Find the field that this condition depends on
+		const comparable_field = fields.find((f) => f.id === field_to_check)
+		if (!comparable_field) return true // field not found, show by default
 
-		// // TODO: ensure correct field (considering repeaters)
-		// const content_entry = get_direct_entries(entity_id, field_to_check)?.[0]
-		// if (!content_entry) {
-		// 	// comparable entry is a non-matching data field
-		// 	// TODO: add UI to conditional component that says "this field will show when data field is irrelevant"
-		// 	return true
-		// } else if (comparison === '=' && value === content_entry.value) {
-		// 	return true
-		// } else if (comparison === '!=' && value !== content_entry.valuerable_value) {
-		// 	return true
-		// } else if (typeof value === 'string' && is_regex(value)) {
-		// 	const regex = new RegExp(value.slice(1, -1))
-		// 	if (comparison === '=' && regex.test(content_entry.value)) {
-		// 		return true
-		// 	} else if (comparison === '!=' && !regex.test(content_entry.value)) {
-		// 		return true
-		// 	}
-		// }
-		// return false
+		// Get the entry for the comparable field
+		const content_entry = getDirectEntries(entity, comparable_field, entries)[0]
+		if (!content_entry) return true // no entry found, show by default
+
+		// Check the condition
+		if (comparison === '=' && value === content_entry.value) {
+			return true
+		} else if (comparison === '!=' && value !== content_entry.value) {
+			return true
+		}
+
+		return false // condition not met, hide field
 	}
 
 	// TABS
@@ -78,6 +73,42 @@
 			selected_tabs[field_id] = tab
 		})
 	}
+	// Field reordering function
+	function move_field(field: Field, direction: 'up' | 'down') {
+		// Get all top-level fields (same parent level as the field being moved)
+		const siblings = fields.filter((f) => (f.parent || '') === (field.parent || ''))
+
+		// Sort by index to get current order
+		const sorted_siblings = siblings.sort((a, b) => (a.index || 0) - (b.index || 0))
+
+		// Find current position
+		const current_index = sorted_siblings.findIndex((f) => f.id === field.id)
+
+		if (current_index === -1) return // Field not found
+
+		// Calculate new position
+		let new_index = current_index
+		if (direction === 'up' && current_index > 0) {
+			new_index = current_index - 1
+		} else if (direction === 'down' && current_index < sorted_siblings.length - 1) {
+			new_index = current_index + 1
+		} else {
+			return // Can't move further in that direction
+		}
+
+		// Swap the fields - use the other field's current index value
+		const field_to_swap = sorted_siblings[new_index]
+		const temp_index = field.index || current_index
+
+		// Update the indices by swapping them
+		onchange({ id: field.id, data: { index: field_to_swap.index || new_index } })
+		onchange({ id: field_to_swap.id, data: { index: temp_index } })
+	}
+
+	function duplicate_field(field: Field) {
+		// TODO: Implement field duplication
+	}
+
 	// TODO: Implement
 	// get(`active-tabs--${id}`).then((saved) => {
 	// 	if (saved) {
@@ -90,7 +121,7 @@
 </script>
 
 <div class="Fields">
-	{#each (fields || []).filter((f) => !f.parent || f.parent === '') as field (field.id)}
+	{#each (fields || []).filter((f) => !f.parent || f.parent === '').sort((a, b) => (a.index || 0) - (b.index || 0)) as field (field.id)}
 		{@const Field_Component = get_component(field)}
 		<!-- TODO: $userRole === 'DEV' -->
 		{@const active_tab = selected_tabs[field.id] || 'field'}
@@ -128,7 +159,13 @@
 							}
 						}}
 					>
-						<Icon icon={is_visible ? undefined : 'mdi:hide'} />
+						{#if !is_visible}
+							<Icon icon="mdi:hide" />
+						{:else}
+							{@const field_type = get_component(field)}
+							{@const field_type_config = $fieldTypes.find((ft) => ft.id === field.type)}
+							<Icon icon={field_type_config?.icon || 'fluent:form-48-filled'} />
+						{/if}
 						{#if field.type === 'repeater'}
 							<span>Entries</span>
 						{:else}
@@ -147,10 +184,10 @@
 							{onchange}
 							ondelete={() => ondelete(field.id)}
 							onduplicate={() => {
-								// TODO: Implement duplicate
+								duplicate_field(field)
 							}}
 							onmove={(direction) => {
-								// TODO: Implement move
+								move_field(field, direction)
 							}}
 						/>
 					</div>
@@ -205,7 +242,7 @@
 	{/each}
 	<!-- TODO: $userRole === 'DEV' -->
 	{#if true}
-		<button class="field-button" onclick={() => create_field()}>
+		<button class="field-button" onclick={() => create_field({})}>
 			<div class="icon">
 				<Icon icon="fa-solid:plus" />
 			</div>

@@ -41,8 +41,10 @@
 			<div class="options">
 				{#each options as option, i}
 					<DropdownMenu.Item
-						class="p-1 cursor-pointer rounded"
+						class="p-1 rounded {option.disabled ? 'text-gray-500 cursor-not-allowed' : 'cursor-pointer'}"
+						disabled={option.disabled}
 						onSelect={(e) => {
+							if (option.disabled) return
 							if (option.on_click) {
 								option.on_click(e)
 							} else {

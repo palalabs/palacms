@@ -60,20 +60,29 @@
 					entity={page_type}
 					{fields}
 					{entries}
-					create_field={async (parentId) => {
-						// Get the highest index for fields at this level
-						const siblingFields = fields?.filter((f) => f.parent === parentId) || []
-						const nextIndex = Math.max(...siblingFields.map((f) => f.index || 0), -1) + 1
+					create_field={async ({ parentId, field }) => {
+						if (field) {
+							// It's field duplication
+							const fieldData = {
+								...field,
+								page_type: page_type.id
+							}
+							return PageTypeFields.create(fieldData)
+						} else {
+							// It's new field creation
+							const siblingFields = fields?.filter((f) => f.parent === parentId) || []
+							const nextIndex = Math.max(...siblingFields.map((f) => f.index || 0), -1) + 1
 
-						return PageTypeFields.create({
-							type: 'text',
-							key: '',
-							label: '',
-							config: null,
-							page_type: page_type.id,
-							...(parentId ? { parent: parentId } : {}),
-							index: nextIndex
-						})
+							return PageTypeFields.create({
+								type: 'text',
+								key: '',
+								label: '',
+								config: null,
+								page_type: page_type.id,
+								...(parentId ? { parent: parentId } : {}),
+								index: nextIndex
+							})
+						}
 					}}
 					oninput={(values) => {
 						console.log('oninput')
