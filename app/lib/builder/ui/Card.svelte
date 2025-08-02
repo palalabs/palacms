@@ -87,7 +87,7 @@
 		}
 	}
 	.Card.minimal .card-body {
-		margin: 0;
+		margin: 0 !important;
 	}
 	button {
 		width: 100%;

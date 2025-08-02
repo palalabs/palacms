@@ -76,11 +76,11 @@ export default function scramble_ids({ site, page_types, symbols, pages, section
     if (new_field.parent) {
       new_field.parent = get_id(new_field.parent)
     }
-    if (new_field.options?.source) {
-      new_field.options.source = get_id(new_field.options.source)
+    if (new_field.config?.source) {
+      new_field.config.source = get_id(new_field.config.source)
     }
-    if (new_field.options?.page_type) {
-      new_field.options.page_type = get_id(new_field.options.page_type)
+    if (new_field.config?.page_type) {
+      new_field.config.page_type = get_id(new_field.config.page_type)
     }
     if (new_field.source) {
       new_field.source = get_id(new_field.source)

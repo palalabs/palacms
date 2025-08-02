@@ -70,7 +70,7 @@
 		})
 	}
 
-	let commit_task = $state<NodeJS.Timeout>()
+	let commit_task
 </script>
 
 <div class="sidebar primo-reset">
@@ -83,7 +83,7 @@
 				</Tabs.Trigger>
 				<Tabs.Trigger value="content" class="flex-1 flex gap-1">
 					<SquarePen class="w-3" />
-					<span class="text-xs">Content</span>
+					<span class="text-xs">Fields</span>
 				</Tabs.Trigger>
 			</Tabs.List>
 			<Tabs.Content value="blocks">
@@ -109,7 +109,7 @@
 					<button
 						onclick={() => {
 							const base_path = pageState.url.pathname.includes('/sites/') ? `/admin/sites/${site?.id}` : '/admin/site'
-							goto(`${base_path}/page-type--${page_type?.id}?t=b`)
+							goto(`${base_path}/page-type--${page_type?.id}?tab=blocks`)
 						}}
 						class="footer-link"
 					>
@@ -121,6 +121,7 @@
 				{#if page && page_type_fields && page_entries}
 					<div class="page-type-fields">
 						<Content
+							minimal={true}
 							entity={page}
 							fields={page_type_fields}
 							entries={page_entries}
@@ -147,7 +148,15 @@
 				{/if}
 				<!-- $userRole === 'DEV' -->
 				{#if true}
-					<button onclick={() => goto(`/${site?.id}/page-type--${page_type?.id}?t=p`)} class="footer-link">Manage Fields</button>
+					<button
+						onclick={() => {
+							const base_path = pageState.url.pathname.startsWith('/admin/sites/') ? `/admin/sites/${site?.id}` : '/admin/site'
+							goto(`${base_path}/page-type--${page_type?.id}?tab=fields`)
+						}}
+						class="footer-link"
+					>
+						Manage Fields
+					</button>
 				{/if}
 			</Tabs.Content>
 		</Tabs.Root>
@@ -155,6 +164,7 @@
 		{#if page && page_type_fields && page_entries}
 			<div class="p-4 page-type-fields">
 				<Content
+					minimal={true}
 					entity={page}
 					fields={page_type_fields}
 					entries={page_entries}
@@ -184,7 +194,7 @@
 			<button
 				onclick={() => {
 					const base_path = pageState.url.pathname.includes('/sites/') ? `/admin/sites/${site?.id}` : '/admin/site'
-					goto(`${base_path}/page-type--${page_type?.id}?t=p`)
+					goto(`${base_path}/page-type--${page_type?.id}?tab=fields`)
 				}}
 				class="footer-link mb-2 mr-2"
 			>

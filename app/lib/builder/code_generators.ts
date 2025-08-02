@@ -65,10 +65,15 @@ export async function page_html({
 	locale?: (typeof locales)[number]
 	no_js?: boolean
 }) {
+	const site_content = getContent(site, site_fields, site_entries)
+	const page_type_content = getContent(page_type, page_type_fields, page_type_entries)
+	
+	// Flatten the content for template variables (extract from locale structure)
 	const site_data = {
-		...getContent(site, site_fields, site_entries),
-		...getContent(page_type, page_type_fields, page_type_entries)
+		...(site_content[locale] || {}),
+		...(page_type_content[locale] || {})
 	}
+	
 	const head = {
 		code: site.head + page_type.head,
 		data: site_data

@@ -363,7 +363,7 @@ export function convertFields(fields = [], fn = () => {}) {
 			label: field.label,
 			type: field.type,
 			fields: convertFields(field.fields),
-			options: field.options || {},
+			config: field.config || {},
 			is_static: field.is_static || false
 		})
 	})

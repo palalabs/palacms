@@ -29,14 +29,23 @@ export const usePublishSite = (site_id?: string) => {
 				await self.collection('pages').update(page.id, {
 					compiled_html: new File([html], 'index.html')
 				})
+			}).catch(error => {
+				console.error('Page compilation error:', error)
+				throw error // Re-throw to be caught by Promise.all
 			})
 			promises.push(promise)
 		}
 
-		Promise.all(promises).finally(() => {
-			status = 'standby'
-			done?.()
-		})
+		Promise.all(promises)
+			.then(() => {
+				status = 'standby'
+				done?.()
+			})
+			.catch(error => {
+				console.error('Publish failed:', error)
+				status = 'standby'
+				done?.(error) // Pass error to the done callback
+			})
 	})
 
 	return new (class {
@@ -44,8 +53,14 @@ export const usePublishSite = (site_id?: string) => {
 
 		async publish() {
 			status = 'loading'
-			return new Promise<void>((resolve) => {
-				done = resolve
+			return new Promise<void>((resolve, reject) => {
+				done = (error?: Error) => {
+					if (error) {
+						reject(error)
+					} else {
+						resolve()
+					}
+				}
 			})
 		}
 	})()

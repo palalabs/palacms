@@ -19,6 +19,7 @@
 	import SitePages from '$lib/builder/views/modal/SitePages/SitePages.svelte'
 	import PageTypeModal from '$lib/builder/views/modal/PageTypeModal/PageTypeModal.svelte'
 	import Collaboration from '$lib/builder/views/modal/Collaboration.svelte'
+	import Deploy from '$lib/components/Modals/Deploy/Deploy.svelte'
 	import { usePublishSite } from '$lib/Publish.svelte'
 	import type { Snippet } from 'svelte'
 	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
@@ -69,11 +70,15 @@
 	let editing_pages = $state(false)
 	let editing_page_types = $state(false)
 	let editing_collaborators = $state(false)
+	let publishing = $state(false)
+	let publish_stage = $state('INITIAL')
 
 	// Close all dialogs on navigation
 	onNavigate(() => {
 		editing_pages = false
 		editing_page_types = false
+		publishing = false
+		publish_stage = 'INITIAL'
 	})
 
 	// Hotkey event listeners
@@ -122,6 +127,21 @@
 <Dialog.Root bind:open={editing_collaborators}>
 	<Dialog.Content class="z-[999] max-w-[600px] flex flex-col p-4">
 		<Collaboration />
+	</Dialog.Content>
+</Dialog.Root>
+
+<Dialog.Root bind:open={publishing}>
+	<Dialog.Content class="z-[999] max-w-[500px] flex flex-col p-0">
+		<Deploy 
+			bind:stage={publish_stage}
+			publish_fn={publish.publish}
+			loading={publish.status !== 'standby'}
+			site_host={resolved_site?.host}
+			onClose={() => {
+				publishing = false
+				publish_stage = 'INITIAL'
+			}}
+		/>
 	</Dialog.Content>
 </Dialog.Root>
 
@@ -210,12 +230,12 @@
 				<ToolbarButton id="redo" title="Redo" icon="material-symbols:redo" style="border: 0; font-size: 1.5rem;" on:click={redo_change} />
 			{/if} -->
 			<!-- $userRole === 'DEV' -->
-			<!-- {#if true}
+			{#if true}
 				<ToolbarButton icon="clarity:users-solid" on:click={() => (editing_collaborators = true)} />
-			{/if} -->
+			{/if}
 			{@render children?.()}
 			<!-- <LocaleSelector /> -->
-			<ToolbarButton type="primo" icon="entypo:publish" label="Publish" loading={publish.status !== 'standby'} on:click={publish.publish} />
+			<ToolbarButton type="primo" icon="entypo:publish" label="Publish" loading={publish.status !== 'standby'} on:click={() => publishing = true} />
 		</div>
 	</div>
 </nav>

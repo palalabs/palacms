@@ -8,9 +8,8 @@
 	import Icon from '@iconify/svelte'
 	import BlockEditor from '$lib/builder/views/modal/BlockEditor.svelte'
 	import BlockPicker from '$lib/builder/views/modal/BlockPicker.svelte'
-	import PageEditor from '$lib/builder/views/modal/PageEditor.svelte'
 	import Sidebar_Symbol from './Sidebar_Symbol.svelte'
-	import Content from '$lib/builder/components/Content.svelte'
+	import Fields from '$lib/builder/components/Fields/FieldsContent.svelte'
 	import { flip } from 'svelte/animate'
 	import { dropTargetForElements } from '../../libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
 	import { attachClosestEdge, extractClosestEdge } from '../../libraries/pragmatic-drag-and-drop-hitbox/closest-edge.js'
@@ -32,11 +31,11 @@
 	const page_type_symbols = $derived(page_type?.symbols() ?? [])
 	const site_symbols = $derived(site?.symbols() ?? [])
 
-	// get the query param to set the tab when navigating from page (i.e. 'Edit Fields')
-	let active_tab = $state(page.url.searchParams.get('t') === 'p' ? 'CONTENT' : 'BLOCKS')
+	// get the query param to set the tab when navigating from page (i.e. 'Manage Fields')
+	let active_tab = $state(page.url.searchParams.get('tab') === 'fields' ? 'CONTENT' : 'BLOCKS')
 	if (browser) {
 		const url = new URL(page.url)
-		url.searchParams.delete('t')
+		url.searchParams.delete('tab')
 		goto(url, { replaceState: true })
 	}
 
@@ -121,7 +120,6 @@
 	let editing_block = $state(false)
 	let creating_block = $state(false)
 	let adding_block = $state(false)
-	let editing_page = $state(false)
 	let commit_task = $state<NodeJS.Timeout>()
 </script>
 
@@ -192,21 +190,9 @@
 	</Dialog.Content>
 </Dialog.Root>
 
-<Dialog.Root
-	bind:open={editing_page}
-	onOpenChange={(open) => {
-		if (!open) {
-			manager.discard()
-		}
-	}}
->
-	<Dialog.Content class="z-[999] max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4">
-		<PageEditor onClose={() => (editing_page = false)} />
-	</Dialog.Content>
-</Dialog.Root>
 
 <div class="sidebar primo-reset">
-	<Tabs.Root value="blocks" class="p-2">
+	<Tabs.Root value={active_tab === 'CONTENT' ? 'content' : 'blocks'} class="p-2">
 		<Tabs.List class="w-full mb-2">
 			<Tabs.Trigger value="blocks" class="flex-1 flex gap-1">
 				<Cuboid class="w-3" />
@@ -291,19 +277,21 @@
 		</Tabs.Content>
 		<Tabs.Content value="content" class="px-1">
 			<div class="page-type-fields">
-				<!-- $userRole === 'DEV' -->
-				{#if true}
-					<!-- <button class="primo--link" style="margin-bottom: 1rem" onclick={() => modal.show('PAGE_EDITOR')}> -->
-					<button class="primo--link" style="margin-bottom: 1rem" onclick={() => (editing_page = true)}>
-						<Icon icon="mdi:code" />
-						<span>Edit Page Type</span>
-					</button>
-				{/if}
 				{#if page_type}
-					<Content
+					<Fields
 						entity={page_type}
 						{fields}
 						{entries}
+						create_field={async (parentId) => {
+							return PageTypeFields.create({
+								type: 'text',
+								key: '',
+								label: '',
+								config: null,
+								page_type: page_type.id,
+								parent: parentId || ''
+							})
+						}}
 						oninput={(values) => {
 							for (const [key, value] of Object.entries(values)) {
 								const field = fields?.find((field) => field.key === key)
@@ -321,6 +309,21 @@
 
 							clearTimeout(commit_task)
 							commit_task = setTimeout(() => manager.commit(), 500)
+						}}
+						onchange={({ id, data }) => {
+							PageTypeFields.update(id, data)
+						}}
+						ondelete={(field_id) => {
+							// PocketBase cascade deletion will automatically clean up all associated entries
+							PageTypeFields.delete(field_id)
+						}}
+						onadd={({ parent, index, subfields }) => {
+							// Create an entry for the repeater item
+							PageTypeEntries.create({
+								field: parent,
+								locale: 'en',
+								value: {}
+							})
 						}}
 					/>
 				{/if}
