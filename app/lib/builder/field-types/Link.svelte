@@ -7,8 +7,9 @@
 	import { page } from '$app/state'
 	import { Sites } from '$lib/pocketbase/collections'
 	import { type Entity } from '$lib/pocketbase/content'
+	import type { FieldValueHandler } from '../components/Fields/FieldsContent.svelte'
 
-	const { entity, field, entry: passedEntry, onchange }: { entity: Entity; field: LinkField; entry?: any; onchange: (value: any) => void } = $props()
+	const { entity, field, entry: passedEntry, onchange }: { entity: Entity; field: LinkField; entry?: any; onchange: FieldValueHandler } = $props()
 
 	const default_value = {
 		label: '',
@@ -41,7 +42,7 @@
 		<UI.TextInput
 			label={field.label}
 			oninput={(text) => {
-				onchange({ ...entry.value, label: text })
+				onchange({ [field.key]: { 0: { value: { ...entry.value, label: text } } } })
 			}}
 			value={entry.value.label}
 			id="page-label"
@@ -66,14 +67,14 @@
 						const page = selectable_pages.find((p) => p.id === pageId)
 						if (page) {
 							selected_page = page
-							onchange({ ...entry.value, page: page.id, url: get_page_url(page) })
+							onchange({ [field.key]: { 0: { value: { ...entry.value, page: page.id, url: get_page_url(page) } } } })
 						}
 					}}
 				/>
 			{:else}
 				<UI.TextInput
 					oninput={(text) => {
-						onchange({ ...entry.value, url: text })
+						onchange({ [field.key]: { 0: { value: { ...entry.value, url: text } } } })
 					}}
 					value={entry.value.url}
 					type="url"

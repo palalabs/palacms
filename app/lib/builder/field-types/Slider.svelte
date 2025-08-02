@@ -2,9 +2,19 @@
 	import type { Entity } from '$lib/pocketbase/content'
 	import type { Field } from '$lib/common/models/Field'
 	import type { Entry } from '$lib/common/models/Entry'
+	import type { FieldValueHandler } from '../components/Fields/FieldsContent.svelte'
 
-	let { field, entry, onchange }: { entity: Omit<Entity, 'id'>; field: Omit<Field, 'id'>; entry?: Omit<Entry, 'id'>; onchange: (value: string) => void } = $props()
-	
+	let {
+		field,
+		entry,
+		onchange
+	}: {
+		entity: Entity
+		field: Field
+		entry?: Entry
+		onchange: FieldValueHandler
+	} = $props()
+
 	const value = $derived(entry?.value ?? '')
 </script>
 
@@ -12,7 +22,7 @@
 	<p class="label">{field.label}</p>
 	<div class="container">
 		<p class="value">{value}</p>
-		<input oninput={({ target }) => onchange(target.value)} class="input" {value} type="range" />
+		<input oninput={({ target }) => onchange({ [field.key]: { 0: { value: target.value } } })} class="input" {value} type="range" />
 	</div>
 </div>
 

@@ -5,9 +5,21 @@
 	import type { Entity } from '$lib/pocketbase/content'
 	import type { Field } from '$lib/common/models/Field'
 	import type { Entry } from '$lib/common/models/Entry'
+	import type { FieldValueHandler } from '../components/Fields/FieldsContent.svelte'
 
-	let { field, entry, onchange, search_query = '' }: { entity: Omit<Entity, 'id'>; field: Omit<Field, 'id'>; entry?: Omit<Entry, 'id'>; onchange: (value: string) => void; search_query?: string } = $props()
-	
+	let {
+		field,
+		entry,
+		onchange,
+		search_query = ''
+	}: {
+		entity: Entity
+		field: Field
+		entry?: Entry
+		onchange: FieldValueHandler
+		search_query?: string
+	} = $props()
+
 	const value = $derived(entry?.value ?? '')
 
 	let searched = $state(false)
@@ -15,7 +27,7 @@
 	$effect(() => {
 		if (!getIcon(value) && !value.startsWith('<svg')) {
 			// reset value when invalid (i.e. when switching field type)
-			onchange('')
+			onchange({ [field.key]: { 0: { value: '' } } })
 		} else if (getIcon(value)) {
 			// convert icon-id to icon-svg
 			select_icon(value)
@@ -45,7 +57,7 @@
 	async function select_icon(icon) {
 		// delete icon
 		if (!icon) {
-			onchange('')
+			onchange({ [field.key]: { 0: { value: '' } } })
 			return
 		}
 
@@ -54,7 +66,7 @@
 		if (icon_data) {
 			const { attributes } = buildIcon(icon_data)
 			const svg = `<svg xmlns="http://www.w3.org/2000/svg" data-key="${field.key}" data-icon="${icon}" aria-hidden="true" role="img" height="${attributes.height}" width="${attributes.width}" viewBox="${attributes.viewBox}" preserveAspectRatio="${attributes.preserveAspectRatio}">${icon_data.body}</svg>`
-			onchange(svg)
+			onchange({ [field.key]: { value: svg } })
 		}
 	}
 </script>

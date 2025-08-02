@@ -1,74 +1,16 @@
 <script lang="ts">
-	import * as _ from 'lodash-es'
-	import Card from '../ui/Card.svelte'
-	import { fieldTypes } from '../stores/app'
 	import type { Field } from '$lib/common/models/Field'
-	import { getDirectEntries, type Entity } from '$lib/pocketbase/content'
+	import { type Entity } from '$lib/pocketbase/content'
 	import type { Entry } from '$lib/common/models/Entry'
+	import type { FieldValueHandler } from './Fields/FieldsContent.svelte'
+	import EntryContent from './Fields/EntryContent.svelte'
 
-	const { minimal, entity, fields, entries, oninput }: { minimal: boolean; entity: Entity; entries: Entry[]; fields: Field[]; oninput: (values: Record<string, unknown>) => void } = $props()
-
-	function check_condition(field: Field) {
-		// TODO: Implement
-		return true
-		// if (!field.condition) return true // has no condition
-
-		// const { field: field_to_compare, value, comparison } = field.condition
-		// const entry = getResolvedEntries(entity_id, field)[0]
-		// if (typeof value === 'string' && is_regex(value)) {
-		// 	const regex = new RegExp(value.slice(1, -1))
-		// 	if (comparison === '=' && regex.test(entry.value)) {
-		// 		return true
-		// 	} else if (comparison === '!=' && !regex.test(entry.value)) {
-		// 		return true
-		// 	}
-		// } else if (comparison === '=' && value === entry.value) {
-		// 	return true
-		// } else if (comparison === '!=' && value !== entry.value) {
-		// 	return true
-		// }
-		// return false
-	}
+	const { entity, fields, entries, oninput }: { entity: Entity; entries: Entry[]; fields: Field[]; oninput: FieldValueHandler } = $props()
 </script>
 
 <div class="Content">
-	{#each fields as field}
-		{@const field_type = $fieldTypes.find((f) => f.id === field.type)}
-		<!-- weird race condition bug, fields is dirty when switching pages w/ sidebar open -->
-		{@const Field_Component = field_type?.component}
-		{@const is_visible = check_condition(field)}
-		{@const is_valid = (field.key || field.type === 'info') && Field_Component}
-		{@const has_child_fields = field.type === 'repeater' || field.type === 'group'}
-		{@const content_entry = getDirectEntries(entity, field, entries)[0]}
-		{#if is_valid && is_visible}
-			<Card {minimal} title={has_child_fields ? field.label : null} icon={field_type?.icon}>
-				<div class="field-item" id="field-{field.key}" class:repeater={field.key === 'repeater'}>
-					<Field_Component
-						{entity}
-						field={{ ...field, label: field.label }}
-						entry={content_entry}
-						onchange={(value) => {
-							oninput({ [field.key]: value })
-						}}
-					/>
-				</div>
-			</Card>
-		{:else if is_valid && is_visible}
-			<Card {minimal} title={has_child_fields ? field.label : null} icon={field_type?.icon}>
-				<div class="field-item" id="field-{field.key}" class:repeater={field.key === 'repeater'}>
-					<Field_Component
-						{entity}
-						{field}
-						entry={content_entry}
-						onchange={(value) => {
-							oninput({ [field.key]: value })
-						}}
-					/>
-				</div>
-			</Card>
-		{:else if is_visible}
-			<p class="empty-description">Field requires a key</p>
-		{/if}
+	{#each fields as field (field.id)}
+		<EntryContent {entity} {field} {fields} {entries} level={0} onchange={oninput} />
 	{:else}
 		<p class="empty-description">
 			<!-- $userRole === 'DEV' -->

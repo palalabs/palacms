@@ -47,13 +47,7 @@ export const LibrarySymbols = createCollectionMapping('library_symbols', Library
 			return LibrarySymbolFields.from(this.collection.instance).list({ filter: `symbol = "${this.id}"` })
 		},
 		entries() {
-			const fields = LibrarySymbolFields.from(this.collection.instance).list({ filter: `symbol = "${this.id}"` })
-			if (!fields) return undefined
-
-			const entryLists = fields.map((field) => field.entries())
-			if (entryLists.some((list) => list === undefined)) return undefined
-
-			return entryLists.filter((list) => list !== undefined).flat()
+			return LibrarySymbolEntries.from(this.collection.instance).list({ filter: `field.symbol = "${this.id}"` })
 		}
 	}
 })
@@ -87,13 +81,7 @@ export const Sites = createCollectionMapping('sites', Site, manager, {
 			return SiteFields.from(this.collection.instance).list({ filter: `site = "${this.id}"` })
 		},
 		entries() {
-			const fields = SiteFields.from(this.collection.instance).list({ filter: `site = "${this.id}"` })
-			if (!fields) return undefined
-
-			const entryLists = fields.map((field) => field.entries())
-			if (entryLists.some((list) => list === undefined)) return undefined
-
-			return entryLists.filter((list) => list !== undefined).flat()
+			return SiteEntries.from(this.collection.instance).list({ filter: `field.site = "${this.id}"` })
 		},
 		page_types() {
 			return PageTypes.from(this.collection.instance).list({ filter: `site = "${this.id}"` })
@@ -125,13 +113,7 @@ export const SiteSymbols = createCollectionMapping('site_symbols', SiteSymbol, m
 			return SiteSymbolFields.from(this.collection.instance).list({ filter: `symbol = "${this.id}"` })
 		},
 		entries() {
-			const fields = SiteSymbolFields.from(this.collection.instance).list({ filter: `symbol = "${this.id}"` })
-			if (!fields) return undefined
-
-			const entryLists = fields.map((field) => field.entries())
-			if (entryLists.some((list) => list === undefined)) return undefined
-
-			return entryLists.filter((list) => list !== undefined).flat()
+			return SiteSymbolEntries.from(this.collection.instance).list({ filter: `field.symbol = "${this.id}"` })
 		}
 	}
 })
@@ -160,13 +142,7 @@ export const PageTypes = createCollectionMapping('page_types', PageType, manager
 			return PageTypeFields.from(this.collection.instance).list({ filter: `page_type = "${this.id}"` })
 		},
 		entries() {
-			const fields = PageTypeFields.from(this.collection.instance).list({ filter: `page_type = "${this.id}"` })
-			if (!fields) return undefined
-
-			const entryLists = fields.map((field) => field.entries())
-			if (entryLists.some((list) => list === undefined)) return undefined
-
-			return entryLists.filter((list) => list !== undefined).flat()
+			return PageTypeEntries.from(this.collection.instance).list({ filter: `field.page_type = "${this.id}"` })
 		}
 	}
 })

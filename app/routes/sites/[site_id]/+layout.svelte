@@ -16,16 +16,10 @@
 
 	const site_id = $derived(page.params.site_id)
 	const site = $derived(Sites.one(site_id))
-	const page_slug = $derived(page.params.page || '')
-	const current_page = $derived(() => {
-		if (!site) return undefined
-		if (!page_slug) return site.homepage()
-		return Pages.list({ filter: `site = "${site.id}" && slug = "${page_slug}"` })?.[0]
-	})
 </script>
 
-{#if site && current_page}
-	<Primo {site} currentPage={current_page}>
+{#if site}
+	<Primo {site}>
 		{@render children?.()}
 	</Primo>
 {:else}

@@ -9,11 +9,11 @@
 	import BlockToolbar from './Layout/BlockToolbar.svelte'
 	import LockedOverlay from './Layout/LockedOverlay.svelte'
 	import DropIndicator from './Layout/DropIndicator.svelte'
-	import { locale, locked_blocks, page_loaded, dragging_symbol } from '$lib/builder/stores/app/misc'
+	import { locale, locked_blocks, dragging_symbol } from '$lib/builder/stores/app/misc'
 	import { dropTargetForElements } from '$lib/builder/libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
 	import { attachClosestEdge, extractClosestEdge } from '$lib/builder/libraries/pragmatic-drag-and-drop-hitbox/closest-edge.js'
 	import { beforeNavigate } from '$app/navigation'
-	import { Pages, Sites, SiteSymbols, PageSections, PageTypes, PageTypeSections, PageSectionEntries, PageTypeSectionEntries, SiteSymbolFields, manager } from '$lib/pocketbase/collections'
+	import { Pages, Sites, SiteSymbols, PageSections, PageTypes, PageSectionEntries, manager } from '$lib/pocketbase/collections'
 	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
 
 	let { page }: { page: ObjectOf<typeof Pages> } = $props()
@@ -74,7 +74,8 @@
 					section: copied_section.id,
 					field: entry.field,
 					locale: entry.locale,
-					value: entry.value
+					value: entry.value,
+					index: entry.index
 				})
 			}
 			copied_sections.push(copied_section)
