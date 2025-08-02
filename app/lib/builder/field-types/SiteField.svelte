@@ -1,11 +1,26 @@
 <script lang="ts">
-	import type { SiteFieldField } from '$lib/common/models/fields/SiteFieldField'
 	import { fieldTypes } from '../stores/app'
-	import { SiteFields, SiteEntries } from '$lib/pocketbase/collections'
+	import { SiteFields, SiteEntries, Sites } from '$lib/pocketbase/collections'
 	import type { Entry } from '$lib/common/models/Entry'
-	import type { Entity } from '$lib/pocketbase/content'
+	import { getDirectEntries, type Entity } from '$lib/pocketbase/content'
+	import { setFieldEntries, type FieldValueHandler, type FieldValueMap } from '../components/Fields/FieldsContent.svelte'
+	import type { Field } from '$lib/common/models/Field'
+	import { page } from '$app/state'
 
-	const { entity, field, entry, onchange }: { entity: Entity; field: SiteFieldField; entry?: Entry; onchange?: (value: any) => void } = $props()
+	const {
+		entity,
+		field,
+		onchange,
+		level
+	}: {
+		entity: Entity
+		field: Field
+		entry?: Entry
+		fields: Field[]
+		entries: Entry[]
+		onchange: FieldValueHandler
+		level: number
+	} = $props()
 
 	// Resolve the actual site field being referenced
 	const resolvedField = $derived.by(() => {
@@ -19,25 +34,21 @@
 		return $fieldTypes.find((ft) => ft.id === resolvedField.type)
 	})
 
+	const host = $derived(page.url.host)
+	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
+	const fields = $derived(site?.fields() ?? [])
+	const entries = $derived(site?.entries() ?? [])
+	const entry = $derived(resolvedField && getDirectEntries(entity, resolvedField, entries)[0])
+
 	// Handle changes to the site field by updating the entry
-	function handleFieldChange(value: any) {
-		if (!entry) {
-			throw new Error(`No entry found for site field`)
-		}
-
-		// Update the entry directly
-		SiteEntries.update(entry.id, { value })
-
-		// Call parent onchange if provided
-		if (onchange) {
-			onchange(value)
-		}
+	function handleFieldChange(values: FieldValueMap) {
+		setFieldEntries({ fields, entries, updateEntry: SiteEntries.update, createEntry: SiteEntries.create, values })
 	}
 </script>
 
 {#if resolvedField && fieldType && entry}
 	{@const SvelteComponent = fieldType.component}
-	<SvelteComponent {entity} field={{ ...resolvedField, label: field.label }} {entry} onchange={handleFieldChange} />
+	<SvelteComponent {entity} field={{ ...resolvedField, label: field.label }} {entry} {fields} {entries} onchange={handleFieldChange} {level} />
 {:else if !field.config?.field}
 	<span>Please configure this field to select a site field.</span>
 {:else if !entry}

@@ -3,12 +3,25 @@
 	import type { Entity } from '$lib/pocketbase/content'
 	import type { Field } from '$lib/common/models/Field'
 	import type { Entry } from '$lib/common/models/Entry'
+	import type { FieldValueHandler } from '../components/Fields/FieldsContent.svelte'
 
-	let { field, entry, onchange }: { entity: Omit<Entity, 'id'>; field: Omit<Field, 'id'>; entry?: Omit<Entry, 'id'>; onchange: (value: boolean) => void } = $props()
+	let {
+		field,
+		entry,
+		onchange
+	}: {
+		entity: Entity
+		field: Field
+		entry?: Entry
+		fields: Field[]
+		entries: Entry[]
+		onchange: FieldValueHandler
+		level: number
+	} = $props()
 </script>
 
 <div>
-	<UI.Switch label={field.label} {field} value={entry?.value ?? false} oninput={(value) => onchange(value)} />
+	<UI.Switch label={field.label} {field} value={entry?.value ?? false} oninput={(value) => onchange({ [field.key]: { 0: { value } } })} />
 </div>
 
 <style lang="postcss">

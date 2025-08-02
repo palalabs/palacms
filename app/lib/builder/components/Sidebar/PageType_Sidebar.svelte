@@ -21,6 +21,7 @@
 	import DropZone from '$lib/components/DropZone.svelte'
 	import { exportSymbol, importSiteSymbol } from '$lib/builder/utils/symbolImportExport'
 	import { Button } from '$lib/components/ui/button'
+	import { setFieldEntries } from '../Fields/FieldsContent.svelte'
 
 	const host = $derived(page.url.host)
 	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
@@ -293,20 +294,13 @@
 							})
 						}}
 						oninput={(values) => {
-							for (const [key, value] of Object.entries(values)) {
-								const field = fields?.find((field) => field.key === key)
-								if (!field) {
-									continue
-								}
-
-								const entry = entries?.find((entry) => entry.field === field?.id)
-								if (entry) {
-									PageTypeEntries.update(entry.id, { value })
-								} else {
-									PageTypeEntries.create({ field: field.id, locale: 'en', value })
-								}
-							}
-
+							setFieldEntries({
+								fields,
+								entries,
+								updateEntry: PageTypeEntries.update,
+								createEntry: PageTypeEntries.create,
+								values
+							})
 							clearTimeout(commit_task)
 							commit_task = setTimeout(() => manager.commit(), 500)
 						}}

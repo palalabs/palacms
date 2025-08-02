@@ -1,0 +1,93 @@
+<script lang="ts">
+	import Card from '$lib/builder/ui/Card.svelte'
+	import type { Entry } from '$lib/common/models/Entry'
+	import type { Field } from '$lib/common/models/Field'
+	import { type Entity, getResolvedEntries } from '$lib/pocketbase/content'
+	import type { FieldValueHandler } from './FieldsContent.svelte'
+	import { fieldTypes } from '../../stores/app/index.js'
+	import type { Component } from 'svelte'
+	import Icon from '@iconify/svelte'
+
+	let {
+		entity,
+		parent,
+		field,
+		fields,
+		entries,
+		level,
+		onchange
+	}: {
+		entity: Entity
+		parent?: Entry
+		field: Field
+		fields: Field[]
+		entries: Entry[]
+		level: number
+		onchange: FieldValueHandler
+	} = $props()
+
+	const field_type = $derived($fieldTypes.find((ft) => ft.id === field.type))
+	const Field_Component = $derived(
+		field_type?.component as
+			| Component<{
+					entity: Entity
+					field: Field
+					entry?: Entry
+					fields: Field[]
+					entries: Entry[]
+					onchange: FieldValueHandler
+					level: number
+			  }>
+			| undefined
+	)
+
+	// TODO: Implement conditions
+	const is_visible = true
+</script>
+
+{#if !Field_Component}
+	<!-- TODO: Improve the error message -->
+	<span>Field type for the field is not found!</span>
+{:else if is_visible}
+	{@const [entry] = getResolvedEntries(entity, field, entries).filter((entry) => (parent ? entry.parent === parent.id : !entry.parent))}
+	{@const title = ['repeater', 'group'].includes(field.type) ? field.label : null}
+	{@const icon = undefined}
+	{#if field.type === 'site-field' || field.type === 'page-field'}
+		<div class="dynamic-header">
+			{#if field.type === 'site-field'}
+				<Icon icon="gg:website" />
+				<span>Site Content</span>
+			{:else if field.type === 'page-field'}
+				<!-- {@const content_entry = getDirectEntries(entity, field, entries)[0]} -->
+				<!-- <Icon icon={content_entry?.value.page.page_type.icon} /> -->
+				<span>Page Content</span>
+			{/if}
+		</div>
+	{/if}
+	<Card {title} {icon}>
+		<Field_Component {entity} {field} {fields} {entries} {entry} {level} {onchange} />
+	</Card>
+	<!-- TODO: $userRole === 'DEV' -->
+{:else if !is_visible}
+	<div class="hidden-field">
+		<Icon icon="mdi:hidden" />
+		<span>This field will be hidden from content editors</span>
+	</div>
+{/if}
+
+<style>
+	.dynamic-header {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.25rem;
+		border-bottom: 1px solid var(--color-gray-9);
+		padding-block: 0.5rem;
+		font-size: 0.75rem;
+	}
+	.hidden-field {
+		padding: 1rem;
+		color: var(--color-gray-2);
+		font-size: 0.875rem;
+	}
+</style>

@@ -4,15 +4,26 @@
 	import TextInput from '../ui/TextInput.svelte'
 	import Spinner from '../ui/Spinner.svelte'
 	import imageCompression from 'browser-image-compression'
-	import type { ImageField } from '$lib/common/models/fields/ImageField'
-	import { getDirectEntries, type Entity } from '$lib/pocketbase/content'
+	import type { Entity } from '$lib/pocketbase/content'
+	import type { Field } from '$lib/common/models/Field'
+	import type { Entry } from '$lib/common/models/Entry'
+	import type { FieldValueHandler } from '../components/Fields/FieldsContent.svelte'
 
 	const default_value = {
 		alt: '',
 		url: ''
 	}
 
-	const { entity, field, entry: passedEntry, onchange }: { entity: Entity; field: ImageField; entry?: any; onchange: (value: any) => void } = $props()
+	const {
+		field,
+		entry: passedEntry,
+		onchange
+	}: {
+		entity: Entity
+		field: Field
+		entry?: Entry
+		onchange: FieldValueHandler
+	} = $props()
 	const entry = $derived(passedEntry || { value: default_value })
 
 	async function upload_image(image) {
@@ -84,12 +95,12 @@
 			{/if}
 		</div>
 		<div class="inputs">
-			<TextInput value={entry.value.alt} label="Description" oninput={(alt) => onchange({ ...entry.value, alt })} />
+			<TextInput value={entry.value.alt} label="Description" oninput={(alt) => onchange({ [field.key]: { 0: { value: { ...entry.value, alt } } } })} />
 			<TextInput
 				value={entry.value.url}
 				label="URL"
 				oninput={(value) => {
-					onchange({ ...entry.value, url: value })
+					onchange({ [field.key]: { 0: { value: { ...entry.value, url: value } } } })
 				}}
 			/>
 		</div>

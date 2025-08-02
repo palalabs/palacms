@@ -9,7 +9,7 @@
 	import { PaneGroup, Pane, PaneResizer } from 'paneforge'
 	import FullCodeEditor from './SectionEditor/FullCodeEditor.svelte'
 	import ComponentPreview, { has_error } from '$lib/builder/components/ComponentPreview.svelte'
-	import Fields from '$lib/builder/components/Fields/FieldsContent.svelte'
+	import Fields, { setFieldEntries } from '$lib/builder/components/Fields/FieldsContent.svelte'
 	import { locale } from '$lib/builder/stores/app/misc.js'
 	import hotkey_events from '$lib/builder/stores/app/hotkey_events.js'
 	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
@@ -132,33 +132,19 @@
 						})
 					}}
 					oninput={(values) => {
-						for (const [key, value] of Object.entries(values)) {
-							const field = fields.find((field) => field.key === key)
-							if (!field) {
-								continue
-							}
-
-							const entry = entries.find((entry) => entry.field === field?.id)
-							if (entry) {
-								SiteSymbolEntries.update(entry.id, { value })
-							} else {
-								SiteSymbolEntries.create({ field: field.id, locale: 'en', value })
-							}
-						}
+						setFieldEntries({
+							fields,
+							entries,
+							updateEntry: SiteSymbolEntries.update,
+							createEntry: SiteSymbolEntries.create,
+							values
+						})
 					}}
 					onchange={({ id, data }) => {
 						SiteSymbolFields.update(id, data)
 					}}
 					ondelete={(field_id) => {
 						SiteSymbolFields.delete(field_id)
-					}}
-					onadd={({ parent, index, subfields }) => {
-						// Create an entry for the repeater item
-						SiteSymbolEntries.create({
-							field: parent,
-							locale: 'en',
-							value: {}
-						})
 					}}
 				/>
 			{/if}

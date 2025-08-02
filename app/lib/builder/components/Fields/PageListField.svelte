@@ -6,7 +6,7 @@
 
 	const host = $derived(page.url.host)
 	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
-	const { field }: { entity_id: string; field: PageListField } = $props()
+	const { field }: { field: PageListField } = $props()
 </script>
 
 <div class="PagesField">

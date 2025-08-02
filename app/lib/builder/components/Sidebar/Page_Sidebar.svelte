@@ -16,6 +16,7 @@
 	import { PageTypes, Sites, Pages, PageEntries, manager } from '$lib/pocketbase/collections'
 	import { SiteSymbols } from '$lib/pocketbase/collections'
 	import { getContext } from 'svelte'
+	import { setFieldEntries } from '../Fields/FieldsContent.svelte'
 
 	let active_tab = $state((browser && localStorage.getItem('page-tab')) || 'BLOCKS')
 
@@ -126,20 +127,13 @@
 							fields={page_type_fields}
 							entries={page_entries}
 							oninput={(values) => {
-								for (const [key, value] of Object.entries(values)) {
-									const field = page_type_fields?.find((field) => field.key === key)
-									if (!field) {
-										continue
-									}
-
-									const entry = page_entries?.find((entry) => entry.field === field?.id)
-									if (entry) {
-										PageEntries.update(entry.id, { value })
-									} else {
-										PageEntries.create({ page: page.id, field: field.id, locale: 'en', value })
-									}
-								}
-
+								setFieldEntries({
+									fields: page_type_fields,
+									entries: page_entries,
+									updateEntry: PageEntries.update,
+									createEntry: (data) => PageEntries.create({ ...data, page: page.id }),
+									values
+								})
 								clearTimeout(commit_task)
 								commit_task = setTimeout(() => manager.commit(), 500)
 							}}
@@ -169,20 +163,13 @@
 					fields={page_type_fields}
 					entries={page_entries}
 					oninput={(values) => {
-						for (const [key, value] of Object.entries(values)) {
-							const field = page_type_fields?.find((field) => field.key === key)
-							if (!field) {
-								continue
-							}
-
-							const entry = page_entries?.find((entry) => entry.field === field?.id)
-							if (entry) {
-								PageEntries.update(entry.id, { value })
-							} else {
-								PageEntries.create({ page: page.id, field: field.id, locale: 'en', value })
-							}
-						}
-
+						setFieldEntries({
+							fields: page_type_fields,
+							entries: page_entries,
+							updateEntry: PageEntries.update,
+							createEntry: (data) => PageEntries.create({ ...data, page: page.id }),
+							values
+						})
 						clearTimeout(commit_task)
 						commit_task = setTimeout(() => manager.commit(), 500)
 					}}

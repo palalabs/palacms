@@ -1,13 +1,27 @@
 <script lang="ts">
-	import type { PageFieldField } from '$lib/common/models/fields/PageFieldField'
 	import { fieldTypes } from '../stores/app'
-	import { PageTypeFields } from '$lib/pocketbase/collections'
+	import { Pages, PageTypeFields, PageTypes, Sites } from '$lib/pocketbase/collections'
 	import type { Entry } from '$lib/common/models/Entry'
-	import type { Entity } from '$lib/pocketbase/content'
-
+	import { getDirectEntries, type Entity } from '$lib/pocketbase/content'
 	import { PageEntries, PageTypeEntries } from '$lib/pocketbase/collections'
+	import { setFieldEntries, type FieldValueHandler, type FieldValueMap } from '../components/Fields/FieldsContent.svelte'
+	import type { Field } from '$lib/common/models/Field'
+	import { page as pageState } from '$app/state'
 
-	const { entity, field, entry, onchange }: { entity: Entity; field: PageFieldField; entry?: Entry; onchange?: (value: any) => void } = $props()
+	const {
+		entity,
+		field,
+		onchange,
+		level
+	}: {
+		entity: Entity
+		field: Field
+		entry?: Entry
+		fields: Field[]
+		entries: Entry[]
+		onchange: FieldValueHandler
+		level: number
+	} = $props()
 
 	// Resolve the actual page field being referenced
 	const resolvedField = $derived.by(() => {
@@ -21,29 +35,36 @@
 		return $fieldTypes.find((ft) => ft.id === resolvedField.type)
 	})
 
+	const host = $derived(pageState.url.host)
+	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
+	const slug = $derived(pageState.params.page)
+	const page = $derived(site && slug ? Pages.list({ filter: `site = "${site.id}" && slug = "${slug}"` })?.[0] : undefined)
+	const page_type = $derived(page && PageTypes.one(page.page_type))
+	const fields = $derived(page_type?.fields() ?? [])
+	const entries = $derived(page_type?.entries() ?? [])
+	const entry = $derived(resolvedField && getDirectEntries(entity, resolvedField, entries)[0])
+
 	// Handle changes to the page field by updating the entry
-	function handleFieldChange(value: any) {
-		if (!entry) {
-			throw new Error(`No entry found for page field`)
-		}
+	function handleFieldChange(values: FieldValueMap) {
+		setFieldEntries({
+			fields,
+			entries,
+			updateEntry: PageEntries.update,
+			createEntry: (data) => {
+				if (!page) {
+					throw new Error('No page')
+				}
 
-		// Update the entry directly
-		if ('page' in entity) {
-			PageEntries.update(entry.id, { value })
-		} else if ('page_type' in entity) {
-			PageTypeEntries.update(entry.id, { value })
-		}
-
-		// Call parent onchange if provided
-		if (onchange) {
-			onchange(value)
-		}
+				return PageEntries.create({ ...data, page: page.id })
+			},
+			values
+		})
 	}
 </script>
 
 {#if resolvedField && fieldType && entry}
 	{@const SvelteComponent = fieldType.component}
-	<SvelteComponent {entity} field={{ ...resolvedField, label: field.label }} {entry} onchange={handleFieldChange} />
+	<SvelteComponent {entity} field={{ ...resolvedField, label: field.label }} {entry} {fields} {entries} onchange={handleFieldChange} {level} />
 {:else if !field.config?.field}
 	<span>Please configure this field to select a page field.</span>
 {:else if !entry}

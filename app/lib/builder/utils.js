@@ -5,7 +5,7 @@ import { customAlphabet } from 'nanoid/non-secure'
 import { processors } from './component.js'
 
 const componentsCache = new Map()
-export async function processCode({ component, head = { code: '', data: {}}, buildStatic = true, format = 'esm', locale = 'en', hydrated = true }) {
+export async function processCode({ component, head = { code: '', data: {} }, buildStatic = true, format = 'esm', locale = 'en', hydrated = true }) {
 	let css = ''
 	if (component.css) {
 		css = await processCSS(component.css || '')
@@ -105,19 +105,11 @@ export function get_empty_value(field) {
 	else if (field.type === 'select') return ''
 	else if (field.type === 'switch') return true
 	else if (field.type === 'number') return 0
-
 	else if (field.type === 'page-field') return null
 	else if (field.type === 'site-field') return null
 	else {
 		console.warn('No placeholder set for field type', field.type)
 		return ''
-	}
-
-	function getGroupValue(field) {
-		return _chain(field.fields)
-			.keyBy('key')
-			.mapValues((field) => get_empty_value(field))
-			.value()
 	}
 }
 
@@ -178,7 +170,6 @@ export function compare_urls(url1, url2) {
 	// Compare the normalized URLs
 	return normalizedURL1 === normalizedURL2
 }
-
 
 export function debounce({ instant, delay }, wait = 200) {
 	let timeout

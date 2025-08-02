@@ -4,8 +4,18 @@
 	import type { Field } from '$lib/common/models/Field'
 	import type { Entry } from '$lib/common/models/Entry'
 	import { SiteSymbolFields } from '$lib/pocketbase/collections'
+	import type { FieldValueHandler } from '../components/Fields/FieldsContent.svelte'
 
-	let { field, entry, onchange }: { entity: Omit<Entity, 'id'>; field: Omit<Field, 'id'>; entry?: Omit<Entry, 'id'>; onchange: (value: any) => void } = $props()
+	let {
+		field,
+		entry,
+		onchange
+	}: {
+		entity: Entity
+		field: Field
+		entry?: Entry
+		onchange: FieldValueHandler
+	} = $props()
 
 	const value = $derived(entry?.value)
 	// Access staged field config through collection mapping system
@@ -15,7 +25,7 @@
 
 <div class="SelectField">
 	{#if options.length > 0}
-		<UI.Select fullwidth={true} label={field.label} {options} {value} on:input={({ detail }) => onchange(detail)} />
+		<UI.Select fullwidth={true} label={field.label} {options} {value} on:input={({ detail }) => onchange({ [field.key]: { 0: { value: detail } } })} />
 	{:else}
 		<span>This field doesn't have any options</span>
 	{/if}

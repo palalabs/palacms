@@ -5,8 +5,9 @@
 	import { Sites } from '$lib/pocketbase/collections'
 	import type { Entity } from '$lib/pocketbase/content.js'
 	import type { Entry } from '$lib/common/models/Entry'
+	import type { FieldValueHandler } from '../components/Fields/FieldsContent.svelte'
 
-	const { entity, field, entry, onchange }: { entity: Entity; field: PageField; entry?: Entry; onchange?: (value: any) => void } = $props()
+	const { entity, field, entry, onchange }: { entity: Entity; field: PageField; entry?: Entry; onchange: FieldValueHandler } = $props()
 	const host = $derived(page.url.host)
 	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
 	const selectable_pages = $derived.by(() => {
@@ -25,9 +26,7 @@
 			label: page?.name
 		}))}
 		on:input={({ detail }) => {
-			if (onchange) {
-				onchange(detail)
-			}
+			onchange({ [field.key]: { 0: { value: detail } } })
 		}}
 		fullwidth={true}
 	/>

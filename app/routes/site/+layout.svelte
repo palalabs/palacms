@@ -18,8 +18,6 @@
 	const host = $derived(page.url.host)
 	const sites = $derived(Sites.list({ filter: `host = "${host}"` }))
 	const site = $derived(sites?.[0])
-	const page_slug = $derived(page.params.page || '')
-	const current_page = $derived(site && Pages.list({ filter: `site = "${site.id}" && slug = "${page_slug}"` })?.[0])
 
 	let creating_site = $state(false)
 	$effect(() => {
@@ -35,8 +33,8 @@
 			creating_site = false
 		}}
 	/>
-{:else if site && current_page}
-	<Primo {site} currentPage={current_page}>
+{:else if site}
+	<Primo {site}>
 		{@render children?.()}
 	</Primo>
 {:else}
