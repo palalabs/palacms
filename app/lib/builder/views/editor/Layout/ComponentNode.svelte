@@ -1,20 +1,10 @@
-<script module>
-	let Editor, Extension
-	import('@tiptap/core').then((module) => {
-		Editor = module.Editor
-		Extension = module.Extension
-	})
-</script>
-
 <script lang="ts">
-	import { onMount, untrack } from 'svelte'
+	import { onMount } from 'svelte'
 	import * as _ from 'lodash-es'
 	import { fade } from 'svelte/transition'
 	import * as Dialog from '$lib/components/ui/dialog'
-	import ImageModal from '$lib/builder/views/modal/ImageModal.svelte'
 	import ImageField from '$lib/builder/field-types/ImageField.svelte'
 	import LinkField from '$lib/builder/field-types/Link.svelte'
-	import LinkModal from '$lib/builder/views/modal/LinkModal.svelte'
 	import VideoModal from '$lib/builder/views/modal/VideoModal.svelte'
 	import Icon from '@iconify/svelte'
 	import Typography from '@tiptap/extension-typography'
@@ -35,7 +25,8 @@
 	import { component_iframe_srcdoc } from '$lib/builder/components/misc'
 	import { getContent } from '$lib/pocketbase/content'
 	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
-	import { SiteSymbolFields, SiteSymbols, type PageSections, type PageTypeSections, PageSectionEntries, PageTypeSectionEntries, manager } from '$lib/pocketbase/collections'
+	import { SiteSymbols, type PageSections, type PageTypeSections, PageSectionEntries, PageTypeSectionEntries, manager } from '$lib/pocketbase/collections'
+	import { Editor, Extension } from '@tiptap/core'
 
 	const lowlight = createLowlight(all)
 
@@ -71,8 +62,7 @@
 				js: block.js,
 				data: component_data
 			},
-			buildStatic: false,
-			hydrated: true
+			buildStatic: false
 		})
 		if (res.error) {
 			error = res.error
@@ -551,7 +541,7 @@
 			iframe_resize_observer?.disconnect()
 
 			const update_height = () => {
-				const height = doc.body.clientHeight
+				const height = doc.documentElement.clientHeight
 				window.postMessage({ type: 'resize', height, id: section.id }, '*')
 				dispatch('resize')
 			}

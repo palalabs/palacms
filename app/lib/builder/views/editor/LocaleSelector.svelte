@@ -1,7 +1,7 @@
 <script>
 	import Icon from '@iconify/svelte'
 	import { fly } from 'svelte/transition'
-	import { find as _find } from 'lodash-es'
+	import * as _ from 'lodash-es'
 	import { locale } from '../../stores/app/misc'
 	import { add_language, delete_language, set_language } from '$lib/builder/actions'
 	import { locales as available_languages } from '../../constants'
@@ -15,7 +15,7 @@
 	/** @type {Props} */
 	let { align = 'right' } = $props()
 
-	const Language_Name = (language) => _find(available_languages, ['key', language])['name']
+	const Language_Name = (language) => _.find(available_languages, ['key', language])['name']
 
 	let showingSelector = $state(false)
 	let addingLanguage = $state(false)

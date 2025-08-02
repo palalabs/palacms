@@ -1,9 +1,3 @@
-<script module>
-	import { writable } from 'svelte/store'
-	export const pluralize = writable(null)
-	import('../libraries/pluralize').then((mod) => pluralize.set(mod.default))
-</script>
-
 <script>
 	import { createEventDispatcher } from 'svelte'
 	import * as _ from 'lodash-es'
@@ -11,6 +5,9 @@
 	import Icon from '@iconify/svelte'
 	import { is_regex } from '../utils'
 	import { fieldTypes } from '../stores/app'
+	import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
+	import { attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge'
+	import pluralize from 'pluralize'
 
 	const dispatch = createEventDispatcher()
 
@@ -99,8 +96,6 @@
 	let element = $state()
 
 	onMount(async () => {
-		const { draggable, dropTargetForElements } = await import('$lib/builder/libraries/pragmatic-drag-and-drop/adapter/element-adapter')
-		const { attachClosestEdge, extractClosestEdge } = await import('$lib/builder/libraries/pragmatic-drag-and-drop-hitbox/closest-edge')
 		draggable({
 			element,
 			dragHandle: drag_handle_element,
@@ -141,7 +136,7 @@
 			}
 		})
 	})
-	let singular_label = $derived($pluralize && $pluralize?.singular(field.label))
+	let singular_label = $derived(pluralize.singular(field.label))
 	let item_image = $derived(get_image(repeater_item, field))
 	let item_icon = $derived(get_icon(repeater_item, field))
 	let item_title = $derived(get_title(repeater_item, field))

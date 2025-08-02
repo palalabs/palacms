@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { tick, onDestroy } from 'svelte'
 	import { browser } from '$app/environment'
-	import { find as _find } from 'lodash-es'
 	import { Sites } from '$lib/pocketbase/collections'
 
 	let { site_id, preview = $bindable(), head = '', append = '', style = '' }: { site_id?: string; preview?: string; head?: string; append?: string; style?: string } = $props()

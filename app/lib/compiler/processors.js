@@ -2,6 +2,7 @@ import * as _ from 'lodash-es'
 import PromiseWorker from 'promise-worker'
 import rollupWorker from './workers/rollup.worker.js?worker'
 import postCSSWorker from './workers/postcss.worker.js?worker'
+import { render } from 'svelte/server'
 
 const postcss_worker = new PromiseWorker(new postCSSWorker())
 const rollup_worker = new PromiseWorker(new rollupWorker())
@@ -38,7 +39,7 @@ export async function html({ component, head, buildStatic = true, format = 'esm'
 	try {
 		const has_js = compile_page ? component.some((s) => s.js) : !!component.js
 		res = await rollup_worker.postMessage({
-			component: _.cloneDeep(component),
+			component,
 			head,
 			hydrated: buildStatic && has_js,
 			buildStatic,
@@ -87,19 +88,17 @@ export async function html({ component, head, buildStatic = true, format = 'esm'
 		}
 
 		try {
-			const rendered = App.render(component_data)
+			const rendered = render(App, { props: component_data })
 			payload = {
 				head: rendered.head,
-				html: rendered.html,
-				css: rendered.css.code,
+				body: rendered.body,
 				js: res.dom
 			}
 		} catch (e) {
 			console.log({ e })
 			payload = {
 				head: '',
-				html: '',
-				css: '',
+				body: '',
 				js: ''
 			}
 		}

@@ -1,7 +1,6 @@
 <script>
 	import CreateBlock from '$lib/components/Modals/CreateBlock.svelte'
 	import { EllipsisVertical, SquarePen, Trash2, ArrowLeftRight, Code, Loader } from 'lucide-svelte'
-	import { find as _find } from 'lodash-es'
 	import IFrame from '$lib/builder/components/IFrame.svelte'
 	import * as RadioGroup from '$lib/components/ui/radio-group'
 	import { Label } from '$lib/components/ui/label'

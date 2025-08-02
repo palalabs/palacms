@@ -1,17 +1,10 @@
-<script module>
-	import { writable } from 'svelte/store'
-	export const pluralize = writable(null)
-	import('../libraries/pluralize').then((mod) => pluralize.set(mod.default))
-</script>
-
 <script>
-	import { flip } from 'svelte/animate'
-	import { find as _find, chain as _chain, cloneDeep as _cloneDeep } from 'lodash-es'
 	import Icon from '@iconify/svelte'
 	import { createEventDispatcher, onDestroy, tick } from 'svelte'
 	import RepeaterFieldItem from './RepeaterFieldItem.svelte'
 
 	import * as idb from 'idb-keyval'
+	import pluralize from 'pluralize'
 	const dispatch = createEventDispatcher()
 
 	/**
@@ -94,7 +87,7 @@
 	</ul>
 	<button class="field-button" onclick={add_item}>
 		<Icon icon="akar-icons:plus" />
-		<span>Create {$pluralize ? $pluralize.singular(field.label) : field.label}</span>
+		<span>Create {pluralize.singular(field.label)}</span>
 	</button>
 </div>
 

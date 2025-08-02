@@ -1,8 +1,6 @@
-import { find as _find, chain as _chain, flattenDeep as _flattenDeep } from 'lodash-es'
-import * as _ from 'lodash-es'
 import type { Entry } from '$lib/common/models/Entry.js'
 import type { locales } from '../common'
-import { SiteFields, Sites, Pages, SiteSymbolFields, PageTypeFields, PageTypes } from './collections'
+import { SiteFields, Sites, Pages, PageTypeFields, PageTypes } from './collections'
 import { LibrarySymbolEntry } from '../common/models/LibrarySymbolEntry'
 import type { models } from '$lib/common/models'
 import type { z } from 'zod'
@@ -43,15 +41,15 @@ export const getContent = <Collection extends keyof typeof ENTRY_MODELS>(entity:
 		.filter((field1, index, array) => array.findIndex((field2) => field2.id === field1.id) === index)
 	for (const field of fields) {
 		const fieldEntries = getResolvedEntries(entity, field, entries)
-		
+
 		// Handle group fields specially - collect subfield entries into an object
 		if (field.type === 'group' && field.key) {
 			if (!content.en) content.en = {}
-			
+
 			// Find all subfields for this group
-			const subfields = fields.filter(f => f.parent === field.id)
+			const subfields = fields.filter((f) => f.parent === field.id)
 			const groupObject: Record<string, unknown> = {}
-			
+
 			// Collect each subfield's value
 			for (const subfield of subfields) {
 				const subfieldEntries = getDirectEntries(entity, subfield, entries)
@@ -64,7 +62,7 @@ export const getContent = <Collection extends keyof typeof ENTRY_MODELS>(entity:
 					groupObject[subfield.key] = ''
 				}
 			}
-			
+
 			content.en![field.key] = groupObject
 		}
 		// If field has a key but no entries, fill with empty value
@@ -79,7 +77,7 @@ export const getContent = <Collection extends keyof typeof ENTRY_MODELS>(entity:
 		} else {
 			for (const entry of fieldEntries) {
 				if (!content[entry.locale]) content[entry.locale] = {}
-				
+
 				// For repeater fields, collect values in array; for single fields, use direct value
 				if (field.type === 'repeater') {
 					if (!content[entry.locale]![field.key]) content[entry.locale]![field.key] = []
@@ -107,13 +105,13 @@ export const getResolvedEntries = <Collection extends keyof typeof ENTRY_MODELS>
 			console.log('page-field: no config.field')
 			return []
 		}
-		
+
 		const pageField = PageTypeFields.one(field.config.field)
 		if (!pageField) {
 			console.log('page-field: pageField not found for', field.config.field)
 			return []
 		}
-		
+
 		// Get the page entity and its entries
 		let pageEntity, pageEntries
 		if ('page' in entity) {
@@ -125,67 +123,69 @@ export const getResolvedEntries = <Collection extends keyof typeof ENTRY_MODELS>
 			pageEntity = entity
 			pageEntries = entries
 		}
-		
+
 		// Get entries for the referenced field from the page
 		const directEntries = getDirectEntries(pageEntity, pageField, pageEntries)
 		return directEntries
 	} else if (field.type === 'site-field') {
 		// For site-field, get the referenced field value directly from the site
 		if (!field.config?.field) return []
-		
+
 		const siteField = SiteFields.one(field.config.field)
 		if (!siteField) return []
-		
+
 		// Get the site entity and its entries
 		const site = Sites.one(siteField.site)
 		if (!site) return []
-		
+
 		const siteEntries = site.entries() || []
-		
+
 		// Get entries for the referenced field from the site
 		const directEntries = getDirectEntries(site, siteField, siteEntries)
 		return directEntries
 	} else if (field.type === 'page') {
-		return fieldEntries.map((entry) => {
-			const page = Pages.one(entry.value)
-			if (!page) return null
-			
-			// Get all entries from all fields in the page
-			const pageEntries = page.entries() || []
-			// Get fields from the page's page type
-			const pageType = PageTypes.one(page.page_type)
-			if (!pageType) return null
-			
-			// Build the page content object manually
-			const pageFields = pageType.fields() || []
-			const pageContentObject = {}
-			
-			for (const pageField of pageFields) {
-				const fieldEntries = pageEntries.filter(e => e.field === pageField.id)
-				if (fieldEntries.length > 0) {
-					// Use the last entry if there are multiple (same as getContent logic)
-					const fieldEntry = fieldEntries[fieldEntries.length - 1]
-					pageContentObject[pageField.key] = fieldEntry.value
+		return fieldEntries
+			.map((entry) => {
+				const page = Pages.one(entry.value)
+				if (!page) return null
+
+				// Get all entries from all fields in the page
+				const pageEntries = page.entries() || []
+				// Get fields from the page's page type
+				const pageType = PageTypes.one(page.page_type)
+				if (!pageType) return null
+
+				// Build the page content object manually
+				const pageFields = pageType.fields() || []
+				const pageContentObject = {}
+
+				for (const pageField of pageFields) {
+					const fieldEntries = pageEntries.filter((e) => e.field === pageField.id)
+					if (fieldEntries.length > 0) {
+						// Use the last entry if there are multiple (same as getContent logic)
+						const fieldEntry = fieldEntries[fieldEntries.length - 1]
+						pageContentObject[pageField.key] = fieldEntry.value
+					}
 				}
-			}
-			
-			// Create the page field value with content and metadata
-			const pageValue = {
-				...pageContentObject,
-				_meta: {
-					created_at: page.created,
-					name: page.name,
-					slug: page.slug,
-					url: `/${page.slug}`
+
+				// Create the page field value with content and metadata
+				const pageValue = {
+					...pageContentObject,
+					_meta: {
+						created_at: page.created,
+						name: page.name,
+						slug: page.slug,
+						url: `/${page.slug}`
+					}
 				}
-			}
-			
-			// Return an entry with the structured page value
-			return {
-				...entry,
-				value: pageValue
-			}
-		}).filter(Boolean)
+
+				// Return an entry with the structured page value
+				return {
+					...entry,
+					value: pageValue
+				}
+			})
+			.filter(Boolean)
 	} else if (field.type === 'page-list') {
 		return fieldEntries.flatMap((entry) =>
 			entry.value.flatMap((page_id: string) => {

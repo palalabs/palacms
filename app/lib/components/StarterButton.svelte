@@ -1,8 +1,6 @@
 <script lang="ts">
 	import SitePreview from '$lib/components/SitePreview.svelte'
 	import { CheckCircle } from 'lucide-svelte'
-	import { find as _find } from 'lodash-es'
-	import type { MouseEventHandler } from 'svelte/elements'
 
 	/**
 	 * @typedef {Object} Props

@@ -7,6 +7,8 @@ export const dynamic_iframe_srcdoc = (head = '') => {
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <script type="module">
+        import { mount, unmount } from "https://esm.sh/svelte";
+
         let c;
 
         const channel = new BroadcastChannel('component_preview');
@@ -39,13 +41,12 @@ export const dynamic_iframe_srcdoc = (head = '') => {
             const blob = new Blob([withLogs], { type: 'text/javascript' });
             const url = URL.createObjectURL(blob);
             import(url).then(({ default: App }) => {
-              if (c) c.$destroy();
+              if (c) unmount(c)
               try {
-                c = new App({ 
+                c = mount(App, { 
                   target: document.querySelector('#page'),
                   props
                 })
-                // setTimeout(setListeners, 1000)
               } catch(e) {
                 document.querySelector('#page').innerHTML = ''
                 console.error(e.toString())
@@ -56,29 +57,8 @@ export const dynamic_iframe_srcdoc = (head = '') => {
                   }
                 });
               }
-              channel.postMessage({
-                event: 'SET_HEIGHT',
-                payload: {
-                  height: window.document.body.scrollHeight
-                }
-              });
             })
           }
-        }
-
-        function setListeners() {
-          document.body.querySelectorAll('*').forEach(el => {
-            el.addEventListener('mouseenter', () => {
-              const loc = el?.__svelte_meta?.loc // line of code
-              channel.postMessage({
-                event: 'SET_ELEMENT_PATH',
-                payload: { loc }
-              });
-            })
-          })
-          // Move site+page styles to top of html head to cascade correctly
-          const head = document.getElementsByTagName('head')[0]
-          head.prepend(document.getElementById('parent-styles'))
         }
 		  <\/script>
     </head>
@@ -101,12 +81,14 @@ export const static_iframe_srcdoc = ({ head = '', html, css, foot = '' }) => {
   `
 }
 
-export const component_iframe_srcdoc = ({ head = '', css = '', foot = '' }) => {
+export const component_iframe_srcdoc = ({ head = '', foot = '' }) => {
 	return `
     <!DOCTYPE html>
     <html lang="en">
       <head>
         <script type="module">
+          import { mount, unmount } from "https://esm.sh/svelte"
+
           let c;
 
           window.addEventListener('message', ({data}) => {
@@ -127,31 +109,16 @@ export const component_iframe_srcdoc = ({ head = '', css = '', foot = '' }) => {
               const blob = new Blob([source], { type: 'text/javascript' });
               const url = URL.createObjectURL(blob);
               import(url).then(({ default: App }) => {
-                if (c) {
-                  c.$destroy();
-                }
+                if (c) unmount(c)
                 try {
-                  c = new App({ 
+                  c = mount(App, { 
                     target: document.querySelector('#component'),
                     props
                   })
-                  // setTimeout(setListeners, 1000)
                 } catch(e) {
                   document.querySelector('body').innerHTML = ''
                   console.error(e.toString())
-                  // channel.postMessage({
-                  //   event: 'SET_ERROR',
-                  //   payload: {
-                  //     error: e.toString()
-                  //   }
-                  // });
                 }
-                // channel.postMessage({
-                //   event: 'SET_HEIGHT',
-                //   payload: {
-                //     height: window.document.body.scrollHeight
-                //   }
-                // });
               })
             }
           }
@@ -160,7 +127,6 @@ export const component_iframe_srcdoc = ({ head = '', css = '', foot = '' }) => {
       </head>
       <body id="page" style="margin:0;overflow:hidden;">
         <div id="component"></div>
-        <style>${css}</style>
         ${foot}
         <style>
           [contenteditable="true"] { outline: 0 !important; }
