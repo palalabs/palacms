@@ -3,7 +3,6 @@
 	import { toast } from 'svelte-sonner'
 	import SitePreview from '$lib/components/SitePreview.svelte'
 	import { CircleCheck, CirclePlus, Loader } from 'lucide-svelte'
-	import { find as _find } from 'lodash-es'
 	import { Button } from '$lib/components/ui/button'
 	import { Site } from '$lib/common/models/Site'
 

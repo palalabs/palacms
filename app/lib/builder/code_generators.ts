@@ -1,4 +1,3 @@
-import { find as _find, chain as _chain, flattenDeep as _flattenDeep } from 'lodash-es'
 import { processors } from './component.js'
 import { getContent } from '../pocketbase/content.js'
 import { type locales } from '$lib/common/constants.js'
@@ -17,7 +16,6 @@ import type { PageTypeSectionEntry } from '$lib/common/models/PageTypeSectionEnt
 import type { PageTypeSymbol } from '$lib/common/models/PageTypeSymbol.js'
 import type { SiteSymbol } from '$lib/common/models/SiteSymbol.js'
 import type { SiteSymbolEntry } from '$lib/common/models/SiteSymbolEntry.js'
-import { page } from '$app/state'
 
 export async function block_html({ code, data }) {
 	const { html, css: postcss, js } = code
@@ -67,13 +65,13 @@ export async function page_html({
 }) {
 	const site_content = getContent(site, site_fields, site_entries)
 	const page_type_content = getContent(page_type, page_type_fields, page_type_entries)
-	
+
 	// Flatten the content for template variables (extract from locale structure)
 	const site_data = {
 		...(site_content[locale] || {}),
 		...(page_type_content[locale] || {})
 	}
-	
+
 	const head = {
 		code: site.head + page_type.head,
 		data: site_data
@@ -132,18 +130,24 @@ export async function page_html({
    <head>
      <meta name="generator" content="PalaCMS" />
      ${res.head}
-     <style>${res.css}</style>
    </head>
    <body id="page">
-     ${res.html}
-     ${no_js ? `` : `<script type="module">${fetch_modules(symbol_ids)}</script>`}
+     ${res.body}
+     ${
+				no_js
+					? ``
+					: `<script type="module">
+				import { hydrate } from "https://esm.sh/svelte"
+				${fetch_modules(symbol_ids)}
+			</script>`
+			}
      ${site.foot}
    </body>
  </html>
  `
 
 	return {
-		success: !!res.html,
+		success: !!res.body,
 		html: final,
 		js: res.js
 	}
@@ -154,15 +158,14 @@ export async function page_html({
 			.map(
 				(id) => `
      import('/_symbols/${id}.js')
-     .then(({default:App}) => {
+     .then(({ default: App }) => {
        ${sections
 					.filter((section) => section.symbol === id)
 					.map((section) => {
 						const instance_content = getContent(section, symbol_fields, section_entries)[locale]
 						return `
-							new App({
+							hydrate(App, {
 								target: document.querySelector('#section-${section.id}'),
-								hydrate: true,
 								props: ${JSON.stringify(instance_content)}
 							})
          		`

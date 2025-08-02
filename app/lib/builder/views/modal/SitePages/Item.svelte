@@ -10,6 +10,8 @@
 	import { manager, Pages, PageTypes, Sites } from '$lib/pocketbase/collections'
 	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
 	import { getContext } from 'svelte'
+	import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
+	import { attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge'
 
 	let editing_page = $state(false)
 
@@ -47,8 +49,6 @@
 	let drag_handle_element = $state()
 	let element = $state()
 	onMount(async () => {
-		const { draggable, dropTargetForElements } = await import('$lib/builder/libraries/pragmatic-drag-and-drop/adapter/element-adapter')
-		const { attachClosestEdge, extractClosestEdge } = await import('$lib/builder/libraries/pragmatic-drag-and-drop-hitbox/closest-edge')
 		draggable({
 			element,
 			dragHandle: drag_handle_element,

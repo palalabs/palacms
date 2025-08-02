@@ -1,1 +1,0 @@
-export var customDataMediaTypePrefix = 'application/vnd.pdnd-custom-data-';

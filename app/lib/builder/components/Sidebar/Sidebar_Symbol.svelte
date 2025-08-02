@@ -7,13 +7,13 @@
 	import { Input } from '$lib/components/ui/input'
 	import MenuPopup from '../../ui/Dropdown.svelte'
 	import { locale } from '../../stores/app/misc'
-	import { draggable } from '$lib/builder/libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
+	import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
 	import IFrame from '../../components/IFrame.svelte'
 	import { getContent } from '$lib/pocketbase/content'
 	import { createEventDispatcher, onMount } from 'svelte'
 	import { block_html } from '$lib/builder/code_generators'
 	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
-	import { SiteSymbols, SiteSymbolFields, SiteSymbolEntries } from '$lib/pocketbase/collections'
+	import { SiteSymbols } from '$lib/pocketbase/collections'
 
 	const dispatch = createEventDispatcher()
 

@@ -10,34 +10,19 @@
 		css: true,
 		js: true
 	})
-
-	const CodeMirror = writable(null)
-	if (!import.meta.env.SSR) {
-		import('../../../components/CodeEditor/CodeMirror.svelte').then((module) => {
-			CodeMirror.set(module.default)
-			fetch_dev_libraries()
-		})
-	}
-
-	let libraries
-	async function fetch_dev_libraries() {
-		libraries = {
-			prettier: await import('$lib/builder/libraries/prettier/prettier'),
-			prettier_css: (await import('$lib/builder/libraries/prettier/parser-postcss')).default,
-			prettier_babel: (await import('$lib/builder/libraries/prettier/parser-babel')).default,
-			prettier_svelte: (await import('$lib/builder/libraries/prettier/prettier-svelte')).default
-		}
-	}
 </script>
 
 <script>
-	import { fade } from 'svelte/transition'
 	import Icon from '@iconify/svelte'
 	import { createEventDispatcher } from 'svelte'
-	const dispatch = createEventDispatcher()
-
 	import { PaneGroup, Pane, PaneResizer } from 'paneforge'
-	import { onMobile } from '../../../stores/app/misc'
+	import prettier from 'prettier'
+	import * as prettierPostcss from 'prettier/parser-postcss'
+	import * as prettierBabel from 'prettier/parser-babel'
+	import * as prettierSvelte from 'prettier-plugin-svelte'
+	import CodeMirror from '$lib/builder/components/CodeEditor/CodeMirror.svelte'
+
+	const dispatch = createEventDispatcher()
 
 	/**
 	 * @typedef {Object} Props
@@ -94,15 +79,15 @@
 
 	let showing_format_button = $state(true)
 	async function format_all_code() {
-		html = format(html, 'svelte', libraries.prettier_svelte)
-		css = format(css, 'css', libraries.prettier_css)
-		js = format(js, 'babel', libraries.prettier_babel)
+		html = await format(html, 'svelte', prettierSvelte)
+		css = await format(css, 'css', prettierPostcss)
+		js = await format(js, 'babel', prettierBabel)
 	}
 
-	function format(code, mode, plugin) {
+	async function format(code, mode, plugin) {
 		let formatted
 		try {
-			formatted = libraries.prettier.format(code, {
+			formatted = await prettier.format(code, {
 				parser: mode,
 				// bracketSameLine: true,
 				plugins: [plugin]
@@ -132,28 +117,25 @@
 					<span>HTML</span>
 				{/if}
 			</button>
-			{#if $CodeMirror}
-				{@const SvelteComponent_3 = $CodeMirror}
-				<SvelteComponent_3
-					mode="html"
-					docs="https://docs.primo.so/development#html"
-					{data}
-					bind:value={html}
-					bind:selection={selections['html']}
-					on:mod-e
-					on:mod-r
-					on:modkeydown={() => (showing_local_key_hint = true)}
-					on:modkeyup={() => (showing_local_key_hint = false)}
-					on:tab-switch={({ detail }) => toggleTab(detail)}
-					on:change={() => {
-						dispatch('htmlChange')
-						oninput()
-					}}
-					on:format={() => (showing_format_button = false)}
-					on:save
-					on:refresh
-				/>
-			{/if}
+			<CodeMirror
+				mode="html"
+				docs="https://docs.primo.so/development#html"
+				{data}
+				bind:value={html}
+				bind:selection={selections['html']}
+				on:mod-e
+				on:mod-r
+				on:modkeydown={() => (showing_local_key_hint = true)}
+				on:modkeyup={() => (showing_local_key_hint = false)}
+				on:tab-switch={({ detail }) => toggleTab(detail)}
+				on:change={() => {
+					dispatch('htmlChange')
+					oninput()
+				}}
+				on:format={() => (showing_format_button = false)}
+				on:save
+				on:refresh
+			/>
 		</div>
 	</Pane>
 	<PaneResizer
@@ -181,28 +163,25 @@
 					<span>CSS</span>
 				{/if}
 			</button>
-			{#if $CodeMirror}
-				{@const SvelteComponent_4 = $CodeMirror}
-				<SvelteComponent_4
-					on:modkeydown={() => (showing_local_key_hint = true)}
-					on:modkeyup={() => (showing_local_key_hint = false)}
-					on:tab-switch={({ detail }) => toggleTab(detail)}
-					bind:selection={selections['css']}
-					bind:value={css}
-					mode="css"
-					docs="https://docs.primo.so/development#css"
-					on:change={() => {
-						// showing_format_button = true
-						dispatch('cssChange')
-						oninput()
-					}}
-					on:mod-e
-					on:mod-r
-					on:format={() => (showing_format_button = false)}
-					on:save
-					on:refresh
-				/>
-			{/if}
+			<CodeMirror
+				on:modkeydown={() => (showing_local_key_hint = true)}
+				on:modkeyup={() => (showing_local_key_hint = false)}
+				on:tab-switch={({ detail }) => toggleTab(detail)}
+				bind:selection={selections['css']}
+				bind:value={css}
+				mode="css"
+				docs="https://docs.primo.so/development#css"
+				on:change={() => {
+					// showing_format_button = true
+					dispatch('cssChange')
+					oninput()
+				}}
+				on:mod-e
+				on:mod-r
+				on:format={() => (showing_format_button = false)}
+				on:save
+				on:refresh
+			/>
 		</div>
 	</Pane>
 	<PaneResizer
@@ -232,28 +211,25 @@
 					<span>JS</span>
 				{/if}
 			</button>
-			{#if $CodeMirror}
-				{@const SvelteComponent_5 = $CodeMirror}
-				<SvelteComponent_5
-					on:modkeydown={() => (showing_local_key_hint = true)}
-					on:modkeyup={() => (showing_local_key_hint = false)}
-					on:tab-switch={({ detail }) => toggleTab(detail)}
-					bind:selection={selections['js']}
-					bind:value={js}
-					mode="javascript"
-					docs="https://docs.primo.so/development#javascript"
-					on:change={() => {
-						// showing_format_button = true
-						dispatch('jsChange')
-						oninput()
-					}}
-					on:mod-e
-					on:mod-r
-					on:format={() => (showing_format_button = false)}
-					on:save
-					on:refresh
-				/>
-			{/if}
+			<CodeMirror
+				on:modkeydown={() => (showing_local_key_hint = true)}
+				on:modkeyup={() => (showing_local_key_hint = false)}
+				on:tab-switch={({ detail }) => toggleTab(detail)}
+				bind:selection={selections['js']}
+				bind:value={js}
+				mode="javascript"
+				docs="https://docs.primo.so/development#javascript"
+				on:change={() => {
+					// showing_format_button = true
+					dispatch('jsChange')
+					oninput()
+				}}
+				on:mod-e
+				on:mod-r
+				on:format={() => (showing_format_button = false)}
+				on:save
+				on:refresh
+			/>
 		</div>
 	</Pane>
 </PaneGroup>

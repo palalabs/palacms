@@ -1,24 +1,10 @@
 <script module>
 	const scrollPositions = new Map() // TODO: fix
-
-	let libraries
-	if (!import.meta.env.SSR) fetch_dev_libraries()
-
-	async function fetch_dev_libraries() {
-		libraries = {
-			prettier: (await import('$lib/builder/libraries/prettier/prettier')).default,
-			prettier_css: (await import('$lib/builder/libraries/prettier/parser-postcss')).default,
-			prettier_babel: (await import('$lib/builder/libraries/prettier/parser-babel')).default,
-			prettier_svelte: (await import('$lib/builder/libraries/prettier/prettier-svelte')).default
-		}
-	}
 </script>
 
 <script>
-	import { flattenDeep as _flattenDeep } from 'lodash-es'
 	import { createEventDispatcher } from 'svelte'
 	import { createDebouncer } from '../../utils'
-	import { abbreviationTracker } from '../../libraries/emmet/plugin'
 	import { highlightedElement } from '../../stores/app/misc'
 	import { basicSetup } from 'codemirror'
 	import { EditorView, keymap } from '@codemirror/view'
@@ -28,6 +14,10 @@
 	import { svelteCompletions, cssCompletions } from './extensions/autocomplete'
 	import { getLanguage } from './extensions'
 	import highlight_active_line from './extensions/inspector'
+	import prettier from 'prettier'
+	import * as prettierPostcss from 'prettier/parser-postcss'
+	import * as prettierBabel from 'prettier/parser-babel'
+	import * as prettierSvelte from 'prettier-plugin-svelte'
 
 	const slowDebounce = createDebouncer(1000)
 
@@ -99,12 +89,11 @@
 		doc: value,
 		extensions: [
 			EditorState.readOnly.of(disabled),
-			abbreviationTracker(),
 			language,
 			oneDarkTheme,
 			ThemeHighlighting,
 			keymap.of([
-				standardKeymap,
+				...standardKeymap,
 				indentWithTab,
 				{
 					key: 'Escape',
@@ -229,11 +218,11 @@
 				mode = 'svelte'
 			}
 
-			formatted = libraries.prettier.formatWithCursor(code, {
+			formatted = prettier.formatWithCursor(code, {
 				parser: mode,
 				bracketSameLine: true,
 				cursorOffset: position,
-				plugins: [libraries.prettier_svelte, libraries.prettier_css, libraries.prettier_babel]
+				plugins: [prettierSvelte, prettierPostcss, prettierBabel]
 			})
 			console.log({ formatted })
 		} catch (e) {

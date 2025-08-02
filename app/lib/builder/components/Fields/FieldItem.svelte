@@ -14,11 +14,11 @@
 	import ImageFieldOptions from './ImageFieldOptions.svelte'
 	import fieldTypes from '../../stores/app/fieldTypes.js'
 	import { dynamic_field_types } from '$lib/builder/field-types'
-	import { pluralize } from '../../field-types/RepeaterField.svelte'
 	import { getContext } from 'svelte'
 	import type { Field } from '$lib/common/models/Field'
 	import { Sites } from '$lib/pocketbase/collections'
 	import { page } from '$app/state'
+	import pluralize from 'pluralize'
 
 	let {
 		field,
@@ -112,7 +112,7 @@
 		const combined = `${labelLower} ${keyLower}`
 
 		// Plurals/Arrays first (most specific)
-		if (label && $pluralize.isPlural(label)) {
+		if (label && pluralize.isPlural(label)) {
 			return 'repeater'
 		}
 
