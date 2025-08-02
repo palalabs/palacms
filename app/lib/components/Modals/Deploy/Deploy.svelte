@@ -1,6 +1,6 @@
 <script>
 	import Icon from '@iconify/svelte'
-	import { page } from '$app/stores'
+	import { page } from '$app/state'
 
 	let { stage = $bindable(), publish_fn, loading, site_host, onClose } = $props()
 
@@ -28,7 +28,7 @@
 			{#if site_host}
 				<p class="description">
 					Your website will be published to
-					<a href="{$page.url.protocol}//{site_host}" target="_blank">{site_host}</a>
+					<a href="{page.url.protocol}//{site_host}" target="_blank">{site_host}</a>
 				</p>
 			{:else}
 				<p class="description">Ready to publish your website changes?</p>
@@ -49,7 +49,7 @@
 			<p class="description">
 				Your website changes have been published to
 				{#if site_host}
-					<a href="{$page.url.protocol}//{site_host}" target="_blank">{site_host}</a>
+					<a href="{page.url.protocol}//{site_host}" target="_blank">{site_host}</a>
 				{:else}
 					your live site
 				{/if}
@@ -59,7 +59,7 @@
 					<span>Done</span>
 				</button>
 				{#if site_host}
-					<a href="{$page.url.protocol}//{site_host}" target="_blank" class="primo-button">
+					<a href="{page.url.protocol}//{site_host}" target="_blank" class="primo-button">
 						<Icon icon="lucide:external-link" />
 						<span>View Site</span>
 					</a>
