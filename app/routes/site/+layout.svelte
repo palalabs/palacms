@@ -21,7 +21,7 @@
 
 	let creating_site = $state(false)
 	$effect(() => {
-		if (!creating_site && sites?.length === 0) {
+		if (!creating_site && sites?.length === 0 && self.authStore.isValid) {
 			creating_site = true
 		}
 	})
