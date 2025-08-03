@@ -24,15 +24,14 @@
 	import type { Snippet } from 'svelte'
 	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
 
-	let { children, currentPage, site }: { children: Snippet; currentPage?: ObjectOf<typeof Pages>; site?: ObjectOf<typeof Sites> } = $props()
+	let { children, site }: { children: Snippet; site?: ObjectOf<typeof Sites> } = $props()
 
-	// Fallback to hostname lookup if no site prop provided (for backward compatibility)
 	const host = $derived(pageState.url.host)
 	const fallback_site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
 	const resolved_site = $derived(site || fallback_site)
 	const page_slug = $derived(pageState.params.page || '')
 	const page_type_id = $derived(pageState.params.page_type)
-	const page = $derived(currentPage ?? (resolved_site && page_slug ? Pages.list({ filter: `site = "${resolved_site.id}" && slug = "${page_slug}"` })?.[0] : undefined))
+	const page = $derived(resolved_site && page_slug ? Pages.list({ filter: `site = "${resolved_site.id}" && slug = "${page_slug}"` })?.[0] : undefined)
 	const page_type = $derived(page_type_id && PageTypes.one(page_type_id))
 	const page_page_type = $derived(page && PageTypes.one(page.page_type))
 
