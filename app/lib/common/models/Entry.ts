@@ -7,7 +7,7 @@ export const Entry = z.object({
 	value: z.any(),
 	field: z.string().nonempty().optional(),
 	parent: z.string().optional().nullable(),
-	index: z.number().optional().nullable()
+	index: z.number().int().nonnegative()
 })
 
 export type Entry = z.infer<typeof Entry>

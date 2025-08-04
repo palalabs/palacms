@@ -2,7 +2,7 @@
 	import Icon from '@iconify/svelte'
 	import * as Dialog from '$lib/components/ui/dialog'
 	import { PaneGroup, Pane, PaneResizer } from 'paneforge'
-	import Fields from '$lib/builder/components/Fields/FieldsContent.svelte'
+	import Fields, { setFieldEntries } from '$lib/builder/components/Fields/FieldsContent.svelte'
 	import * as _ from 'lodash-es'
 	import CodeEditor from '$lib/builder/components/CodeEditor/CodeMirror.svelte'
 	import { page } from '$app/state'
@@ -85,35 +85,19 @@
 						}
 					}}
 					oninput={(values) => {
-						console.log('oninput')
-						for (const [key, value] of Object.entries(values)) {
-							const field = fields.find((field) => field.key === key)
-							if (!field) {
-								continue
-							}
-
-							const entry = entries.find((entry) => entry.field === field?.id)
-							if (entry) {
-								console.log({ entry, value })
-								PageTypeEntries.update(entry.id, { value })
-							} else {
-								PageTypeEntries.create({ field: field.id, locale: 'en', value })
-							}
-						}
+						setFieldEntries({
+							fields,
+							entries,
+							updateEntry: PageTypeEntries.update,
+							createEntry: PageTypeEntries.create,
+							values
+						})
 					}}
 					onchange={({ id, data }) => {
 						PageTypeFields.update(id, data)
 					}}
 					ondelete={(field_id) => {
 						PageTypeFields.delete(field_id)
-					}}
-					onadd={({ parent, index, subfields }) => {
-						// Create an entry for the repeater item
-						PageTypeEntries.create({
-							field: parent,
-							locale: 'en',
-							value: {}
-						})
 					}}
 				/>
 			</Pane>

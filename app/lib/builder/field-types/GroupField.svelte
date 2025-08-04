@@ -1,64 +1,36 @@
-<script>
+<script lang="ts">
 	import { find as _find, chain as _chain } from 'lodash-es'
-	import { createEventDispatcher } from 'svelte'
 	import Icon from '@iconify/svelte'
 	import { fieldTypes } from '../stores/app'
-	import { is_regex } from '../utils'
-	import { PageTypeSectionEntries, PageSectionEntries, SiteEntries } from '$lib/pocketbase/collections'
+	import type { Entry } from '$lib/common/models/Entry'
+	import type { Field } from '$lib/common/models/Field'
+	import type { Entity } from '$lib/pocketbase/content'
+	import type { Component } from 'svelte'
+	import type { FieldValueHandler, FieldValueMap } from '../components/Fields/FieldsContent.svelte'
+	import EntryContent from '../components/Fields/EntryContent.svelte'
 
-	const dispatch = createEventDispatcher()
+	const {
+		entity,
+		field,
+		entry,
+		fields,
+		entries,
+		onchange,
+		level
+	}: {
+		entity: Entity
+		field: Field
+		entry?: Entry
+		fields: Field[]
+		entries: Entry[]
+		onchange: FieldValueHandler
+		level: number
+	} = $props()
 
-	/**
-	 * @typedef {Object} Props
-	 * @property {any} id
-	 * @property {any} field
-	 * @property {any} fields
-	 * @property {any} entries
-	 * @property {number} [level]
-	 * @property {() => void} [oninput]
-	 */
-
-	/** @type {Props} */
-	let { entity, field, fields = [], entries = [], entry, level = 0, onchange } = $props()
-
-	let subfields = $derived(fields.filter((f) => f.parent === field.id).sort((a, b) => (a.index || 0) - (b.index || 0)))
+	const group_entry = $derived(entry)
+	const subfields = $derived(fields.filter((f) => f.parent === field.id).sort((a, b) => a.index - b.index))
 
 	let hidden = $state(false)
-
-	function getFieldComponent(subfield) {
-		const field = _find($fieldTypes, ['id', subfield.type])
-		return field ? field.component : null
-	}
-
-	function check_condition(field) {
-		if (!field.config?.condition) return true // has no condition
-		const { field: field_id, value, comparison } = field.config.condition
-		const field_to_compare = fields.find((f) => f.id === field_id)
-		if (!field_to_compare) {
-			// field has been deleted, reset condition
-			// field.config.condition = null
-			return true
-		}
-		// const { value: comparable_value } = entries.find((e) => e.field === field_id)
-		const entry_to_compare = entries.find((e) => e.field === field_id)
-		if (!entry_to_compare) {
-			console.log('No entry to compare', { field, entry_to_compare, entries })
-			return true
-		}
-		if (is_regex(value)) {
-			const regex = new RegExp(value.slice(1, -1))
-			if (comparison === '=' && regex.test(entry_to_compare.value)) {
-				return true
-			} else if (comparison === '!=' && !regex.test(entry_to_compare.value)) {
-				return true
-			}
-		} else if (comparison === '=' && value === entry_to_compare.value) {
-			return true
-		} else if (comparison === '!=' && value !== entry_to_compare.value) {
-			return true
-		}
-		return false
-	}
 </script>
 
 <div class="group-field group-level-{level}">
@@ -75,51 +47,16 @@
 					<span>No subfields in this group. Add subfields in the Field tab.</span>
 				</div>
 			{:else}
-				{#each subfields as subfield}
-					{@const is_visible = check_condition(subfield)}
-					{@const entry = entries.find((e) => e.field === subfield.id)}
-					{#if is_visible}
-						{@const SvelteComponent = getFieldComponent(subfield)}
-						<div class="group-item">
-							<SvelteComponent
-								{entity}
-								field={subfield}
-								{fields}
-								{entries}
-								{entry}
-								level={level + 1}
-								on:save
-								on:add
-								on:remove
-								on:move
-								onchange={(value) => {
-									// Handle entry creation/update for subfield
-									const entry = entries.find((entry) => entry.field === subfield.id)
-									if ('page_type' in entity) {
-										if (entry) {
-											PageTypeSectionEntries.update(entry.id, { value })
-										} else {
-											PageTypeSectionEntries.create({ field: subfield.id, locale: 'en', value, section: entity.id })
-										}
-									} else if ('page' in entity) {
-										if (entry) {
-											PageSectionEntries.update(entry.id, { value })
-										} else {
-											PageSectionEntries.create({ field: subfield.id, locale: 'en', value, section: entity.id })
-										}
-									} else {
-										// Handle site entries
-										if (entry) {
-											SiteEntries.update(entry.id, { value })
-										} else {
-											SiteEntries.create({ field: subfield.id, locale: 'en', value })
-										}
-									}
-									onchange(value)
-								}}
-							/>
-						</div>
-					{/if}
+				{#each subfields as subfield (subfield.id)}
+					<EntryContent
+						{entity}
+						parent={group_entry}
+						field={subfield}
+						{fields}
+						{entries}
+						level={level + 1}
+						onchange={(values) => onchange({ [field.key]: { 0: { value: null, subValues: values } } })}
+					/>
 				{/each}
 			{/if}
 		</div>

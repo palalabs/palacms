@@ -38,9 +38,9 @@
 		top_level?: boolean
 		create_field?: (parentId?: string) => void
 		onchange: (details: { id: string; data: Partial<Field> }) => void
-		onduplicate: () => void
-		ondelete: () => void
-		onmove: (direction: 'up' | 'down') => void
+		onduplicate: (id: string) => void
+		ondelete: (id: string) => void
+		onmove: (id: string, direction: 'up' | 'down') => void
 	} = $props()
 
 	const host = $derived(page.url.host)
@@ -94,7 +94,6 @@
 
 	// enable condition if field has previous siblings without their own condition
 	let condition_enabled = $derived(comparable_fields.length > 0)
-
 
 	let selected_field_type_id = $state<string>()
 	$effect.pre(() => {
@@ -229,10 +228,10 @@
 						<button onclick={add_condition}>
 							<Icon icon="mdi:show" />
 						</button>
-						<!-- <button onclick={onduplicate}>
+						<!-- <button onclick={() => onduplicate(field.id)}>
 							<Icon icon="bxs:duplicate" />
 						</button> -->
-						<button class="delete" onclick={ondelete}>
+						<button class="delete" onclick={() => ondelete(field.id)}>
 							<Icon icon="ic:outline-delete" />
 						</button>
 					{:else}
@@ -242,12 +241,12 @@
 								{
 									label: 'Move up',
 									icon: 'material-symbols:arrow-circle-up-outline',
-									on_click: () => onmove('up')
+									on_click: () => onmove(field.id, 'up')
 								},
 								{
 									label: 'Move down',
 									icon: 'material-symbols:arrow-circle-down-outline',
-									on_click: () => onmove('down')
+									on_click: () => onmove(field.id, 'down')
 								},
 								...(has_condition
 									? []
@@ -264,13 +263,13 @@
 								// {
 								// 	label: 'Duplicate',
 								// 	icon: 'bxs:duplicate',
-								// 	on_click: () => onduplicate()
+								// 	on_click: () => onduplicate(field.id)
 								// },
 								{
 									label: 'Delete',
 									icon: 'ic:outline-delete',
 									is_danger: true,
-									on_click: () => ondelete()
+									on_click: () => ondelete(field.id)
 								}
 							]}
 							placement="bottom-end"
@@ -305,10 +304,10 @@
 							<button onclick={add_condition}>
 								<Icon icon="mdi:show" />
 							</button>
-							<button onclick={onduplicate}>
+							<button onclick={() => onduplicate(field.id)}>
 								<Icon icon="bxs:duplicate" />
 							</button>
-							<button class="delete" onclick={ondelete}>
+							<button class="delete" onclick={() => ondelete(field.id)}>
 								<Icon icon="ic:outline-delete" />
 							</button>
 						{:else}
@@ -318,12 +317,12 @@
 									{
 										label: 'Move up',
 										icon: 'material-symbols:arrow-circle-up-outline',
-										on_click: () => onmove('up')
+										on_click: () => onmove(field.id, 'up')
 									},
 									{
 										label: 'Move down',
 										icon: 'material-symbols:arrow-circle-down-outline',
-										on_click: () => onmove('down')
+										on_click: () => onmove(field.id, 'down')
 									},
 									...(has_condition
 										? []
@@ -340,13 +339,13 @@
 									{
 										label: 'Duplicate',
 										icon: 'bxs:duplicate',
-										on_click: () => onduplicate()
+										on_click: () => onduplicate(field.id)
 									},
 									{
 										label: 'Delete',
 										icon: 'ic:outline-delete',
 										is_danger: true,
-										on_click: () => ondelete()
+										on_click: () => ondelete(field.id)
 									}
 								]}
 								placement="bottom-end"
@@ -406,10 +405,10 @@
 							<button onclick={add_condition}>
 								<Icon icon="mdi:show" />
 							</button>
-							<button onclick={onduplicate}>
+							<button onclick={() => onduplicate(field.id)}>
 								<Icon icon="bxs:duplicate" />
 							</button>
-							<button class="delete" onclick={ondelete}>
+							<button class="delete" onclick={() => ondelete(field.id)}>
 								<Icon icon="ic:outline-delete" />
 							</button>
 						{:else}
@@ -419,12 +418,12 @@
 									{
 										label: 'Move up',
 										icon: 'material-symbols:arrow-circle-up-outline',
-										on_click: () => onmove('up')
+										on_click: () => onmove(field.id, 'up')
 									},
 									{
 										label: 'Move down',
 										icon: 'material-symbols:arrow-circle-down-outline',
-										on_click: () => onmove('down')
+										on_click: () => onmove(field.id, 'down')
 									},
 									...(has_condition
 										? []
@@ -441,13 +440,13 @@
 									{
 										label: 'Duplicate',
 										icon: 'bxs:duplicate',
-										on_click: () => onduplicate()
+										on_click: () => onduplicate(field.id)
 									},
 									{
 										label: 'Delete',
 										icon: 'ic:outline-delete',
 										is_danger: true,
-										on_click: () => ondelete()
+										on_click: () => ondelete(field.id)
 									}
 								]}
 								placement="bottom-end"
@@ -462,7 +461,6 @@
 		{#if field.type === 'select'}
 			<SelectField
 				{field}
-				{level}
 				on:input={(event) => {
 					onchange({ id: field.id, data: event.detail })
 				}}
@@ -496,7 +494,7 @@
 			/>
 		{/if}
 		{#if field.type === 'page-list'}
-			<PageListField {field} oninput={onchange} />
+			<PageListField {field} />
 		{/if}
 		{#if field.config?.condition}
 			<Condition
@@ -527,7 +525,7 @@
 					data-level={level}
 					onclick={() => {
 						if (create_field) {
-							create_field({ parentId: field.id })
+							create_field(field.id)
 						}
 					}}
 				>
