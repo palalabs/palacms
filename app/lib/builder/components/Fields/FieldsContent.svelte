@@ -18,7 +18,6 @@
 		parent?: Entry
 	}) {
 		const { fields, entries, updateEntry, createEntry, values, parent } = options
-		console.log(values)
 		for (const [key, items] of Object.entries(values)) {
 			for (const index in items) {
 				const field = fields?.find((field) => field.key === key && (parent ? field.parent === parent?.field : !field.parent))
@@ -28,10 +27,8 @@
 
 				let entry = entries?.find((entry) => entry.field === field?.id && (parent ? entry.parent === parent?.id : !entry.parent) && entry.index === +index)
 				if (entry) {
-					console.log('update', field.id, entry.id, items[index].value)
 					entry = updateEntry(entry.id, { value: items[index].value })
 				} else {
-					console.log('create', field.id, items[index].value)
 					entry = createEntry({ field: field.id, parent: parent?.id, index: +index, locale: 'en', value: items[index].value })
 				}
 
