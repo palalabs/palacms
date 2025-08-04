@@ -4,8 +4,8 @@ import { PageTypes, Sites } from './pocketbase/collections'
 import { self } from './pocketbase/PocketBase'
 
 export const usePublishSite = (site_id?: string) => {
-	let status = $state<'standby' | 'loading' | 'publishing'>('standby')
-	let done = $state<() => void>()
+	let status = $state<'standby' | 'loading' | 'working'>('standby')
+	let done = $state<(error?: unknown) => void>()
 
 	const site = $derived(site_id ? Sites.one(site_id) : undefined)
 	const { data } = $derived(status === 'standby' ? { data: undefined } : usePageData(site, site?.pages()))
@@ -15,24 +15,32 @@ export const usePublishSite = (site_id?: string) => {
 			return
 		}
 
+		if (status !== 'working') {
+			status = 'working'
+		} else {
+			return
+		}
+
 		const promises: Promise<void>[] = []
 		for (const page of data.pages) {
 			const promise = page_html({
 				...data,
 				page,
 				page_type: PageTypes.one(page.page_type)!
-			}).then(async ({ success, html }) => {
-				if (!success) {
-					throw new Error('Generating page not successful')
-				}
-
-				await self.collection('pages').update(page.id, {
-					compiled_html: new File([html], 'index.html')
-				})
-			}).catch(error => {
-				console.error('Page compilation error:', error)
-				throw error // Re-throw to be caught by Promise.all
 			})
+				.then(async ({ success, html }) => {
+					if (!success) {
+						throw new Error('Generating page not successful')
+					}
+
+					await self.collection('pages').update(page.id, {
+						compiled_html: new File([html], 'index.html')
+					})
+				})
+				.catch((error) => {
+					console.error('Page compilation error:', error)
+					throw error // Re-throw to be caught by Promise.all
+				})
 			promises.push(promise)
 		}
 
@@ -41,7 +49,7 @@ export const usePublishSite = (site_id?: string) => {
 				status = 'standby'
 				done?.()
 			})
-			.catch(error => {
+			.catch((error) => {
 				console.error('Publish failed:', error)
 				status = 'standby'
 				done?.(error) // Pass error to the done callback
@@ -54,7 +62,7 @@ export const usePublishSite = (site_id?: string) => {
 		async publish() {
 			status = 'loading'
 			return new Promise<void>((resolve, reject) => {
-				done = (error?: Error) => {
+				done = (error) => {
 					if (error) {
 						reject(error)
 					} else {

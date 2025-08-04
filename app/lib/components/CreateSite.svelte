@@ -12,6 +12,7 @@
 	import type { Page } from '$lib/common/models/Page'
 	import Button from './ui/button/button.svelte'
 	import { user } from '$lib/pocketbase/PocketBase'
+	import { useCloneSite } from '$lib/CloneSite.svelte'
 
 	const { oncreated }: { oncreated?: () => void } = $props()
 
@@ -67,6 +68,15 @@
 		parent: ''
 	} satisfies Partial<Page>
 
+	const { cloneSite } = $derived(
+		useCloneSite({
+			starter_site_id: selected_starter_id,
+			site_name,
+			site_host: pageState.url.host,
+			site_group_id: site_group?.id
+		})
+	)
+
 	let completed = $derived(!!site_name && selected_starter_id)
 	let loading = $state(false)
 	async function create_site() {
@@ -109,6 +119,9 @@
 			})
 
 			await manager.commit()
+			oncreated?.()
+		} else {
+			await cloneSite()
 			oncreated?.()
 		}
 	}
