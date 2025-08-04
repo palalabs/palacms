@@ -66,7 +66,7 @@ export const getContent = <Collection extends keyof typeof ENTRY_MODELS>(entity:
 			content.en![field.key] = get_empty_value(field)
 		}
 		// For single-value fields, collect just get the first value
-		else {
+		else if (field.key) {
 			const [entry] = fieldEntries
 			if (!content[entry.locale]) content[entry.locale] = {}
 			content[entry.locale]![field.key] = entry.value

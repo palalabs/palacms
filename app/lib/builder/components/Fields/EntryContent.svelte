@@ -41,8 +41,28 @@
 			| undefined
 	)
 
-	// TODO: Implement conditions
-	const is_visible = true
+	const is_visible = $derived.by(() => {
+		if (!field.config?.condition) return true // has no condition
+
+		const { field: field_to_check, value, comparison } = field.config.condition
+
+		// Find the field that this condition depends on
+		const comparable_field = fields.find((f) => f.id === field_to_check)
+		if (!comparable_field) return true // field not found, show by default
+
+		// Get the entry for the comparable field
+		const entry = getResolvedEntries(entity, comparable_field, entries)[0]
+		if (!entry) return true // no entry found, show by default
+
+		// Check the condition
+		if (comparison === '=' && value === entry.value) {
+			return true
+		} else if (comparison === '!=' && value !== entry.value) {
+			return true
+		}
+
+		return false // condition not met, hide field
+	})
 </script>
 
 {#if !Field_Component}

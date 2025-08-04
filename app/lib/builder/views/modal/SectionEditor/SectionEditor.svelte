@@ -99,13 +99,13 @@
 					entity={component}
 					{fields}
 					{entries}
-					create_field={(parentId) => {
+					create_field={(data) => {
 						if (!symbol) {
 							return
 						}
 
 						// Get the highest index for fields at this level
-						const siblingFields = fields?.filter((f) => f.parent === parentId) || []
+						const siblingFields = (fields ?? []).filter((f) => (data?.parent ? f.parent === data.parent : !f.parent))
 						const nextIndex = Math.max(...siblingFields.map((f) => f.index || 0), -1) + 1
 
 						return SiteSymbolFields.create({
@@ -114,7 +114,7 @@
 							label: '',
 							config: null,
 							symbol: symbol.id,
-							...(parentId ? { parent: parentId } : {}),
+							...data,
 							index: nextIndex
 						})
 					}}

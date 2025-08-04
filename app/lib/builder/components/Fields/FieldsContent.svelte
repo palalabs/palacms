@@ -18,7 +18,6 @@
 		parent?: Entry
 	}) {
 		const { fields, entries, updateEntry, createEntry, values, parent } = options
-		console.log(values)
 		for (const [key, items] of Object.entries(values)) {
 			for (const index in items) {
 				const field = fields?.find((field) => field.key === key && (parent ? field.parent === parent?.field : !field.parent))
@@ -28,10 +27,8 @@
 
 				let entry = entries?.find((entry) => entry.field === field?.id && (parent ? entry.parent === parent?.id : !entry.parent) && entry.index === +index)
 				if (entry) {
-					console.log('update', field.id, entry.id, items[index].value)
 					entry = updateEntry(entry.id, { value: items[index].value })
 				} else {
-					console.log('create', field.id, items[index].value)
 					entry = createEntry({ field: field.id, parent: parent?.id, index: +index, locale: 'en', value: items[index].value })
 				}
 
@@ -67,7 +64,7 @@
 		entity: Entity
 		fields: Field[]
 		entries: Entry[]
-		create_field: (parentId?: string) => void
+		create_field: (data?: Partial<Field>) => void
 		oninput: FieldValueHandler
 		onchange: (details: { id: string; data: Partial<Field> }) => void
 		ondelete: (field_id: string) => void
@@ -102,6 +99,42 @@
 			selected_tabs[field_id] = tab
 		})
 	}
+	// Field reordering function
+	function move_field(field: Field, direction: 'up' | 'down') {
+		// Get all top-level fields (same parent level as the field being moved)
+		const siblings = fields.filter((f) => (f.parent || '') === (field.parent || ''))
+
+		// Sort by index to get current order
+		const sorted_siblings = siblings.sort((a, b) => (a.index || 0) - (b.index || 0))
+
+		// Find current position
+		const current_index = sorted_siblings.findIndex((f) => f.id === field.id)
+
+		if (current_index === -1) return // Field not found
+
+		// Calculate new position
+		let new_index = current_index
+		if (direction === 'up' && current_index > 0) {
+			new_index = current_index - 1
+		} else if (direction === 'down' && current_index < sorted_siblings.length - 1) {
+			new_index = current_index + 1
+		} else {
+			return // Can't move further in that direction
+		}
+
+		// Swap the fields - use the other field's current index value
+		const field_to_swap = sorted_siblings[new_index]
+		const temp_index = field.index || current_index
+
+		// Update the indices by swapping them
+		onchange({ id: field.id, data: { index: field_to_swap.index || new_index } })
+		onchange({ id: field_to_swap.id, data: { index: temp_index } })
+	}
+
+	function duplicate_field(field: Field) {
+		create_field(field)
+	}
+
 	// TODO: Implement
 	// get(`active-tabs--${id}`).then((saved) => {
 	// 	if (saved) {
@@ -114,7 +147,7 @@
 </script>
 
 <div class="Fields">
-	{#each (fields || []).filter((f) => !f.parent || f.parent === '') as field (field.id)}
+	{#each (fields || []).filter((f) => !f.parent || f.parent === '').sort((a, b) => a.index - b.index) as field (field.id)}
 		<!-- TODO: $userRole === 'DEV' -->
 		{@const active_tab = selected_tabs[field.id] || 'field'}
 		<div class="entries-item">
@@ -168,10 +201,10 @@
 							{onchange}
 							{ondelete}
 							onduplicate={() => {
-								// TODO: Implement duplicate
+								duplicate_field(field)
 							}}
 							onmove={(direction) => {
-								// TODO: Implement move
+								move_field(field, direction)
 							}}
 						/>
 					</div>

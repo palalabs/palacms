@@ -60,9 +60,9 @@
 					entity={page_type}
 					{fields}
 					{entries}
-					create_field={async (parentId) => {
+					create_field={async (data) => {
 						// Get the highest index for fields at this level
-						const siblingFields = fields?.filter((f) => f.parent === parentId) || []
+						const siblingFields = (fields ?? []).filter((f) => (data?.parent ? f.parent === data.parent : !f.parent))
 						const nextIndex = Math.max(...siblingFields.map((f) => f.index || 0), -1) + 1
 
 						return PageTypeFields.create({
@@ -71,7 +71,7 @@
 							label: '',
 							config: null,
 							page_type: page_type.id,
-							...(parentId ? { parent: parentId } : {}),
+							...data,
 							index: nextIndex
 						})
 					}}

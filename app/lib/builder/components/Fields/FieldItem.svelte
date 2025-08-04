@@ -19,6 +19,7 @@
 	import type { Field } from '$lib/common/models/Field'
 	import { Sites } from '$lib/pocketbase/collections'
 	import { page } from '$app/state'
+	import { get_empty_value } from '../../utils.js'
 
 	let {
 		field,
@@ -35,7 +36,7 @@
 		fields: Field[]
 		level?: number
 		top_level?: boolean
-		create_field?: (parentId?: string) => void
+		create_field?: (data?: Partial<Field>) => void
 		onchange: (details: { id: string; data: Partial<Field> }) => void
 		onduplicate: (id: string) => void
 		ondelete: (id: string) => void
@@ -49,14 +50,14 @@
 	const visible_field_types = getContext('hide_dynamic_field_types') ? $fieldTypes.filter((ft) => !dynamic_field_types.includes(ft.id)) : $fieldTypes
 
 	let comparable_fields = $derived(
-		[]
-		// fields
-		// 	.filter((f) => {
-		// 		const is_valid_type = ['text', 'number', 'switch', 'url', 'select'].includes(f.type)
-		// 		const is_previous_sibling = f.parent === field.parent && f.index < field.index
-		// 		return is_valid_type && is_previous_sibling
-		// 	})
-		// 	.sort((a, b) => a.index - b.index)
+		fields
+			.filter((f) => {
+				const is_valid_type = ['text', 'number', 'switch', 'url', 'select'].includes(f.type)
+				const same_parent = (!f.parent && !field.parent) || f.parent === field.parent
+				const is_previous_sibling = same_parent && (f.index || 0) < (field.index || 0)
+				return is_valid_type && is_previous_sibling
+			})
+			.sort((a, b) => (a.index || 0) - (b.index || 0))
 	)
 
 	function validate_field_key(key) {
@@ -89,13 +90,10 @@
 
 	let minimal = $derived(field.type === 'info')
 	let has_subfields = $derived(field.type === 'group' || field.type === 'repeater')
-	let has_condition = $derived(false) // TODO
+	let has_condition = $derived(!!field.config?.condition)
 
 	// enable condition if field has previous siblings without their own condition
-	let condition_enabled = $derived(
-		false
-		// !field.parent && fields.filter((f) => f.parent === field.parent && f.id !== field.id && f.index < field.index && !f.config?.condition).length > 0
-	)
+	let condition_enabled = $derived(comparable_fields.length > 0)
 
 	let selected_field_type_id = $state<string>()
 	$effect.pre(() => {
@@ -166,20 +164,30 @@
 
 	function add_condition() {
 		const default_field = comparable_fields[0]
-		// dispatch_update({
-		// 	condition: {
-		// 		field: default_field.id,
-		// 		comparison: '=',
-		// 		value: get_empty_value(default_field)
-		// 	}
-		// })
+		if (!default_field) {
+			return
+		}
+
+		onchange({
+			id: field.id,
+			data: {
+				config: {
+					...field.config,
+					condition: {
+						field: default_field.id,
+						comparison: '=',
+						value: get_empty_value(default_field)
+					}
+				}
+			}
+		})
 	}
 
 	let child_fields = $derived(fields?.filter((f) => f.parent === field.id) || [])
 
 	let is_new_field = $state(field.key === '')
 
-	let hide_footer = $derived(!['select', 'image', ...dynamic_field_types].includes(field.type) /*&& !field.condition*/)
+	let hide_footer = $derived(!['select', 'image', ...dynamic_field_types].includes(field.type) && !field.config?.condition)
 </script>
 
 <div class="top-container" class:top_level class:collapsed>
@@ -322,6 +330,7 @@
 												{
 													label: 'Add Condition',
 													icon: 'mdi:show',
+													disabled: !condition_enabled,
 													on_click: () => {
 														add_condition()
 													}
@@ -422,6 +431,7 @@
 												{
 													label: 'Add Condition',
 													icon: 'mdi:show',
+													disabled: !condition_enabled,
 													on_click: () => {
 														add_condition()
 													}
@@ -493,7 +503,12 @@
 				{comparable_fields}
 				{collapsed}
 				on:input={({ detail: condition }) => {
-					// onchange({ config: { ...field.config, condition } })
+					onchange({
+						id: field.id,
+						data: {
+							config: { ...field.config, condition }
+						}
+					})
 				}}
 			/>
 		{/if}
@@ -501,7 +516,7 @@
 
 	{#if has_subfields}
 		<div class="children-container" style:padding-left="{level + 1}rem">
-			{#each child_fields.sort((a, b) => a.index - b.index) as subfield (subfield.id)}
+			{#each child_fields.sort((a, b) => (a.index || 0) - (b.index || 0)) as subfield (subfield.id)}
 				<FieldItem field={cloneDeep(subfield)} {fields} {create_field} top_level={false} level={level + 1} {onduplicate} {ondelete} {onmove} {onchange} />
 			{/each}
 			{#if field.type === 'repeater' || field.type === 'group'}
@@ -510,7 +525,7 @@
 					data-level={level}
 					onclick={() => {
 						if (create_field) {
-							create_field(field.id)
+							create_field({ parent: field.id })
 						}
 					}}
 				>

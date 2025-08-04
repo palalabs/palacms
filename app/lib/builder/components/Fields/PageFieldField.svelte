@@ -14,7 +14,6 @@
 	// Get page type fields
 	const allFields = $derived.by(() => {
 		const pageTypes = site?.page_types() ?? []
-		console.log({ pageTypes })
 		return pageTypes.flatMap((pageType) => {
 			const fields = pageType.fields() || []
 			return fields.map((f) => ({
