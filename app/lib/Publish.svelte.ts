@@ -23,6 +23,28 @@ export const usePublishSite = (site_id?: string) => {
 
 		const promises: Promise<void>[] = []
 		for (const page of data.pages) {
+			if (!page.parent) {
+				// Generate site preview from homepage
+				const promise = page_html({
+					...data,
+					page,
+					page_type: PageTypes.one(page.page_type)!,
+					no_js: true
+				}).then(async ({ success, html }) => {
+					if (!success) {
+						throw new Error('Generating site preview not successful')
+					}
+					if (!site) {
+						throw new Error('No site')
+					}
+
+					await self.collection('sites').update(site.id, {
+						preview: new File([html], 'index.html')
+					})
+				})
+				promises.push(promise)
+			}
+
 			const promise = page_html({
 				...data,
 				page,

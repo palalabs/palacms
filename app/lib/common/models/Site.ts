@@ -8,6 +8,7 @@ export const Site = z.object({
 	group: z.string().nonempty(),
 	head: z.string(),
 	foot: z.string(),
+	preview: z.string().optional(),
 	index: z.number().int().nonnegative()
 })
 
