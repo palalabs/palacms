@@ -14,7 +14,7 @@ const sveltePromiseWorker = new PromiseWorker(new svelteWorker())
 const CDN_URL = 'https://esm.sh' // or 'https://cdn.jsdelivr.net/npm' or 'https://unpkg.com'
 
 registerPromiseWorker(rollup_worker)
-async function rollup_worker({ component, head, hydrated, buildStatic = true, format = 'esm', dev_mode = false }) {
+async function rollup_worker({ component, head, hydrated, buildStatic = true, css = 'external', format = 'esm', dev_mode = false }) {
 	const final = {
 		ssr: '',
 		dom: '',
@@ -33,7 +33,7 @@ async function rollup_worker({ component, head, hydrated, buildStatic = true, fo
 				${components.map((_, i) => `import Component_${i} from './Component_${i}.svelte';`).join('\n')}
 				${components.map((_, i) => `export let component_${i}_props`).join(`\n`)}
 
-				export let head_props 
+				export let head_props
 				${field_keys.map((field) => `let ${field[0]} = head_props['${field[0]}'];`).join(`\n`)}
 			</script>
 			${components.map((component, i) => `<Component_${i} {...component_${i}_props} /> \n`).join('')}
@@ -54,7 +54,7 @@ async function rollup_worker({ component, head, hydrated, buildStatic = true, fo
 
 		// html must come first for LoC (inspector) to work
 		return `\
-					${html} 
+					${html}
           <script>
             ${field_keys.map((field) => `let ${field[0]} = $$props['${field[0]}'];`).join(`\n`) /* e.g. let heading = props['heading'] */}
             ${js}
@@ -82,7 +82,7 @@ async function rollup_worker({ component, head, hydrated, buildStatic = true, fo
 	if (buildStatic) {
 		const bundle = await compile({
 			generate: 'server',
-			css: 'injected'
+			css
 		})
 
 		const output = (await bundle.generate({ format })).output[0].code
@@ -90,7 +90,7 @@ async function rollup_worker({ component, head, hydrated, buildStatic = true, fo
 	} else {
 		const bundle = await compile({
 			generate: 'client',
-			css: 'injected',
+			css,
 			dev: dev_mode
 		})
 
