@@ -64,7 +64,7 @@
 		entity: Entity
 		fields: Field[]
 		entries: Entry[]
-		create_field: (parentId?: string) => void
+		create_field: (data?: Partial<Field>) => void
 		oninput: FieldValueHandler
 		onchange: (details: { id: string; data: Partial<Field> }) => void
 		ondelete: (field_id: string) => void
@@ -132,7 +132,7 @@
 	}
 
 	function duplicate_field(field: Field) {
-		// TODO: Implement field duplication
+		create_field(field)
 	}
 
 	// TODO: Implement

@@ -36,7 +36,7 @@
 		fields: Field[]
 		level?: number
 		top_level?: boolean
-		create_field?: (parentId?: string) => void
+		create_field?: (data?: Partial<Field>) => void
 		onchange: (details: { id: string; data: Partial<Field> }) => void
 		onduplicate: (id: string) => void
 		ondelete: (id: string) => void
@@ -228,9 +228,9 @@
 						<button onclick={add_condition}>
 							<Icon icon="mdi:show" />
 						</button>
-						<!-- <button onclick={() => onduplicate(field.id)}>
+						<button onclick={() => onduplicate(field.id)}>
 							<Icon icon="bxs:duplicate" />
-						</button> -->
+						</button>
 						<button class="delete" onclick={() => ondelete(field.id)}>
 							<Icon icon="ic:outline-delete" />
 						</button>
@@ -260,11 +260,11 @@
 												}
 											}
 										]),
-								// {
-								// 	label: 'Duplicate',
-								// 	icon: 'bxs:duplicate',
-								// 	on_click: () => onduplicate(field.id)
-								// },
+								{
+									label: 'Duplicate',
+									icon: 'bxs:duplicate',
+									on_click: () => onduplicate(field.id)
+								},
 								{
 									label: 'Delete',
 									icon: 'ic:outline-delete',
@@ -525,7 +525,7 @@
 					data-level={level}
 					onclick={() => {
 						if (create_field) {
-							create_field(field.id)
+							create_field({ parent: field.id })
 						}
 					}}
 				>

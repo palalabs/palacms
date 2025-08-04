@@ -191,7 +191,6 @@
 	</Dialog.Content>
 </Dialog.Root>
 
-
 <div class="sidebar primo-reset">
 	<Tabs.Root value={active_tab === 'CONTENT' ? 'content' : 'blocks'} class="p-2">
 		<Tabs.List class="w-full mb-2">
@@ -283,14 +282,19 @@
 						entity={page_type}
 						{fields}
 						{entries}
-						create_field={async (parentId) => {
+						create_field={async (data) => {
+							// Get the highest index for fields at this level
+							const siblingFields = (fields ?? []).filter((f) => (data?.parent ? f.parent === data.parent : !f.parent))
+							const nextIndex = Math.max(...siblingFields.map((f) => f.index || 0), -1) + 1
+
 							return PageTypeFields.create({
 								type: 'text',
 								key: '',
 								label: '',
 								config: null,
 								page_type: page_type.id,
-								parent: parentId || ''
+								...data,
+								index: nextIndex
 							})
 						}}
 						oninput={(values) => {
