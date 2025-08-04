@@ -17,22 +17,46 @@ export const usePublishSite = (site_id?: string) => {
 
 		const promises: Promise<void>[] = []
 		for (const page of data.pages) {
+			if (!page.parent) {
+				// Generate site preview from homepage
+				const promise = page_html({
+					...data,
+					page,
+					page_type: PageTypes.one(page.page_type)!,
+					no_js: true
+				}).then(async ({ success, html }) => {
+					if (!success) {
+						throw new Error('Generating site preview not successful')
+					}
+					if (!site) {
+						throw new Error('No site')
+					}
+
+					await self.collection('sites').update(site.id, {
+						preview: new File([html], 'index.html')
+					})
+				})
+				promises.push(promise)
+			}
+
 			const promise = page_html({
 				...data,
 				page,
 				page_type: PageTypes.one(page.page_type)!
-			}).then(async ({ success, html }) => {
-				if (!success) {
-					throw new Error('Generating page not successful')
-				}
-
-				await self.collection('pages').update(page.id, {
-					compiled_html: new File([html], 'index.html')
-				})
-			}).catch(error => {
-				console.error('Page compilation error:', error)
-				throw error // Re-throw to be caught by Promise.all
 			})
+				.then(async ({ success, html }) => {
+					if (!success) {
+						throw new Error('Generating page not successful')
+					}
+
+					await self.collection('pages').update(page.id, {
+						compiled_html: new File([html], 'index.html')
+					})
+				})
+				.catch((error) => {
+					console.error('Page compilation error:', error)
+					throw error // Re-throw to be caught by Promise.all
+				})
 			promises.push(promise)
 		}
 
@@ -41,7 +65,7 @@ export const usePublishSite = (site_id?: string) => {
 				status = 'standby'
 				done?.()
 			})
-			.catch(error => {
+			.catch((error) => {
 				console.error('Publish failed:', error)
 				status = 'standby'
 				done?.(error) // Pass error to the done callback

@@ -84,3 +84,28 @@ routerAdd('GET', '/{path...}', (e) => {
 		fsys?.close()
 	}
 })
+
+routerAdd('GET', '/_preview/{site}', (e) => {
+	const siteId = e.request.pathValue('site')
+	let site
+	try {
+		site = $app.findRecordById('sites', siteId)
+	} catch {
+		return e.string(404, 'Site not found')
+	}
+
+	// Respond with compiled HTML
+	const fileKey = site.baseFilesPath() + '/' + site.get('preview')
+	let fsys, reader, content
+	try {
+		fsys = $app.newFilesystem()
+		reader = fsys.getFile(fileKey)
+		content = toString(reader)
+		return e.blob(200, 'text/html', content)
+	} catch {
+		return e.string(404, 'Preview not found')
+	} finally {
+		reader?.close()
+		fsys?.close()
+	}
+})
