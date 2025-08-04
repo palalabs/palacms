@@ -22,8 +22,7 @@
 	const fallback_site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
 	const site = $derived(context_site || fallback_site)
 	const full_url = $derived(() => {
-		const base_path = pageState.url.pathname.includes('/sites/') ? `/admin/sites/${site?.id}` : '/admin/site'
-		return `${base_path}/${page.slug}`
+		return `/admin/site/${page.slug}`
 	})
 	const allPages = $derived(site?.pages() ?? [])
 	const page_type = $derived(PageTypes.one(page.page_type))

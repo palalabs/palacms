@@ -109,8 +109,7 @@
 				{#if true}
 					<button
 						onclick={() => {
-							const base_path = pageState.url.pathname.includes('/sites/') ? `/admin/sites/${site?.id}` : '/admin/site'
-							goto(`${base_path}/page-type--${page_type?.id}?tab=blocks`)
+							goto(`/admin/site/page-type--${page_type?.id}?tab=blocks`)
 						}}
 						class="footer-link"
 					>
@@ -144,8 +143,7 @@
 				{#if true}
 					<button
 						onclick={() => {
-							const base_path = pageState.url.pathname.startsWith('/admin/sites/') ? `/admin/sites/${site?.id}` : '/admin/site'
-							goto(`${base_path}/page-type--${page_type?.id}?tab=fields`)
+							goto(`/admin/site/page-type--${page_type?.id}?tab=fields`)
 						}}
 						class="footer-link"
 					>
@@ -180,8 +178,7 @@
 		{#if true}
 			<button
 				onclick={() => {
-					const base_path = pageState.url.pathname.includes('/sites/') ? `/admin/sites/${site?.id}` : '/admin/site'
-					goto(`${base_path}/page-type--${page_type?.id}?tab=fields`)
+					goto(`/admin/site/page-type--${page_type?.id}?tab=fields`)
 				}}
 				class="footer-link mb-2 mr-2"
 			>

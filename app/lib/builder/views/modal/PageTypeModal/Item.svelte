@@ -26,8 +26,7 @@
 	})
 
 	const full_url = $derived(() => {
-		const base_path = page.url.pathname.includes('/sites/') ? `/admin/sites/${site?.id}` : '/admin/site'
-		return `${base_path}/page-type--${page_type.id}`
+		return `/admin/site/page-type--${page_type.id}`
 	})
 </script>
 

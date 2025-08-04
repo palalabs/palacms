@@ -50,16 +50,14 @@
 	function navigate_up() {
 		if (can_navigate_up) {
 			const prev_page = all_pages[current_page_index - 1]
-			const base_path = pageState.url.pathname.includes('/sites/') ? `/admin/sites/${resolved_site?.id}` : '/admin/site'
-			goto(`${base_path}/${prev_page.slug}`)
+			goto(`/admin/site/${prev_page.slug}`)
 		}
 	}
 
 	function navigate_down() {
 		if (can_navigate_down) {
 			const next_page = all_pages[current_page_index + 1]
-			const base_path = pageState.url.pathname.includes('/sites/') ? `/admin/sites/${resolved_site?.id}` : '/admin/site'
-			goto(`${base_path}/${next_page.slug}`)
+			goto(`/admin/site/${next_page.slug}`)
 		}
 	}
 
@@ -131,7 +129,7 @@
 
 <Dialog.Root bind:open={publishing}>
 	<Dialog.Content class="z-[999] max-w-[500px] flex flex-col p-0">
-		<Deploy 
+		<Deploy
 			bind:stage={publish_stage}
 			publish_fn={publish.publish}
 			loading={publish.status !== 'standby'}
@@ -197,8 +195,7 @@
 				{#if page_page_type}
 					<!-- $userRole === 'DEV' -->
 					{#if true}
-						{@const base_path = pageState.url.pathname.includes('/sites/') ? `/admin/sites/${resolved_site?.id}` : '/admin/site'}
-						<a class="page-type-badge" style="background-color: {page_page_type.color};" href="{base_path}/page-type--{page_page_type.id}">
+						<a class="page-type-badge" style="background-color: {page_page_type.color};" href="/admin/site/page-type--{page_page_type.id}">
 							<Icon icon={page_page_type.icon} />
 						</a>
 					{:else}
@@ -234,7 +231,7 @@
 			{/if}
 			{@render children?.()}
 			<!-- <LocaleSelector /> -->
-			<ToolbarButton type="primo" icon="entypo:publish" label="Publish" loading={publish.status !== 'standby'} on:click={() => publishing = true} />
+			<ToolbarButton type="primo" icon="entypo:publish" label="Publish" loading={publish.status !== 'standby'} on:click={() => (publishing = true)} />
 		</div>
 	</div>
 </nav>

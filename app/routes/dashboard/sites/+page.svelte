@@ -169,12 +169,12 @@
 {#snippet SiteButton(site: Site)}
 	<div class="space-y-3 relative w-full bg-gray-900">
 		<div class="rounded-tl rounded-tr overflow-hidden">
-			<a data-sveltekit-prefetch href={`/admin/sites/${site.id}`}>
+			<a href={`${page.url.protocol}//${site.host}/admin/site`}>
 				<SitePreview site_id={site.id} />
 			</a>
 		</div>
 		<div class="absolute -bottom-2 rounded-bl rounded-br w-full p-3 z-20 bg-gray-900 truncate flex items-center justify-between">
-			<a data-sveltekit-prefetch href={`/admin/sites/${site.id}`} class="text-sm font-medium leading-none">{site.name}</a>
+			<a href={`${page.url.protocol}//${site.host}/admin/site`} class="text-sm font-medium leading-none">{site.name}</a>
 			<DropdownMenu.Root>
 				<DropdownMenu.Trigger>
 					<EllipsisVertical size={14} />
