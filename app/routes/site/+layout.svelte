@@ -1,6 +1,6 @@
 <script>
 	import Primo from '$lib/builder/Primo.svelte'
-	import { self, user } from '$lib/pocketbase/PocketBase'
+	import { checkSession, self } from '$lib/pocketbase/PocketBase'
 	import { onMount } from 'svelte'
 	import { goto } from '$app/navigation'
 	import { page } from '$app/state'
@@ -8,7 +8,7 @@
 	import CreateSite from '$lib/components/CreateSite.svelte'
 
 	onMount(async () => {
-		if (!self.authStore.isValid) {
+		if (!(await checkSession())) {
 			await goto('/admin/auth')
 		}
 	})

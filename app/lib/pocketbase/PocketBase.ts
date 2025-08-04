@@ -7,3 +7,18 @@ export const marketplace = new PocketBase('https://marketplace.palacms.org')
 export const user = () => {
 	return self.authStore.record as unknown as User | undefined
 }
+
+export const checkSession = async () => {
+	if (self.authStore.isValid) {
+		return self
+			.collection('users')
+			.authRefresh()
+			.then(() => true)
+			.catch(() => {
+				self.authStore.clear()
+				return false
+			})
+	} else {
+		return false
+	}
+}
