@@ -18,6 +18,7 @@ import type { PageTypeSymbol } from '$lib/common/models/PageTypeSymbol.js'
 import type { SiteSymbol } from '$lib/common/models/SiteSymbol.js'
 import type { SiteSymbolEntry } from '$lib/common/models/SiteSymbolEntry.js'
 import { page } from '$app/state'
+import type { PageEntry } from '$lib/common/models/PageEntry.js'
 
 export async function block_html({ code, data }) {
 	const { html, css: postcss, js } = code
@@ -60,6 +61,7 @@ export async function page_html({
 	site_entries: SiteEntry[]
 	page_type_entries: PageTypeEntry[]
 	symbol_entries: SiteSymbolEntry[]
+	page_entries: PageEntry[]
 	page_section_entries: PageSectionEntry[]
 	page_type_section_entries: PageTypeSectionEntry[]
 	locale?: (typeof locales)[number]
@@ -67,13 +69,13 @@ export async function page_html({
 }) {
 	const site_content = getContent(site, site_fields, site_entries)
 	const page_type_content = getContent(page_type, page_type_fields, page_type_entries)
-	
+
 	// Flatten the content for template variables (extract from locale structure)
 	const site_data = {
 		...(site_content[locale] || {}),
 		...(page_type_content[locale] || {})
 	}
-	
+
 	const head = {
 		code: site.head + page_type.head,
 		data: site_data
