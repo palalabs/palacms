@@ -16,10 +16,18 @@
 	import type { Site } from '$lib/common/models/Site'
 	import { Sites, SiteGroups, Pages, manager } from '$lib/pocketbase/collections'
 	import { self as pb } from '$lib/pocketbase/PocketBase'
+	import { goto } from '$app/navigation'
 
 	const sidebar = useSidebar()
 
-	const site_group_id = $derived(page.url.searchParams.get('group')!)
+	const site_group_id = $derived(page.url.searchParams.get('group'))
+	$effect(() => {
+		if (!site_group_id && site_groups.length > 0) {
+			const url = new URL(page.url)
+			url.searchParams.set('group', site_groups[0].id)
+			goto(url, { replaceState: true })
+		}
+	})
 
 	const site_groups = $derived(SiteGroups.list() ?? [])
 	const active_site_group = $derived(site_group_id ? SiteGroups.one(site_group_id) : undefined)
