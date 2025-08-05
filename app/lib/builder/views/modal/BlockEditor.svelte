@@ -78,6 +78,13 @@
 	let html = $state(block.html)
 	let css = $state(block.css)
 	let js = $state(block.js)
+
+	// Create code object for ComponentPreview)
+	let code = $derived({
+		html: html || '<!-- Add your HTML here -->',
+		css: css || '/* Add your CSS here */',
+		js: js || ''
+	})
 </script>
 
 <Dialog.Header
@@ -152,7 +159,7 @@
 		<PaneResizer class="PaneResizer" />
 		<Pane defaultSize={50}>
 			{#if component_data}
-				<ComponentPreview bind:orientation={$orientation} view="small" {loading} code={{ html, css, js }} data={component_data} />
+				<ComponentPreview bind:orientation={$orientation} view="small" {loading} {code} data={component_data} />
 			{/if}
 		</Pane>
 	</PaneGroup>

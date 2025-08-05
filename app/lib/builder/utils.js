@@ -1,5 +1,4 @@
 import * as _ from 'lodash-es'
-import { chain as _chain, capitalize as _capitalize } from 'lodash-es'
 import { customAlphabet } from 'nanoid/non-secure'
 
 import { processors } from './component.js'

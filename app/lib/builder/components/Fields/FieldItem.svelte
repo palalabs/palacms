@@ -14,11 +14,11 @@
 	import ImageFieldOptions from './ImageFieldOptions.svelte'
 	import fieldTypes from '../../stores/app/fieldTypes.js'
 	import { dynamic_field_types } from '$lib/builder/field-types'
-	import { pluralize } from '../../field-types/RepeaterField.svelte'
 	import { getContext } from 'svelte'
 	import type { Field } from '$lib/common/models/Field'
 	import { Sites } from '$lib/pocketbase/collections'
 	import { page } from '$app/state'
+	import pluralize from 'pluralize'
 	import { get_empty_value } from '../../utils.js'
 
 	let {
@@ -110,7 +110,7 @@
 		const combined = `${labelLower} ${keyLower}`
 
 		// Plurals/Arrays first (most specific)
-		if (label && $pluralize.isPlural(label)) {
+		if (label && pluralize.isPlural(label)) {
 			return 'repeater'
 		}
 
@@ -467,7 +467,12 @@
 			/>
 		{/if}
 		{#if field.type === 'image'}
-			<ImageFieldOptions {field} on:input={onchange} />
+			<ImageFieldOptions
+				{field}
+				on:input={(event) => {
+					onchange({ id: field.id, data: event.detail })
+				}}
+			/>
 		{/if}
 		{#if field.type === 'page-field'}
 			<PageFieldField
@@ -516,7 +521,7 @@
 
 	{#if has_subfields}
 		<div class="children-container" style:padding-left="{level + 1}rem">
-			{#each child_fields.sort((a, b) => (a.index || 0) - (b.index || 0)) as subfield (subfield.id)}
+			{#each child_fields.sort((a, b) => a.index - b.index) as subfield (subfield.id)}
 				<FieldItem field={cloneDeep(subfield)} {fields} {create_field} top_level={false} level={level + 1} {onduplicate} {ondelete} {onmove} {onchange} />
 			{/each}
 			{#if field.type === 'repeater' || field.type === 'group'}

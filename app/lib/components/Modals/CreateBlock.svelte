@@ -65,11 +65,11 @@
 	const entries = $derived(symbol.entries())
 	let component_data = $derived(fields && entries && (getContent(symbol, fields, entries)[$locale] ?? {}))
 
-	let html = $state(symbol.html)
-	let css = $state(symbol.css)
-	let js = $state(symbol.js)
+	let html = $state(symbol?.html ?? '')
+	let css = $state(symbol?.css ?? '')
+	let js = $state(symbol?.js ?? '')
 
-	// Create code object for ComponentPreview (matching SectionEditor pattern)
+	// Create code object for ComponentPreview)
 	let code = $derived({
 		html: html || '<!-- Add your HTML here -->',
 		css: css || '/* Add your CSS here */',

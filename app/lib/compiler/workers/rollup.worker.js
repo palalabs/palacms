@@ -1,4 +1,4 @@
-import { rollup } from '../lib/rollup-browser.min.js'
+import { rollup } from '@rollup/browser'
 import svelteWorker from './svelte.worker?worker'
 import PromiseWorker from 'promise-worker'
 import registerPromiseWorker from 'promise-worker/register'
@@ -11,7 +11,7 @@ const sveltePromiseWorker = new PromiseWorker(new svelteWorker())
 
 // Based on https://github.com/pngwn/REPLicant & the Svelte REPL package (https://github.com/sveltejs/sites/tree/master/packages/repl)
 
-const CDN_URL = 'https://cdn.jsdelivr.net/npm' // or 'https://unpkg.com'
+const CDN_URL = 'https://esm.sh' // or 'https://cdn.jsdelivr.net/npm' or 'https://unpkg.com'
 
 registerPromiseWorker(rollup_worker)
 async function rollup_worker({ component, head, hydrated, buildStatic = true, format = 'esm', dev_mode = false }) {
@@ -36,9 +36,7 @@ async function rollup_worker({ component, head, hydrated, buildStatic = true, fo
 				export let head_props 
 				${field_keys.map((field) => `let ${field[0]} = head_props['${field[0]}'];`).join(`\n`)}
 			</script>
-			${components
-				.map((component, i) =>  `<Component_${i} {...component_${i}_props} /> \n`)
-				.join('')}
+			${components.map((component, i) => `<Component_${i} {...component_${i}_props} /> \n`).join('')}
 		`
 	}
 
@@ -71,10 +69,7 @@ async function rollup_worker({ component, head, hydrated, buildStatic = true, fo
 				const code = Component(section)
 				component_lookup.set(`./Component_${i}.svelte`, code)
 			})
-			component_lookup.set(
-				`./App.svelte`,
-				App_Wrapper(component, head)
-			)
+			component_lookup.set(`./App.svelte`, App_Wrapper(component, head))
 		} else {
 			// build individual component
 			const app_code = Component(component)
@@ -86,14 +81,18 @@ async function rollup_worker({ component, head, hydrated, buildStatic = true, fo
 
 	if (buildStatic) {
 		const bundle = await compile({
-			generate: 'ssr',
-			hydratable: true
+			generate: 'server',
+			css: 'injected'
 		})
 
 		const output = (await bundle.generate({ format })).output[0].code
 		final.ssr = output
 	} else {
-		const bundle = await compile({ dev: dev_mode })
+		const bundle = await compile({
+			generate: 'client',
+			css: 'injected',
+			dev: dev_mode
+		})
 
 		const output = (await bundle.generate({ format })).output[0].code
 		final.dom = output
@@ -102,8 +101,8 @@ async function rollup_worker({ component, head, hydrated, buildStatic = true, fo
 	// If static build needs to be hydrated, include Svelte JS (or just render normal component)
 	if (hydrated) {
 		const bundle = await compile({
-			css: false,
-			hydratable: true
+			generate: 'client',
+			css: 'external'
 		})
 		const output = (await bundle.generate({ format })).output[0].code
 		final.dom = output
@@ -112,6 +111,9 @@ async function rollup_worker({ component, head, hydrated, buildStatic = true, fo
 	async function compile(svelteOptions = {}) {
 		return await rollup({
 			input: './App.svelte',
+			external: (id) => {
+				if (/^https?:/.test(id)) return true
+			},
 			plugins: [
 				commonjs,
 				{
@@ -120,18 +122,22 @@ async function rollup_worker({ component, head, hydrated, buildStatic = true, fo
 						// handle imports from 'svelte'
 
 						// import x from 'svelte'
-						if (importee === 'svelte') return `${CDN_URL}/svelte/index.mjs`
+						if (importee === 'svelte') return `${CDN_URL}/svelte`
 
 						// import x from 'svelte/somewhere'
 						if (importee.startsWith('svelte/')) {
-							return `${CDN_URL}/svelte/${importee.slice(7)}/index.mjs`
+							return `${CDN_URL}/${importee}`
 						}
 
 						// import x from './file.js' (via a 'svelte' or 'svelte/x' package)
-						if (importer && importer.startsWith(`${CDN_URL}/svelte/`)) {
-							const resolved = new URL(importee, importer).href
-							if (resolved.endsWith('.mjs')) return resolved
-							return `${resolved}/index.mjs`
+						if (importer && importer.startsWith(CDN_URL)) {
+							if (importee.startsWith(CDN_URL)) {
+								return importee
+							}
+
+							if (importee.startsWith('/')) {
+								return `${CDN_URL}${importee}`
+							}
 						}
 
 						// local repl components
@@ -203,7 +209,6 @@ async function rollup_worker({ component, head, hydrated, buildStatic = true, fo
 								svelteOptions
 							})
 							return res.code
-
 
 							// TODO: reinstate warnings, pass along to UI instead of throwing
 							// const warnings = res.warnings

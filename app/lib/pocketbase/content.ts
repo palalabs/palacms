@@ -1,8 +1,6 @@
-import { find as _find, chain as _chain, flattenDeep as _flattenDeep } from 'lodash-es'
-import * as _ from 'lodash-es'
 import type { Entry } from '$lib/common/models/Entry.js'
 import type { locales } from '../common'
-import { SiteFields, Sites, Pages, SiteSymbolFields, PageTypeFields, PageTypes, SiteSymbols } from './collections'
+import { SiteFields, Sites, Pages, PageTypeFields, PageTypes } from './collections'
 import { LibrarySymbolEntry } from '../common/models/LibrarySymbolEntry'
 import type { models } from '$lib/common/models'
 import type { z } from 'zod'
@@ -13,7 +11,6 @@ import { SiteSymbolEntry } from '../common/models/SiteSymbolEntry'
 import { SiteEntry } from '../common/models/SiteEntry'
 import { PageTypeEntry } from '$lib/common/models/PageTypeEntry'
 import { PageEntry } from '$lib/common/models/PageEntry'
-import { get_empty_value } from '$lib/builder/utils'
 
 /**
  * Entry models by name of the owning collection.

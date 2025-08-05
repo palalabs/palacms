@@ -9,7 +9,7 @@
 </script>
 
 <script>
-	import { onMount, tick } from 'svelte'
+	import { onMount, tick, untrack } from 'svelte'
 	import { slide, fade } from 'svelte/transition'
 	import { dynamic_iframe_srcdoc } from './misc.js'
 	import { highlightedElement } from '../stores/app/misc'
@@ -82,7 +82,7 @@
 					html: `<svelte:head>${site.head}</svelte:head>`,
 					css: '',
 					js: '',
-					data
+					data: {}
 				}
 			})
 
@@ -292,17 +292,21 @@
 	})
 	$effect(() => {
 		if (componentApp) {
-			setIframeApp({
-				iframeLoaded,
-				componentApp
+			iframeLoaded
+			untrack(() => {
+				setIframeApp({
+					iframeLoaded,
+					componentApp
+				})
 			})
 		}
 	})
 	$effect(() => {
-		setIframeData(data)
+		data
+		untrack(() => setIframeData(data))
 	})
 	$effect(() => {
-		previewWidth, resizePreview()
+		;(previewWidth, resizePreview())
 	})
 	let active_dynamic_icon = $derived(getIcon(previewWidth))
 	let active_static_icon = $derived(getIcon(active_static_width))

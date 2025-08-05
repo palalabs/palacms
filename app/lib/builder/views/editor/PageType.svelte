@@ -12,9 +12,10 @@
 	import LockedOverlay from './Layout/LockedOverlay.svelte'
 	import CodeEditor from '$lib/builder/components/CodeEditor/CodeMirror.svelte'
 	import { locale } from '../../stores/app/misc.js'
-	import { dropTargetForElements } from '$lib/builder/libraries/pragmatic-drag-and-drop/entry-point/element/adapter.js'
-	import { attachClosestEdge, extractClosestEdge } from '$lib/builder/libraries/pragmatic-drag-and-drop-hitbox/closest-edge.js'
+	import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
+	import { attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge'
 	import { manager, PageTypes, PageTypeSections, Sites } from '$lib/pocketbase/collections'
+
 	import { page } from '$app/state'
 	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.js'
 

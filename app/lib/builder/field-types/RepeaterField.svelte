@@ -1,15 +1,9 @@
-<script module>
-	import { writable } from 'svelte/store'
-	export const pluralize = writable(null)
-	import('../libraries/pluralize').then((mod) => pluralize.set(mod.default))
-</script>
-
 <script lang="ts">
 	import Icon from '@iconify/svelte'
 	import { onDestroy } from 'svelte'
 	import RepeaterFieldItem from './RepeaterFieldItem.svelte'
-
 	import * as idb from 'idb-keyval'
+	import pluralize from 'pluralize'
 	import type { Entry } from '$lib/common/models/Entry'
 	import type { Entity } from '$lib/pocketbase/content'
 	import type { Field } from '$lib/common/models/Field'
@@ -124,7 +118,7 @@
 	</ul>
 	<button class="field-button" onclick={add_item}>
 		<Icon icon="akar-icons:plus" />
-		<span>Create {$pluralize ? $pluralize.singular(field.label) : field.label}</span>
+		<span>Create {pluralize.singular(field.label)}</span>
 	</button>
 </div>
 

@@ -1,14 +1,11 @@
-<script module>
-	import { writable } from 'svelte/store'
-	export const pluralize = writable(null)
-	import('../libraries/pluralize').then((mod) => pluralize.set(mod.default))
-</script>
-
 <script lang="ts">
-	import { createEventDispatcher, type Component } from 'svelte'
+	import { createEventDispatcher } from 'svelte'
 	import * as _ from 'lodash-es'
 	import { onMount } from 'svelte'
 	import Icon from '@iconify/svelte'
+	import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
+	import { attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge'
+	import pluralize from 'pluralize'
 	import type { Field } from '$lib/common/models/Field'
 	import type { Entry } from '$lib/common/models/Entry'
 	import { getResolvedEntries, type Entity } from '$lib/pocketbase/content'
@@ -80,8 +77,6 @@
 	let element = $state()
 
 	onMount(async () => {
-		const { draggable, dropTargetForElements } = await import('$lib/builder/libraries/pragmatic-drag-and-drop/adapter/element-adapter')
-		const { attachClosestEdge, extractClosestEdge } = await import('$lib/builder/libraries/pragmatic-drag-and-drop-hitbox/closest-edge')
 		draggable({
 			element,
 			dragHandle: drag_handle_element,
@@ -122,7 +117,7 @@
 			}
 		})
 	})
-	let singular_label = $derived($pluralize && $pluralize?.singular(field.label))
+	let singular_label = $derived(pluralize.singular(field.label))
 	let item_image = $derived(get_image())
 	let item_icon = $derived(get_icon())
 	let item_title = $derived(get_title())

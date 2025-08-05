@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { find as _find } from 'lodash-es'
 	import IFrame from '$lib/builder/components/IFrame.svelte'
 	import { LibrarySymbols } from '$lib/pocketbase/collections'
 	import { block_html } from '$lib/builder/code_generators'
@@ -29,20 +28,20 @@
 
 	async function get_preview() {
 		if (!symbol) return
-		
+
 		try {
 			// Use the proper code generator like other preview components
 			const code = { html: symbol.html, css: symbol.css, js: symbol.js }
-			
+
 			// Get actual field data for preview
 			const fields = symbol.fields()
 			const entries = symbol.entries()
 			let data = {}
-			
+
 			if (fields && entries) {
 				// Build data object from fields and entries
 				for (const field of fields) {
-					const entry = entries.find(e => e.field === field.id && e.locale === 'en')
+					const entry = entries.find((e) => e.field === field.id && e.locale === 'en')
 					if (entry) {
 						data[field.key] = entry.value
 					} else {
@@ -51,7 +50,7 @@
 					}
 				}
 			}
-			
+
 			const generated_code = await block_html({ code, data })
 			// static_iframe_srcdoc expects an object with head, html, css properties
 			generated_preview = static_iframe_srcdoc({
