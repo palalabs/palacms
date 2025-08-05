@@ -8,7 +8,8 @@ import type { CollectionManager } from './CollectionManager'
 
 export type ObjectOf<T> = T extends CollectionMapping<infer Object, infer Options> ? MappedObject<Object, Options> : never
 
-export type MappedObject<T extends ObjectWithId, Options extends CollectionMappingOptions<T>> = T & NonNullable<Options['links']> & { collection: CollectionMapping<T, CollectionMappingOptions<T>> }
+export type MappedObject<T extends ObjectWithId, Options extends CollectionMappingOptions<T>> = T &
+	NonNullable<Options['links']> & { collection: CollectionMapping<T, CollectionMappingOptions<T>>; values: () => T }
 
 export type MappedObjectList<T extends ObjectWithId, Options extends CollectionMappingOptions<T>> = MappedObject<T, Options>[]
 
@@ -56,7 +57,7 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 	const mapObject = (record: unknown): MappedObject<T, Options> => {
 		const object = model.parse(record)
 		const links = Object.fromEntries(Object.entries(options?.links ?? {}).map(([property, factory]) => [property, factory.bind({ ...object, collection: collectionMapping })]))
-		return Object.assign(object, links, { collection: collectionMapping })
+		return Object.assign({}, object, links, { collection: collectionMapping, values: () => ({ ...object }) })
 	}
 
 	const collectionMapping: CollectionMapping<T, Options> = {

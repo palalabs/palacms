@@ -110,13 +110,6 @@ export function get_empty_value(field) {
 		console.warn('No placeholder set for field type', field.type)
 		return ''
 	}
-
-	function getGroupValue(field) {
-		return _.chain(field.fields)
-			.keyBy('key')
-			.mapValues((field) => get_empty_value(field))
-			.value()
-	}
 }
 
 let converter, showdown, showdown_highlight

@@ -12,6 +12,7 @@
 	import type { Page } from '$lib/common/models/Page'
 	import Button from './ui/button/button.svelte'
 	import { user } from '$lib/pocketbase/PocketBase'
+	import { useCloneSite } from '$lib/CloneSite.svelte'
 
 	const { oncreated }: { oncreated?: () => void } = $props()
 
@@ -40,13 +41,12 @@
 
 	let site_name = $state(``)
 
-	let preview = $state(``)
-
 	let selected_starter_id = $state(``)
 	function select_starter(site_id) {
 		selected_starter_id = site_id
-		preview = ''
 	}
+
+	const selected_starter_site = $derived(starter_sites.find((site) => site.id === selected_starter_id))
 
 	const blank_site = {
 		head: '',
@@ -66,6 +66,15 @@
 		slug: '',
 		parent: ''
 	} satisfies Partial<Page>
+
+	const { cloneSite } = $derived(
+		useCloneSite({
+			starter_site_id: selected_starter_id,
+			site_name,
+			site_host: pageState.url.host,
+			site_group_id: site_group?.id
+		})
+	)
 
 	let completed = $derived(!!site_name && selected_starter_id)
 	let loading = $state(false)
@@ -109,6 +118,9 @@
 			})
 
 			await manager.commit()
+			oncreated?.()
+		} else {
+			await cloneSite()
 			oncreated?.()
 		}
 	}
@@ -156,18 +168,16 @@
 					<div class="split-container flex-1">
 						<div class="h-[77vh] overflow-auto">
 							<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-								{@render StarterButton({
-									id: 'blank',
-									name: 'Blank',
-									data: blank_site
-								})}
+								{@render StarterButton('blank', 'Blank')}
 								{#each starter_sites as site}
-									{@render StarterButton(site)}
+									{@render StarterButton(site.id, site.name, site)}
 								{/each}
 							</div>
 						</div>
 						<div style="background: #222;" class="rounded">
-							<!-- <SitePreview style="height: 100%" site_id={selected_starter_id} {preview} append={design_variables_css} /> -->
+							{#if selected_starter_site}
+								<SitePreview style="height: 100%" site={selected_starter_site} />
+							{/if}
 						</div>
 					</div>
 				</div>
@@ -176,18 +186,18 @@
 	</Tabs.Root>
 </div>
 
-{#snippet StarterButton(site)}
-	<button onclick={() => select_starter(site.id)} class="space-y-3 relative w-full bg-gray-900 rounded overflow-hidden">
+{#snippet StarterButton(id: string, name: string, site?: Site)}
+	<button onclick={() => select_starter(id)} class="space-y-3 relative w-full bg-gray-900 rounded overflow-hidden">
 		<div class="relative">
-			<SitePreview />
-			{#if selected_starter_id === site.id}
+			<SitePreview {site} />
+			{#if selected_starter_id === id}
 				<div class="bg-black/70 absolute inset-0 w-full h-full flex items-center justify-center">
 					<Check />
 				</div>
 			{/if}
 		</div>
 		<div class="absolute bottom-0 w-full p-3 z-20 bg-gray-900 truncate flex items-center justify-between">
-			<div class="text-sm font-medium leading-none">{site.name}</div>
+			<div class="text-sm font-medium leading-none">{name}</div>
 		</div>
 	</button>
 {/snippet}

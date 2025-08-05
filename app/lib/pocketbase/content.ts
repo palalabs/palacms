@@ -29,64 +29,44 @@ export type EntryOf<Collection extends keyof typeof ENTRY_MODELS> = z.TypeOf<(ty
 export type EntityOf<Collection extends keyof typeof ENTRY_MODELS> = z.TypeOf<(typeof models)[Collection]>
 export type Entity = EntityOf<keyof typeof ENTRY_MODELS>
 
-export const getContent = <Collection extends keyof typeof ENTRY_MODELS>(entity: EntityOf<Collection>, fields: Field[], entries: EntryOf<Collection>[]) => {
-	const content: { [K in (typeof locales)[number]]?: Record<string, unknown[]> } = {}
-	fields = fields
+export const getContent = <Collection extends keyof typeof ENTRY_MODELS>(entity: EntityOf<Collection>, fields: Field[], entries: EntryOf<Collection>[], parentField?: Field, parentEntry?: Entry) => {
+	const content: { [K in (typeof locales)[number]]?: Record<string, unknown> } = {}
+	const filteredFields = fields
 		.filter((field) =>
 			'symbol' in entity
 				? 'symbol' in field && field.symbol === entity.symbol
 				: (!('symbol' in field) || field.symbol === entity.id) && (!('site' in field) || field.site === entity.id) && (!('page_type' in field) || field.page_type === entity.id)
 		)
+		.filter((field) => (parentField ? field.parent === parentField.id : !field.parent))
 		// Deduplicate
 		.filter((field1, index, array) => array.findIndex((field2) => field2.id === field1.id) === index)
-	for (const field of fields) {
-		const fieldEntries = getResolvedEntries(entity, field, entries)
+	for (const field of filteredFields) {
+		const fieldEntries = getResolvedEntries(entity, field, entries).filter((entry) => (parentEntry ? entry.parent === parentEntry.id : !entry.parent))
 
 		// Handle group fields specially - collect subfield entries into an object
 		if (field.type === 'group' && field.key) {
-			if (!content.en) content.en = {}
-
-			// Find all subfields for this group
-			const subfields = fields.filter((f) => f.parent === field.id)
-			const groupObject: Record<string, unknown> = {}
-
-			// Collect each subfield's value
-			for (const subfield of subfields) {
-				const subfieldEntries = getDirectEntries(entity, subfield, entries)
-				if (subfieldEntries.length > 0) {
-					// Use the last entry if there are multiple (same as single fields)
-					const subfieldEntry = subfieldEntries[subfieldEntries.length - 1]
-					groupObject[subfield.key] = subfieldEntry.value
-				} else {
-					// Default empty value for missing subfields
-					groupObject[subfield.key] = ''
-				}
+			const [entry] = fieldEntries
+			if (!content[entry.locale]) content[entry.locale] = {}
+			content[entry.locale]![field.key] = getContent(entity, fields, entries, field, entry)[entry.locale]
+		}
+		// Handle repeater fields specially - collect array of subfield entries into an object
+		else if (field.type === 'repeater' && field.key) {
+			for (const entry of fieldEntries) {
+				if (!content[entry.locale]) content[entry.locale] = {}
+				if (!content[entry.locale]![field.key]) content[entry.locale]![field.key] = []
+				;(content[entry.locale]![field.key] as unknown[]).push(getContent(entity, fields, entries, field, entry)[entry.locale])
 			}
-
-			content.en![field.key] = groupObject
 		}
 		// If field has a key but no entries, fill with empty value
 		else if (field.key && fieldEntries.length === 0) {
 			if (!content.en) content.en = {}
-			// For repeater fields, use empty array; for single fields, use empty string/appropriate default
-			if (field.type === 'repeater') {
-				content.en![field.key] = []
-			} else {
-				content.en![field.key] = ''
-			}
-		} else {
-			for (const entry of fieldEntries) {
-				if (!content[entry.locale]) content[entry.locale] = {}
-
-				// For repeater fields, collect values in array; for single fields, use direct value
-				if (field.type === 'repeater') {
-					if (!content[entry.locale]![field.key]) content[entry.locale]![field.key] = []
-					content[entry.locale]![field.key].push(entry.value)
-				} else {
-					// For single-value fields, just use the value directly (last one wins if multiple)
-					content[entry.locale]![field.key] = entry.value
-				}
-			}
+			content.en![field.key] = get_empty_value(field)
+		}
+		// For single-value fields, collect just get the first value
+		else if (field.key) {
+			const [entry] = fieldEntries
+			if (!content[entry.locale]) content[entry.locale] = {}
+			content[entry.locale]![field.key] = entry.value
 		}
 	}
 	return content
@@ -94,7 +74,7 @@ export const getContent = <Collection extends keyof typeof ENTRY_MODELS>(entity:
 
 export const getDirectEntries = <Collection extends keyof typeof ENTRY_MODELS>(entity: EntityOf<Collection>, field: Field, entries: EntryOf<Collection>[]): EntryOf<Collection>[] => {
 	if (!entries) return []
-	return entries.filter((entry) => entry.field === field.id && (!('section' in entry) || entry.section === entity.id))
+	return entries.filter((entry) => entry.field === field.id && (!('section' in entry) || entry.section === entity.id)).sort((a, b) => a.index - b.index)
 }
 
 export const getResolvedEntries = <Collection extends keyof typeof ENTRY_MODELS>(entity: EntityOf<Collection>, field: Field, entries: EntryOf<Collection>[]): Entry[] => {
@@ -191,9 +171,8 @@ export const getResolvedEntries = <Collection extends keyof typeof ENTRY_MODELS>
 			entry.value.flatMap((page_id: string) => {
 				const page = Pages.one(page_id)
 				if (!page) return []
-				const symbols = page
-					.sections()
-					.map((section) => section.symbol())
+				const symbols = (page.sections() ?? [])
+					.map((section) => SiteSymbols.one(section.symbol))
 					.filter(isNotUndefined)
 					.filter(deduplicate)
 				const fields = symbols.flatMap((symbol) => symbol.fields())

@@ -1,18 +1,9 @@
 <script lang="ts">
-	import { tick, onDestroy } from 'svelte'
-	import { browser } from '$app/environment'
-	import { Sites } from '$lib/pocketbase/collections'
+	import type { Site } from '$lib/common/models/Site'
+	import { Globe } from 'lucide-svelte'
+	import { onDestroy, tick } from 'svelte'
 
-	let { site_id, preview = $bindable(), head = '', append = '', style = '' }: { site_id?: string; preview?: string; head?: string; append?: string; style?: string } = $props()
-
-	const site = $derived(site_id ? Sites.one(site_id) : undefined)
-	const page = $derived(site?.homepage())
-	$effect(() => {
-		if (!preview && page) {
-			// TODO: Point iframe to page URL
-			preview = ''
-		}
-	})
+	let { site, style }: { site?: Site; style?: string } = $props()
 
 	let container = $state()
 	let scale = $state()
@@ -46,34 +37,6 @@
 		iframeHeight = `${100 / scale}%`
 	}
 
-	function append_to_head(code) {
-		var container = document.createElement('div')
-		container.innerHTML = code
-		Array.from(container.childNodes).forEach((node) => {
-			iframe.contentWindow.document.head.appendChild(node)
-		})
-	}
-
-	$effect(() => {
-		iframe && head && append_to_head(head)
-	})
-
-	function append_to_iframe(code) {
-		var container = document.createElement('div')
-
-		// Set the innerHTML of the container to your HTML string
-		container.innerHTML = code
-
-		// Append each element in the container to the document head
-		Array.from(container.childNodes).forEach((node) => {
-			iframe.contentWindow.document.body.appendChild(node)
-		})
-	}
-
-	$effect(() => {
-		iframe && append && append_to_iframe(append)
-	})
-
 	onDestroy(() => {
 		resize_observer?.disconnect()
 	})
@@ -82,24 +45,26 @@
 <svelte:window onresize={resize_preview} />
 
 <div class="iframe-root bg-gray-900" {style}>
-	<div bind:this={container} class="iframe-container z-10">
-		{#if browser && preview}
+	<div bind:this={container} class="iframe-container">
+		{#if site?.preview}
 			<iframe
 				tabindex="-1"
 				bind:this={iframe}
 				class="rounded overflow-hidden bg-white"
-				sandbox="allow-same-origin"
 				style="transform: scale({scale}); width: 1024px;"
 				style:height={iframeHeight}
 				class:fadein={iframeLoaded}
-				title="page preview"
-				srcdoc={preview + append}
+				title="site preview"
+				src={`/_preview/${site.id}`}
 				onload={async () => {
 					await init_preview()
-					iframeLoaded = !!preview
-					append_to_head(head)
+					iframeLoaded = true
 				}}
 			></iframe>
+		{:else}
+			<div class="h-full flex justify-center items-center">
+				<Globe color="white" size="5rem" />
+			</div>
 		{/if}
 	</div>
 </div>
@@ -113,7 +78,6 @@
 	.iframe-container {
 		position: absolute;
 		inset: 0;
-		z-index: 10;
 		opacity: 1;
 		transition: opacity 0.1s;
 		width: 100%;

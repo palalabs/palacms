@@ -19,12 +19,10 @@
 
 	let {
 		site,
-		currentPage,
 		toolbar,
 		children
 	}: {
 		site?: ObjectOf<typeof Sites>
-		currentPage?: ObjectOf<typeof Pages>
 		toolbar?: Snippet
 		children?: Snippet
 	} = $props()
@@ -153,7 +151,7 @@
 </script>
 
 <div class="h-screen flex flex-col">
-	<Toolbar {site} {currentPage}>
+	<Toolbar {site}>
 		{@render toolbar?.()}
 	</Toolbar>
 	<PaneGroup direction="horizontal" autoSaveId="page-view" style="height:initial;flex:1;">

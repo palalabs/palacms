@@ -13,7 +13,7 @@
 	import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
 	import { attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge'
 	import { beforeNavigate } from '$app/navigation'
-	import { Pages, Sites, SiteSymbols, PageSections, PageTypes, PageTypeSections, PageSectionEntries, PageTypeSectionEntries, SiteSymbolFields, manager } from '$lib/pocketbase/collections'
+	import { Pages, Sites, SiteSymbols, PageSections, PageTypes, PageSectionEntries, manager } from '$lib/pocketbase/collections'
 	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
 
 	let { page }: { page: ObjectOf<typeof Pages> } = $props()
@@ -74,7 +74,8 @@
 					section: copied_section.id,
 					field: entry.field,
 					locale: entry.locale,
-					value: entry.value
+					value: entry.value,
+					index: entry.index
 				})
 			}
 			copied_sections.push(copied_section)

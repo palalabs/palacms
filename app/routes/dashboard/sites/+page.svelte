@@ -16,10 +16,18 @@
 	import type { Site } from '$lib/common/models/Site'
 	import { Sites, SiteGroups, Pages, manager } from '$lib/pocketbase/collections'
 	import { self as pb } from '$lib/pocketbase/PocketBase'
+	import { goto } from '$app/navigation'
 
 	const sidebar = useSidebar()
 
-	const site_group_id = $derived(page.url.searchParams.get('group')!)
+	const site_group_id = $derived(page.url.searchParams.get('group'))
+	$effect(() => {
+		if (!site_group_id && site_groups.length > 0) {
+			const url = new URL(page.url)
+			url.searchParams.set('group', site_groups[0].id)
+			goto(url, { replaceState: true })
+		}
+	})
 
 	const site_groups = $derived(SiteGroups.list() ?? [])
 	const active_site_group = $derived(site_group_id ? SiteGroups.one(site_group_id) : undefined)
@@ -170,7 +178,7 @@
 	<div class="space-y-3 relative w-full bg-gray-900">
 		<div class="rounded-tl rounded-tr overflow-hidden">
 			<a data-sveltekit-prefetch href={`/admin/sites/${site.id}`}>
-				<SitePreview site_id={site.id} />
+				<SitePreview {site} />
 			</a>
 		</div>
 		<div class="absolute -bottom-2 rounded-bl rounded-br w-full p-3 z-20 bg-gray-900 truncate flex items-center justify-between">

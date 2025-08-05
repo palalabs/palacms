@@ -1,13 +1,56 @@
+<script lang="ts" module>
+	/**
+	 * Map of field key to object keyed by index specifying value and optionally sub-values.
+	 */
+	export type FieldValueMap = Record<string, Record<number, { value: unknown; subValues?: FieldValueMap }>>
+
+	/**
+	 * Handler used when reporting change of field value.
+	 */
+	export type FieldValueHandler = (values: FieldValueMap) => void
+
+	export function setFieldEntries(options: {
+		fields?: Field[]
+		entries?: Entry[]
+		updateEntry: (id: string, data: Partial<Entry>) => Entry
+		createEntry: (data: Omit<Entry, 'id'>) => Entry
+		values: FieldValueMap
+		parent?: Entry
+	}) {
+		const { fields, entries, updateEntry, createEntry, values, parent } = options
+		for (const [key, items] of Object.entries(values)) {
+			for (const index in items) {
+				const field = fields?.find((field) => field.key === key && (parent ? field.parent === parent?.field : !field.parent))
+				if (!field) {
+					continue
+				}
+
+				let entry = entries?.find((entry) => entry.field === field?.id && (parent ? entry.parent === parent?.id : !entry.parent) && entry.index === +index)
+				if (entry) {
+					entry = updateEntry(entry.id, { value: items[index].value })
+				} else {
+					entry = createEntry({ field: field.id, parent: parent?.id, index: +index, locale: 'en', value: items[index].value })
+				}
+
+				if (items[index].subValues) {
+					setFieldEntries({ ...options, values: items[index].subValues, parent: entry })
+				}
+			}
+		}
+	}
+</script>
+
 <script lang="ts">
 	import Icon from '@iconify/svelte'
 	import * as _ from 'lodash-es'
 	import FieldItem from './FieldItem.svelte'
 	import { fieldTypes } from '../../stores/app/index.js'
-	import Card from '../../ui/Card.svelte'
 	import { mod_key_held } from '../../stores/app/misc.js'
 	import type { Field } from '$lib/common/models/Field'
-	import { getDirectEntries, getResolvedEntries, type Entity } from '$lib/pocketbase/content'
+	import type { Entity } from '$lib/pocketbase/content'
 	import type { Entry } from '$lib/common/models/Entry'
+	import type { Component } from 'svelte'
+	import EntryContent from './EntryContent.svelte'
 
 	let {
 		entity,
@@ -16,55 +59,33 @@
 		create_field,
 		oninput,
 		onchange,
-		ondelete,
-		onadd
+		ondelete
 	}: {
 		entity: Entity
 		fields: Field[]
 		entries: Entry[]
-		create_field: (parentId?: string) => void
-		oninput: (values: Record<string, unknown>) => void
+		create_field: (data?: Partial<Field>) => void
+		oninput: FieldValueHandler
 		onchange: (details: { id: string; data: Partial<Field> }) => void
 		ondelete: (field_id: string) => void
-		onadd?: (details: { parent: string; index: number; subfields: Field[] }) => void
 	} = $props()
 
 	function get_component(field: Field) {
 		const fieldType = $fieldTypes.find((ft) => ft.id === field.type)
 		if (fieldType) {
-			return fieldType.component
+			return fieldType.component as Component<{
+				entity: Entity
+				field: Field
+				entry?: Entry
+				fields: Field[]
+				entries: Entry[]
+				onchange: FieldValueHandler
+				level: number
+			}>
 		} else {
 			console.warn(`Field type '${field.type}' no longer exists, removing '${field.label}' field`)
 			return null
 		}
-	}
-
-	function check_condition(field: Field) {
-		return true // TODO: Implement
-
-		// if (!field.condition) return true // has no condition
-
-		// const { field: field_to_check, value, comparison } = field.condition
-
-		// // TODO: ensure correct field (considering repeaters)
-		// const content_entry = get_direct_entries(entity_id, field_to_check)?.[0]
-		// if (!content_entry) {
-		// 	// comparable entry is a non-matching data field
-		// 	// TODO: add UI to conditional component that says "this field will show when data field is irrelevant"
-		// 	return true
-		// } else if (comparison === '=' && value === content_entry.value) {
-		// 	return true
-		// } else if (comparison === '!=' && value !== content_entry.valuerable_value) {
-		// 	return true
-		// } else if (typeof value === 'string' && is_regex(value)) {
-		// 	const regex = new RegExp(value.slice(1, -1))
-		// 	if (comparison === '=' && regex.test(content_entry.value)) {
-		// 		return true
-		// 	} else if (comparison === '!=' && !regex.test(content_entry.value)) {
-		// 		return true
-		// 	}
-		// }
-		// return false
 	}
 
 	// TABS
@@ -78,6 +99,42 @@
 			selected_tabs[field_id] = tab
 		})
 	}
+	// Field reordering function
+	function move_field(field: Field, direction: 'up' | 'down') {
+		// Get all top-level fields (same parent level as the field being moved)
+		const siblings = fields.filter((f) => (f.parent || '') === (field.parent || ''))
+
+		// Sort by index to get current order
+		const sorted_siblings = siblings.sort((a, b) => (a.index || 0) - (b.index || 0))
+
+		// Find current position
+		const current_index = sorted_siblings.findIndex((f) => f.id === field.id)
+
+		if (current_index === -1) return // Field not found
+
+		// Calculate new position
+		let new_index = current_index
+		if (direction === 'up' && current_index > 0) {
+			new_index = current_index - 1
+		} else if (direction === 'down' && current_index < sorted_siblings.length - 1) {
+			new_index = current_index + 1
+		} else {
+			return // Can't move further in that direction
+		}
+
+		// Swap the fields - use the other field's current index value
+		const field_to_swap = sorted_siblings[new_index]
+		const temp_index = field.index || current_index
+
+		// Update the indices by swapping them
+		onchange({ id: field.id, data: { index: field_to_swap.index || new_index } })
+		onchange({ id: field_to_swap.id, data: { index: temp_index } })
+	}
+
+	function duplicate_field(field: Field) {
+		create_field(field)
+	}
+
 	// TODO: Implement
 	// get(`active-tabs--${id}`).then((saved) => {
 	// 	if (saved) {
@@ -90,11 +147,9 @@
 </script>
 
 <div class="Fields">
-	{#each (fields || []).filter((f) => !f.parent || f.parent === '') as field (field.id)}
-		{@const Field_Component = get_component(field)}
+	{#each (fields || []).filter((f) => !f.parent || f.parent === '').sort((a, b) => a.index - b.index) as field (field.id)}
 		<!-- TODO: $userRole === 'DEV' -->
 		{@const active_tab = selected_tabs[field.id] || 'field'}
-		{@const is_visible = check_condition(field)}
 		<div class="entries-item">
 			<!-- TODO: hotkeys for tab switching  -->
 			<!-- TODO: $userRole === 'DEV' -->
@@ -128,7 +183,6 @@
 							}
 						}}
 					>
-						<Icon icon={is_visible ? undefined : 'mdi:hide'} />
 						{#if field.type === 'repeater'}
 							<span>Entries</span>
 						{:else}
@@ -145,60 +199,17 @@
 							{fields}
 							{create_field}
 							{onchange}
-							ondelete={() => ondelete(field.id)}
+							{ondelete}
 							onduplicate={() => {
-								// TODO: Implement duplicate
+								duplicate_field(field)
 							}}
 							onmove={(direction) => {
-								// TODO: Implement move
+								move_field(field, direction)
 							}}
 						/>
 					</div>
 				{:else if active_tab === 'entry'}
-					{#if is_visible}
-						{#if field.type === 'site-field' || field.type === 'page-field'}
-							{@const source_entry = getResolvedEntries(entity, field, entries)[0]}
-							{@const title = ['repeater', 'group'].includes(field.type) ? field.label : null}
-							{@const icon = undefined}
-							<div class="dynamic-header">
-								{#if field.type === 'site-field'}
-									<Icon icon="gg:website" />
-									<span>Site Content</span>
-								{:else if field.type === 'page-field'}
-									{@const content_entry = getDirectEntries(entity, field, entries)[0]}
-									<!-- <Icon icon={content_entry?.value.page.page_type.icon} /> -->
-									<span>Page Content</span>
-								{/if}
-							</div>
-							<Card {title} {icon}>
-								<Field_Component {entity} {field} {fields} {entries} entry={source_entry} id={source_entry?.id} onchange={(value) => oninput({ [field.key]: value })} />
-							</Card>
-						{:else}
-							{@const content_entry = getDirectEntries(entity, field, entries)[0]}
-							{@const title = ['repeater', 'group'].includes(field.type) ? field.label : null}
-							{@const icon = undefined}
-							<Card {title} {icon}>
-								<Field_Component
-									{entity}
-									{field}
-									{fields}
-									{entries}
-									entry={content_entry}
-									id={content_entry?.id}
-									onchange={(value) => oninput({ [field.key]: value })}
-									on:add={(event) => {
-										if (onadd) onadd(event.detail)
-									}}
-								/>
-							</Card>
-						{/if}
-						<!-- TODO: $userRole === 'DEV' -->
-					{:else if !is_visible}
-						<div class="hidden-field">
-							<Icon icon="mdi:hidden" />
-							<span>This field will be hidden from content editors</span>
-						</div>
-					{/if}
+					<EntryContent {entity} {field} {fields} {entries} level={0} onchange={oninput} />
 				{/if}
 			</div>
 		</div>
@@ -227,20 +238,6 @@
 		overflow-y: auto;
 		place-content: flex-start;
 		justify-content: stretch;
-	}
-	.dynamic-header {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 0.25rem;
-		border-bottom: 1px solid var(--color-gray-9);
-		padding-block: 0.5rem;
-		font-size: 0.75rem;
-	}
-	.hidden-field {
-		padding: 1rem;
-		color: var(--color-gray-2);
-		font-size: 0.875rem;
 	}
 	.entries-item {
 		display: grid;

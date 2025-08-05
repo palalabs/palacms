@@ -67,7 +67,7 @@
 <div class="space-y-3 relative w-full bg-gray-900">
 	<div class="rounded-tl rounded-tr overflow-hidden">
 		<button class="w-full hover:opacity-75 transition-all" onclick={add_to_library} aria-hidden="true">
-			<SitePreview {preview} {append} />
+			<SitePreview {site} />
 		</button>
 	</div>
 	<div class="absolute -bottom-2 rounded-bl rounded-br w-full p-3 z-20 bg-gray-900 truncate flex items-center justify-between">

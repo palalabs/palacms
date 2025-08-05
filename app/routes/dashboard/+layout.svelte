@@ -3,12 +3,12 @@
 	import AppSidebar from '$lib/components/app-sidebar.svelte'
 	import { Globe, LayoutTemplate, Store, Library, Cuboid } from 'lucide-svelte'
 	import { page } from '$app/state'
-	import { self } from '$lib/pocketbase/PocketBase'
+	import { checkSession } from '$lib/pocketbase/PocketBase'
 	import { onMount } from 'svelte'
 	import { goto } from '$app/navigation'
 
 	onMount(async () => {
-		if (!self.authStore.isValid) {
+		if (!(await checkSession())) {
 			await goto('/admin/auth')
 		}
 	})

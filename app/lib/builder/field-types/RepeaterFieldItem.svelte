@@ -1,21 +1,25 @@
-<script>
+<script lang="ts">
 	import { createEventDispatcher } from 'svelte'
 	import * as _ from 'lodash-es'
 	import { onMount } from 'svelte'
 	import Icon from '@iconify/svelte'
-	import { is_regex } from '../utils'
-	import { fieldTypes } from '../stores/app'
 	import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
 	import { attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge'
 	import pluralize from 'pluralize'
+	import type { Field } from '$lib/common/models/Field'
+	import type { Entry } from '$lib/common/models/Entry'
+	import { getResolvedEntries, type Entity } from '$lib/pocketbase/content'
+	import type { FieldValueHandler } from '../components/Fields/FieldsContent.svelte'
+	import EntryContent from '../components/Fields/EntryContent.svelte'
 
 	const dispatch = createEventDispatcher()
 
 	let {
-		repeater_item,
+		entity,
 		field,
-		subfields,
+		entry,
 		fields,
+		subfields,
 		entries,
 		index,
 		level,
@@ -23,73 +27,50 @@
 		autofocus,
 		hovering,
 		hover_position,
-		oninput = /** @type {(val: {id: string, data: any}) => void} */ () => {}
+		onchange
+	}: {
+		entity: Entity
+		field: Field
+		entry: Entry
+		fields: Field[]
+		subfields: Field[]
+		entries: Entry[]
+		index: number
+		level: number
+		is_visible: boolean
+		autofocus: boolean
+		hovering: boolean
+		hover_position: 'top' | 'bottom'
+		onchange: FieldValueHandler
 	} = $props()
 
-	function getFieldComponent(subfield) {
-		const field = _.find($fieldTypes, ['id', subfield.type])
-		return field ? field.component : null
-	}
-
-	function get_content_entry(subfield) {
-		const entry = entries.find((e) => e.field === subfield.id && e.parent === repeater_item.id)
-		return entry
-	}
-
-	function get_image(repeater_item) {
-		const [first_subfield] = subfields
+	function get_image() {
+		const [first_subfield] = fields
 		if (first_subfield && first_subfield.type === 'image') {
-			const content_entry = entries.find((r) => r.field === first_subfield.id && r.parent === repeater_item.id)
-			return content_entry?.value?.url
+			const [ent] = getResolvedEntries(entity, first_subfield, entries).filter((ent) => ent.parent === entry.id)
+			return ent?.value?.url
 		} else return null
 	}
 
-	function get_icon(repeater_item) {
-		const [first_subfield] = subfields
+	function get_icon() {
+		const [first_subfield] = fields
 		if (first_subfield && first_subfield.type === 'icon') {
-			const content_entry = entries.find((r) => r.field === first_subfield.id && r.parent === repeater_item.id)
-			return content_entry?.value
+			const [ent] = getResolvedEntries(entity, first_subfield, entries).filter((ent) => ent.parent === entry.id)
+			return ent?.value
 		} else return null
 	}
 
-	function get_title(repeater_item) {
-		const first_subfield = subfields.find((subfield) => ['text', 'markdown', 'link', 'number'].includes(subfield.type))
+	function get_title() {
+		const first_subfield = fields.find((subfield) => ['text', 'markdown', 'link', 'number'].includes(subfield.type))
 		if (first_subfield) {
 			// let { value } = subfields[0]
-			const content_entry = entries.find((r) => r.field === first_subfield.id && r.parent === repeater_item.id)
-			if (first_subfield.type === 'link') return content_entry?.value?.label
-			else if (first_subfield.type === 'markdown') return content_entry?.value?.markdown
-			else return content_entry?.value
+			const [ent] = getResolvedEntries(entity, first_subfield, entries).filter((ent) => ent.parent === entry.id)
+			if (first_subfield.type === 'link') return ent?.value?.label
+			else if (first_subfield.type === 'markdown') return ent?.value?.markdown
+			else return ent?.value
 		} else {
 			return singular_label
 		}
-	}
-
-	function check_condition(field, entry) {
-		if (!field.config?.condition) return true // has no condition
-
-		const { field: field_id, value, comparison } = field.config.condition
-		const field_to_compare = fields.find((f) => f.id === field_id)
-		if (!field_to_compare) {
-			// field has been deleted, reset condition
-			field.config.condition = null
-			return false
-		}
-
-		const { value: comparable_value } = entries.find((e) => e.field === field_id && e.parent === entry.parent)
-		if (is_regex(value)) {
-			const regex = new RegExp(value.slice(1, -1))
-			if (comparison === '=' && regex.test(comparable_value)) {
-				return true
-			} else if (comparison === '!=' && !regex.test(comparable_value)) {
-				return true
-			}
-		} else if (comparison === '=' && value === comparable_value) {
-			return true
-		} else if (comparison === '!=' && value !== comparable_value) {
-			return true
-		}
-		return false
 	}
 
 	let drag_handle_element = $state()
@@ -99,13 +80,13 @@
 		draggable({
 			element,
 			dragHandle: drag_handle_element,
-			getInitialData: () => ({ item: repeater_item })
+			getInitialData: () => ({})
 		})
 		dropTargetForElements({
 			element,
 			getData({ input, element }) {
 				return attachClosestEdge(
-					{ item: repeater_item },
+					{},
 					{
 						element,
 						input,
@@ -137,9 +118,9 @@
 		})
 	})
 	let singular_label = $derived(pluralize.singular(field.label))
-	let item_image = $derived(get_image(repeater_item, field))
-	let item_icon = $derived(get_icon(repeater_item, field))
-	let item_title = $derived(get_title(repeater_item, field))
+	let item_image = $derived(get_image())
+	let item_icon = $derived(get_icon())
+	let item_title = $derived(get_title())
 </script>
 
 <div
@@ -167,45 +148,25 @@
 				<button bind:this={drag_handle_element}>
 					<Icon icon="material-symbols:drag-handle" />
 				</button>
-				<button title="Delete {singular_label} item" onclick={() => dispatch('remove', repeater_item)}>
+				<button title="Delete {singular_label} item" onclick={() => dispatch('remove')}>
 					<Icon icon="ion:trash" />
 				</button>
 			</div>
 		</div>
 		{#if is_visible}
 			<div class="field-values">
-				{#each subfields as subfield, subfield_index (repeater_item._key + subfield.key)}
-					{@const content_entry = get_content_entry(subfield)}
-					{@const is_visible = check_condition(subfield, content_entry)}
-					{#if !content_entry}
-						<span>Entry corrupted</span>
-					{:else if content_entry && is_visible}
-						{@const SvelteComponent = getFieldComponent(subfield)}
-						<div class="repeater-item-field" id="repeater-{field.key}-{index}-{subfield.key}">
-							<SvelteComponent
-								id={content_entry.id}
-								value={content_entry.value}
-								metadata={content_entry.metadata}
-								field={subfield}
-								{fields}
-								{entries}
-								level={level + 1}
-								show_label={true}
-								autofocus={autofocus && subfield_index === 0}
-								on:keydown
-								on:add
-								on:remove
-								on:move
-								oninput={(detail) => {
-									if (detail.id) {
-										oninput(detail)
-									} else {
-										oninput({ id: content_entry.id, data: detail })
-									}
-								}}
-							/>
-						</div>
-					{/if}
+				{#each subfields as subfield (subfield.key)}
+					<div class="repeater-item-field" id="repeater-{field.key}-{index}-{subfield.key}">
+						<EntryContent
+							{entity}
+							parent={entry}
+							field={subfield}
+							{fields}
+							{entries}
+							level={level + 1}
+							onchange={(values) => onchange({ [field.key]: { [index]: { value: null, subValues: values } } })}
+						/>
+					</div>
 				{/each}
 			</div>
 		{/if}

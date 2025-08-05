@@ -1,8 +1,8 @@
-<script>
+<script lang="ts">
 	import * as Dialog from '$lib/components/ui/dialog'
 	import Icon from '@iconify/svelte'
 	import { PaneGroup, Pane, PaneResizer } from 'paneforge'
-	import Fields from '$lib/builder/components/Fields/FieldsContent.svelte'
+	import Fields, { setFieldEntries } from '$lib/builder/components/Fields/FieldsContent.svelte'
 	import * as _ from 'lodash-es'
 	import CodeEditor from '$lib/builder/components/CodeEditor/CodeMirror.svelte'
 	import { setContext } from 'svelte'
@@ -73,30 +73,29 @@
 						entity={site}
 						{fields}
 						{entries}
-						create_field={async (parentId) => {
+						create_field={async (data) => {
+							// Get the highest index for fields at this level
+							const siblingFields = (fields ?? []).filter((f) => (data?.parent ? f.parent === data.parent : !f.parent))
+							const nextIndex = Math.max(...siblingFields.map((f) => f.index || 0), -1) + 1
+
 							return SiteFields.create({
 								type: 'text',
 								key: '',
 								label: '',
 								config: null,
 								site: site.id,
-								parent: parentId || ''
+								...data,
+								index: nextIndex
 							})
 						}}
 						oninput={(values) => {
-							for (const [key, value] of Object.entries(values)) {
-								const field = fields?.find((field) => field.key === key)
-								if (!field) {
-									continue
-								}
-
-								const entry = entries?.find((entry) => entry.field === field?.id)
-								if (entry) {
-									SiteEntries.update(entry.id, { value })
-								} else {
-									SiteEntries.create({ field: field.id, locale: 'en', value })
-								}
-							}
+							setFieldEntries({
+								fields,
+								entries,
+								updateEntry: SiteEntries.update,
+								createEntry: SiteEntries.create,
+								values
+							})
 						}}
 						onchange={({ id, data }) => {
 							SiteFields.update(id, data)
@@ -104,14 +103,6 @@
 						ondelete={(field_id) => {
 							// PocketBase cascade deletion will automatically clean up all associated entries
 							SiteFields.delete(field_id)
-						}}
-						onadd={({ parent, index, subfields }) => {
-							// Create an entry for the repeater item
-							SiteEntries.create({
-								field: parent,
-								locale: 'en',
-								value: {}
-							})
 						}}
 					/>
 				</Pane>

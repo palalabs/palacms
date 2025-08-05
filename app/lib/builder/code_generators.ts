@@ -16,6 +16,7 @@ import type { PageTypeSectionEntry } from '$lib/common/models/PageTypeSectionEnt
 import type { PageTypeSymbol } from '$lib/common/models/PageTypeSymbol.js'
 import type { SiteSymbol } from '$lib/common/models/SiteSymbol.js'
 import type { SiteSymbolEntry } from '$lib/common/models/SiteSymbolEntry.js'
+import type { PageEntry } from '$lib/common/models/PageEntry.js'
 
 export async function block_html({ code, data }) {
 	const { html, css: postcss, js } = code
@@ -58,6 +59,7 @@ export async function page_html({
 	site_entries: SiteEntry[]
 	page_type_entries: PageTypeEntry[]
 	symbol_entries: SiteSymbolEntry[]
+	page_entries: PageEntry[]
 	page_section_entries: PageSectionEntry[]
 	page_type_section_entries: PageTypeSectionEntry[]
 	locale?: (typeof locales)[number]

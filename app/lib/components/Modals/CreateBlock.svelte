@@ -166,18 +166,13 @@
 					entity={symbol}
 					{fields}
 					{entries}
-					create_field={async (parentId) => {
-						// If this is a child field, commit parent fields first to get real database IDs
-						if (parentId) {
-							try {
-								await FieldCollection.commit()
-							} catch (error) {
-								console.warn('Failed to commit parent fields:', error)
-							}
+					create_field={async (data) => {
+						if (!symbol) {
+							throw new Error('No symbol')
 						}
 
 						// Get the highest index for fields at this level
-						const siblingFields = fields?.filter((f) => f.parent === parentId) || []
+						const siblingFields = (fields ?? []).filter((f) => (data?.parent ? f.parent === data.parent : !f.parent))
 						const nextIndex = Math.max(...siblingFields.map((f) => f.index || 0), -1) + 1
 
 						return FieldCollection.create({
@@ -186,7 +181,7 @@
 							label: '',
 							config: null,
 							symbol: symbol.id,
-							...(parentId ? { parent: parentId } : {}),
+							...data,
 							index: nextIndex
 						})
 					}}

@@ -13,6 +13,7 @@ export const usePageData = (site?: ObjectOf<typeof Sites>, pages?: ObjectOf<type
 	const site_entries = $derived(site?.entries())
 	const page_type_entries = $derived(page_types?.every((page_type) => page_type.entries() !== undefined) ? page_types.flatMap((page_type) => page_type.entries() ?? []) : undefined)
 	const symbol_entries = $derived(symbols?.every((symbol) => symbol.entries() !== undefined) ? symbols.flatMap((symbol) => symbol.entries() ?? []) : undefined)
+	const page_entries = $derived(pages?.every((page) => page.entries() !== undefined) ? pages.flatMap((page) => page.entries() ?? []) : undefined)
 	const page_section_entries = $derived(page_sections?.every((section) => section.entries() !== undefined) ? page_sections.flatMap((section) => section.entries() ?? []) : undefined)
 	const page_type_section_entries = $derived(page_type_sections?.every((section) => section.entries() !== undefined) ? page_type_sections.flatMap((section) => section.entries() ?? []) : undefined)
 
@@ -31,6 +32,7 @@ export const usePageData = (site?: ObjectOf<typeof Sites>, pages?: ObjectOf<type
 				site_entries &&
 				page_type_entries &&
 				symbol_entries &&
+				page_entries &&
 				page_section_entries &&
 				page_type_section_entries && {
 					site,
@@ -45,6 +47,7 @@ export const usePageData = (site?: ObjectOf<typeof Sites>, pages?: ObjectOf<type
 					symbol_fields,
 					site_entries,
 					page_type_entries,
+					page_entries,
 					symbol_entries,
 					page_section_entries,
 					page_type_section_entries

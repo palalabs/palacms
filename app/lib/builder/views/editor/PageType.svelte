@@ -17,6 +17,7 @@
 	import { manager, PageTypes, PageTypeSections, Sites } from '$lib/pocketbase/collections'
 
 	import { page } from '$app/state'
+	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.js'
 
 	const host = $derived(page.url.host)
 	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
@@ -141,6 +142,7 @@
 		lock_block(hovered_section_id)
 		editing_section_tab = tab
 		editing_section = true
+		editing_section_target = hovered_section
 	}
 
 	let moving = $state(false) // workaround to prevent block toolbar from showing when moving blocks
@@ -407,6 +409,7 @@
 	})
 
 	let editing_section = $state(false)
+	let editing_section_target = $state<ObjectOf<typeof PageTypeSections>>()
 </script>
 
 <Dialog.Root
@@ -419,13 +422,12 @@
 >
 	<Dialog.Content class="z-[999] max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4">
 		<SectionEditor
-			component={hovered_section}
+			component={editing_section_target}
 			tab={editing_section_tab}
 			header={{
 				button: {
 					label: 'Save',
-					onclick: (updated_data) => {
-						Object.assign(hovered_section, updated_data)
+					onclick: () => {
 						hovering_toolbar = false
 						editing_section = false
 					}
