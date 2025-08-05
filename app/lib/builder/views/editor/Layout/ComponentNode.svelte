@@ -541,7 +541,7 @@
 			iframe_resize_observer?.disconnect()
 
 			const update_height = () => {
-				const height = doc.documentElement.clientHeight
+				const height = doc.body.clientHeight
 				window.postMessage({ type: 'resize', height, id: section.id }, '*')
 				dispatch('resize')
 			}
