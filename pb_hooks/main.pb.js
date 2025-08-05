@@ -109,3 +109,29 @@ routerAdd('GET', '/_preview/{site}', (e) => {
 		fsys?.close()
 	}
 })
+
+routerAdd('GET', '/_symbols/{filename}', (e) => {
+	const filename = e.request.pathValue('filename')
+
+	// Filename must end with .js
+	if (!filename.endsWith('.js')) {
+		return e.notFoundError('File not found')
+	}
+
+	// Find symbol
+	const symbolId = filename.slice(0, -'.js'.length)
+	const symbol = $app.findRecordById('site_symbols', symbolId)
+
+	// Respond with compiled JavaScript
+	const fileKey = symbol.baseFilesPath() + '/' + symbol.get('compiled_js')
+	let fsys, reader, content
+	try {
+		fsys = $app.newFilesystem()
+		reader = fsys.getFile(fileKey)
+		content = toString(reader)
+		return e.blob(200, 'text/javascript', content)
+	} finally {
+		reader?.close()
+		fsys?.close()
+	}
+})

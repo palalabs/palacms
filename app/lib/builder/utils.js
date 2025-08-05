@@ -28,6 +28,7 @@ export async function processCode({ component, head = { code: '', data: {} }, bu
 		},
 		head,
 		buildStatic,
+		css: 'injected',
 		format,
 		locale,
 		hydrated

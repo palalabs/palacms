@@ -23,7 +23,8 @@ export async function block_html({ code, data }) {
 	// @ts-ignore
 	const { css, error } = await processors.css(postcss || '')
 	const res = await processors.html({
-		component: { html, css, js, data }
+		component: { html, css, js, data },
+		css: 'injected'
 	})
 	return res
 }
@@ -105,10 +106,7 @@ export async function page_html({
 				const { css, error } = await processors.css(postcss || '')
 				return [
 					{
-						html: `
-							<div data-section="${section.id}" id="section-${section.id}" data-symbol="${symbol.id}">
-								${html}
-							</div>`,
+						html: `<div data-section="${section.id}" id="section-${section.id}" data-symbol="${symbol.id}">${html}</div>`,
 						js,
 						css,
 						data
@@ -121,32 +119,26 @@ export async function page_html({
 	const res = await processors.html({
 		component,
 		head,
-		locale
+		locale,
+		css: 'external'
 	})
 
-	const symbol_ids = sections.map((section) => section.symbol).filter((value, index, array) => array.indexOf(value) === index)
+	const page_symbols_with_js = sections
+		.map((section) => section.symbol)
+		.filter(deduplicate)
+		.map((symbol_id) => symbols.find((symbol) => symbol.id === symbol_id))
+		.filter((symbol) => !!symbol)
+		.filter((symbol) => symbol.js)
+	no_js ||= page_symbols_with_js.length === 0
 
-	const final = `\
- <!DOCTYPE html>
- <html lang="${locale}">
-   <head>
-     <meta name="generator" content="PalaCMS" />
-     ${res.head}
-   </head>
-   <body id="page">
-     ${res.body}
-     ${
-				no_js
-					? ``
-					: `<script type="module">
-				import { hydrate } from "https://esm.sh/svelte"
-				${fetch_modules(symbol_ids)}
-			</script>`
-			}
-     ${site.foot}
-   </body>
- </html>
- `
+	const final =
+		`<!DOCTYPE html><html lang="${locale}"><head><meta name="generator" content="PalaCMS" />` +
+		res.head +
+		'</head><body id="page">' +
+		res.body +
+		(no_js ? `` : '<script type="module">' + 'import { hydrate } from "https://esm.sh/svelte";' + fetch_modules(page_symbols_with_js) + '</script>') +
+		site.foot +
+		'</body></html>'
 
 	return {
 		success: !!res.body,
@@ -155,29 +147,21 @@ export async function page_html({
 	}
 
 	// fetch module to hydrate component, include hydration data
-	function fetch_modules(symbol_ids: string[]) {
-		return symbol_ids
+	function fetch_modules(symbols: SiteSymbol[]) {
+		return symbols
 			.map(
-				(id) => `
-     import('/_symbols/${id}.js')
-     .then(({ default: App }) => {
-       ${sections
-					.filter((section) => section.symbol === id)
-					.map((section) => {
-						const instance_content = getContent(section, symbol_fields, section_entries)[locale]
-						return `
-							hydrate(App, {
-								target: document.querySelector('#section-${section.id}'),
-								props: ${JSON.stringify(instance_content)}
-							})
-         		`
-					})
-					.join('\n')}
-     })
-     .catch(e => console.error(e));
-   `
+				(symbol) =>
+					`import('/_symbols/${symbol.id}.js').then(({ default: App }) => {` +
+					sections
+						.filter((section) => section.symbol === symbol.id)
+						.map((section) => {
+							const instance_content = getContent(section, symbol_fields, section_entries)[locale]
+							return `hydrate(App, { target: document.querySelector('#section-${section.id}'), props: ${JSON.stringify(instance_content)} });`
+						})
+						.join('') +
+					'}).catch(e => console.error(e));'
 			)
-			.join('\n')
+			.join('')
 	}
 }
 

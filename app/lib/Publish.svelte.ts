@@ -1,4 +1,5 @@
 import { page_html } from './builder/code_generators'
+import { processors } from './builder/component'
 import { usePageData } from './PageData.svelte'
 import { PageTypes, Sites } from './pocketbase/collections'
 import { self } from './pocketbase/PocketBase'
@@ -22,6 +23,35 @@ export const usePublishSite = (site_id?: string) => {
 		}
 
 		const promises: Promise<void>[] = []
+		for (const symbol of data.symbols) {
+			if (!symbol.js) {
+				// No need to compile symbol JavaScript if there's none
+				continue
+			}
+
+			const promise = processors
+				.html({
+					component: {
+						html: symbol.html,
+						js: symbol.js,
+						css: symbol.css,
+						data: {}
+					},
+					buildStatic: false,
+					css: 'external'
+				})
+				.then(async (res) => {
+					if (!res.js) {
+						throw new Error('Compiling symbol not successful')
+					}
+
+					await self.collection('site_symbols').update(symbol.id, {
+						compiled_js: new File([res.js], 'symbol.js', { type: 'text/javascript' })
+					})
+				})
+			promises.push(promise)
+		}
+
 		for (const page of data.pages) {
 			if (!page.parent) {
 				// Generate site preview from homepage
@@ -56,7 +86,7 @@ export const usePublishSite = (site_id?: string) => {
 					}
 
 					await self.collection('pages').update(page.id, {
-						compiled_html: new File([html], 'index.html')
+						compiled_html: new File([html], 'index.html', { type: 'text/html' })
 					})
 				})
 				.catch((error) => {
