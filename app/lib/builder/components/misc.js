@@ -9,58 +9,57 @@ export const dynamic_iframe_srcdoc = (head = '') => {
       <script type="module">
         import { mount, unmount } from "https://esm.sh/svelte";
 
+        let source;
         let c;
 
         const channel = new BroadcastChannel('component_preview');
         channel.onmessage = ({data}) => {
           const { event, payload = {} } = data
-          if (payload.componentApp || payload.data) {
-            update(payload.componentApp, payload.data)
+          if (payload.componentApp) {
+            source = payload.componentApp
+          }
+          if (payload.data) {
+            update(payload.data)
           }
         }
 
-        function update(source = null, props) {
-          if (c && !source && props) {
-            // TODO: re-render component when passing only a subset of existing props (i.e. when a prop has been deleted)
-            c.$set(props);
-          } else if (source) {
-            const withLogs = \`
-              const channel = new BroadcastChannel('component_preview');
-              const primoLog = console ? console.log.bind(console) : null;
-              const primoError = console ? console.error.bind(console) : null;
-              function postMessage(logs) {
-                channel.postMessage({
-                  event: 'SET_CONSOLE_LOGS',
-                  payload: { logs }
-                });
-              }
-              channel.postMessage({ event: 'BEGIN' });
-              if (primoLog) console.log = (...args) => { try {postMessage(...args)}catch(e){postMessage('Could not print ' + typeof(args) + '. See in console.')}; primoLog(...args); };
-              if (primoLog) console.error = (...args) => { try {postMessage(...args)}catch(e){postMessage('Could not print ' + typeof(args) + '. See in console.')}; primoError(...args); };
-              \` + source;
-            const blob = new Blob([withLogs], { type: 'text/javascript' });
-            const url = URL.createObjectURL(blob);
-            import(url).then(({ default: App }) => {
-              if (c) unmount(c)
-              try {
-                c = mount(App, { 
-                  target: document.querySelector('#page'),
-                  props
-                })
-              } catch(e) {
-                document.querySelector('#page').innerHTML = ''
-                console.error(e.toString())
-                channel.postMessage({
-                  event: 'SET_ERROR',
-                  payload: {
-                    error: e.toString()
-                  }
-                });
-              }
-            })
-          }
+        function update(props) {
+          const withLogs = \`
+            const channel = new BroadcastChannel('component_preview');
+            const primoLog = console ? console.log.bind(console) : null;
+            const primoError = console ? console.error.bind(console) : null;
+            function postMessage(logs) {
+              channel.postMessage({
+                event: 'SET_CONSOLE_LOGS',
+                payload: { logs }
+              });
+            }
+            channel.postMessage({ event: 'BEGIN' });
+            if (primoLog) console.log = (...args) => { try {postMessage(...args)}catch(e){postMessage('Could not print ' + typeof(args) + '. See in console.')}; primoLog(...args); };
+            if (primoLog) console.error = (...args) => { try {postMessage(...args)}catch(e){postMessage('Could not print ' + typeof(args) + '. See in console.')}; primoError(...args); };
+            \` + source;
+          const blob = new Blob([withLogs], { type: 'text/javascript' });
+          const url = URL.createObjectURL(blob);
+          import(url).then(({ default: App }) => {
+            if (c) unmount(c)
+            try {
+              c = mount(App, {
+                target: document.querySelector('#page'),
+                props
+              })
+            } catch(e) {
+              document.querySelector('#page').innerHTML = ''
+              console.error(e.toString())
+              channel.postMessage({
+                event: 'SET_ERROR',
+                payload: {
+                  error: e.toString()
+                }
+              });
+            }
+          })
         }
-		  <\/script>
+		  </script>
     </head>
     <body id="page"></body>
   </html>
@@ -89,38 +88,35 @@ export const component_iframe_srcdoc = ({ head = '', foot = '' }) => {
         <script type="module">
           import { mount, unmount } from "https://esm.sh/svelte"
 
+          let source;
           let c;
 
           window.addEventListener('message', ({data}) => {
             // handle the message here
             const { payload } = data
-            if (payload?.js && payload?.data) {
-              update(payload.js, payload.data)
-            } else if (payload?.data && c) {
-              c.$set(payload.data);
+            if (payload?.js) {
+              source = payload.js
+            }
+            if (payload?.data) {
+              update(payload.data)
             }
           })
 
-          function update(source = null, props) {
-            if (c && !source && props) {
-              // TODO: re-render component when passing only a subset of existing props (i.e. when a prop has been deleted)
-              c.$set(props);
-            } else if (source) {
-              const blob = new Blob([source], { type: 'text/javascript' });
-              const url = URL.createObjectURL(blob);
-              import(url).then(({ default: App }) => {
-                if (c) unmount(c)
-                try {
-                  c = mount(App, { 
-                    target: document.querySelector('#component'),
-                    props
-                  })
-                } catch(e) {
-                  document.querySelector('body').innerHTML = ''
-                  console.error(e.toString())
-                }
-              })
-            }
+          function update(props) {
+            const blob = new Blob([source], { type: 'text/javascript' });
+            const url = URL.createObjectURL(blob);
+            import(url).then(({ default: App }) => {
+              if (c) unmount(c)
+              try {
+                c = mount(App, {
+                  target: document.querySelector('#component'),
+                  props
+                })
+              } catch(e) {
+                document.querySelector('body').innerHTML = ''
+                console.error(e.toString())
+              }
+            })
           }
         </script>
         ${head}
