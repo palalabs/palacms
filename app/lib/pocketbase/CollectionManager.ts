@@ -7,58 +7,68 @@ export type StagedOperation<T extends ObjectWithId> =
 	| { collection: RecordService<T>; operation: 'update'; processed: boolean; data: Partial<T> }
 	| { collection: RecordService<T>; operation: 'delete'; processed: boolean }
 
+export type RecordIdList = {
+	invalidated: boolean
+	ids: string[]
+}
+
 export type CollectionManager = ReturnType<typeof createCollectionManager>
 
 export const createCollectionManager = () => {
 	const staged = new OrderedSvelteMap<string, StagedOperation<ObjectWithId>>()
 	const records = new OrderedSvelteMap<string, ObjectWithId | undefined>()
-	const lists = new OrderedSvelteMap<string, string[] | undefined>()
+	const lists = new OrderedSvelteMap<string, RecordIdList | undefined>()
+
+	let commitsInProgress = 0
 
 	return {
 		staged,
 		records,
 		lists,
 		commit: async () => {
-			for (const [id, operation] of staged) {
-				// Avoid redoing operation if commit is done twice in a row
-				if (operation.processed) {
-					continue
-				} else {
-					operation.processed = true
+			try {
+				commitsInProgress++
+
+				for (const [id, operation] of staged) {
+					// Avoid redoing operation if commit is done twice in a row
+					if (operation.processed) {
+						continue
+					} else {
+						operation.processed = true
+					}
+
+					switch (operation.operation) {
+						case 'create':
+							await operation.collection.create(operation.data).then((record) => {
+								records.set(id, record)
+							})
+							break
+
+						case 'update':
+							await operation.collection.update(id, operation.data).then((record) => {
+								records.set(id, record)
+							})
+							break
+
+						case 'delete':
+							await operation.collection.delete(id).then(() => {
+								records.delete(id)
+							})
+							break
+					}
 				}
-
-				switch (operation.operation) {
-					case 'create':
-						await operation.collection.create(operation.data).then((record) => {
-							records.set(id, record)
-						})
-						break
-
-					case 'update':
-						await operation.collection.update(id, operation.data).then((record) => {
-							records.set(id, record)
-						})
-						break
-
-					case 'delete':
-						await operation.collection.delete(id).then(() => {
-							records.delete(id)
-						})
-						break
+			} finally {
+				commitsInProgress--
+				if (commitsInProgress === 0) {
+					for (const [id, list] of [...lists]) {
+						lists.set(id, { invalidated: true, ids: list?.ids ?? [] })
+					}
+					staged.clear()
 				}
-			}
-
-			for (const id of [...staged.keys()]) {
-				staged.delete(id)
-			}
-			for (const id of [...lists.keys()]) {
-				lists.delete(id)
 			}
 		},
 		discard: () => {
-			for (const id of [...staged.keys()]) {
-				staged.delete(id)
-			}
+			staged.clear()
 		}
 	}
 }

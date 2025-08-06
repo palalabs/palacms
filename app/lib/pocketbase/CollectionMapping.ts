@@ -87,10 +87,11 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 		list: (options) => {
 			const listId = name + JSON.stringify(options ?? {})
 
-			// If no cached list exists, start loading it
-			if (!lists.has(listId)) {
+			// If no cached list exists or it's invalidated, start loading it
+			const existingList = lists.get(listId)
+			if (!lists.has(listId) || existingList?.invalidated) {
 				untrack(() => {
-					lists.set(listId, undefined)
+					lists.set(listId, existingList ? { invalidated: false, ids: existingList?.ids } : undefined)
 					collection
 						.getFullList(options)
 						.then((fetchedRecords) => {
@@ -99,18 +100,15 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 								records.set(record.id, record as unknown as T)
 							})
 							// Store the list of IDs
-							lists.set(
-								listId,
-								fetchedRecords.map(({ id }) => id)
-							)
+							lists.set(listId, { invalidated: false, ids: fetchedRecords.map(({ id }) => id) })
 						})
 						.catch(() => {
-							lists.set(listId, [])
+							lists.set(listId, { invalidated: false, ids: [] })
 						})
 				})
 			}
 
-			const list = [...(lists.get(listId) ?? [])]
+			const list = [...(lists.get(listId)?.ids ?? [])]
 			for (const [id, value] of staged) {
 				if (value.collection !== collection) {
 					// The operation is not for this collection
@@ -176,6 +174,11 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 		authWithPassword: async (usernameOrEmail, password) => {
 			const response = await collection.authWithPassword(usernameOrEmail, password)
 			records.set(response.record.id, response.record as unknown as T)
+
+			// Clear loaded data because authorization has been updated.
+			lists.clear()
+			records.clear()
+
 			return { ...response, record: mapObject(response.record) }
 		},
 		requestPasswordReset: async (email) => {
