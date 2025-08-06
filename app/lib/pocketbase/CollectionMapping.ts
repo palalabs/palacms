@@ -174,6 +174,11 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 		authWithPassword: async (usernameOrEmail, password) => {
 			const response = await collection.authWithPassword(usernameOrEmail, password)
 			records.set(response.record.id, response.record as unknown as T)
+
+			// Clear loaded data because authorization has been updated.
+			lists.clear()
+			records.clear()
+
 			return { ...response, record: mapObject(response.record) }
 		},
 		requestPasswordReset: async (email) => {
