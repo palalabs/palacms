@@ -1,20 +1,10 @@
 <script module>
 	import { writable } from 'svelte/store'
-
-	const left_pane_size = writable(33)
-	const center_pane_size = writable(33)
-	const right_pane_size = writable(33)
-
-	const activeTabs = writable({
-		html: true,
-		css: true,
-		js: true
-	})
 </script>
 
 <script>
 	import Icon from '@iconify/svelte'
-	import { createEventDispatcher } from 'svelte'
+	import { createEventDispatcher, onMount } from 'svelte'
 	import { PaneGroup, Pane, PaneResizer } from 'paneforge'
 	import prettier from 'prettier'
 	import * as prettierPostcss from 'prettier/parser-postcss'
@@ -23,6 +13,10 @@
 	import CodeMirror from '$lib/builder/components/CodeEditor/CodeMirror.svelte'
 
 	const dispatch = createEventDispatcher()
+	
+	const left_pane_size = writable(33)
+	const center_pane_size = writable(33)
+	const right_pane_size = writable(33)
 
 	/**
 	 * @typedef {Object} Props
@@ -35,47 +29,153 @@
 	/** @type {Props} */
 	let { data = {}, html = $bindable(''), css = $bindable(''), js = $bindable(''), onmod_e = () => {}, onmod_r = () => {}, oninput = () => {} } = $props()
 
-	let html_pane = $state()
-	let css_pane = $state()
-	let js_pane = $state()
+	let html_pane_component = $state()
+	let css_pane_component = $state()
+	let js_pane_component = $state()
 
 	let selections = $state({
 		html: 0,
 		css: 0,
 		js: 0
 	})
+	
+	let programmaticResize = false
 
 	function toggleTab(tab) {
-		const tabName = {
-			0: 'html',
-			1: 'css',
-			2: 'js'
-		}[tab]
-		$activeTabs = {
-			...$activeTabs,
-			[tabName]: !$activeTabs[tabName]
+		const paneComponents = [html_pane_component, css_pane_component, js_pane_component]
+		const paneSizes = [$left_pane_size, $center_pane_size, $right_pane_size]
+		const paneStores = [left_pane_size, center_pane_size, right_pane_size]
+		
+		// Check if this tab is currently collapsed (visually)
+		const isCollapsed = paneSizes[tab] <= 5
+		
+		if (isCollapsed) {
+			// Opening a collapsed tab - calculate new sizes
+			const visibleCount = paneSizes.filter(size => size > 5).length
+			const newVisibleCount = visibleCount + 1
+			
+			const collapsedWidth = 4
+			const totalCollapsedWidth = collapsedWidth * (3 - newVisibleCount)
+			const activeWidth = (100 - totalCollapsedWidth) / newVisibleCount
+			
+			// Calculate new sizes first
+			const newSizes = []
+			for (let i = 0; i < 3; i++) {
+				if (i === tab) {
+					// This is the tab being opened
+					newSizes[i] = activeWidth
+				} else if (paneSizes[i] > 5) {
+					// This tab is already visible, keep it at activeWidth
+					newSizes[i] = activeWidth
+				} else {
+					// This tab should stay collapsed
+					newSizes[i] = collapsedWidth
+				}
+			}
+			
+			// Set flag to prevent resize callbacks from updating stores
+			programmaticResize = true
+			
+			// Update stores
+			$left_pane_size = newSizes[0]
+			$center_pane_size = newSizes[1]
+			$right_pane_size = newSizes[2]
+			
+			// Use resize() method directly on each component
+			requestAnimationFrame(() => {
+				if (html_pane_component) {
+					html_pane_component.resize(newSizes[0])
+				}
+				if (css_pane_component) {
+					css_pane_component.resize(newSizes[1])
+				}
+				if (js_pane_component) {
+					js_pane_component.resize(newSizes[2])
+				}
+				
+				setTimeout(() => {
+					programmaticResize = false
+				}, 100)
+			})
+		} else {
+			// Closing an open tab
+			const visibleCount = paneSizes.filter(size => size > 5).length
+			
+			// Don't allow closing the last visible tab
+			if (visibleCount === 1) {
+				return
+			}
+			
+			const newVisibleCount = visibleCount - 1
+			const collapsedWidth = 4
+			const totalCollapsedWidth = collapsedWidth * (3 - newVisibleCount)
+			const activeWidth = (100 - totalCollapsedWidth) / newVisibleCount
+			
+			// Calculate new sizes for closing
+			const newSizes = []
+			for (let i = 0; i < 3; i++) {
+				if (i === tab) {
+					// This is the tab being closed
+					newSizes[i] = collapsedWidth
+				} else if (paneSizes[i] > 5) {
+					// This tab should remain visible with new activeWidth
+					newSizes[i] = activeWidth
+				} else {
+					// This tab should stay collapsed
+					newSizes[i] = collapsedWidth
+				}
+			}
+			
+			// Set flag to prevent resize callbacks from updating stores
+			programmaticResize = true
+			
+			// Update stores
+			$left_pane_size = newSizes[0]
+			$center_pane_size = newSizes[1]
+			$right_pane_size = newSizes[2]
+			
+			// Use resize() method directly on each component
+			requestAnimationFrame(() => {
+				if (html_pane_component) {
+					html_pane_component.resize(newSizes[0])
+				}
+				if (css_pane_component) {
+					css_pane_component.resize(newSizes[1])
+				}
+				if (js_pane_component) {
+					js_pane_component.resize(newSizes[2])
+				}
+				
+				setTimeout(() => {
+					programmaticResize = false
+				}, 100)
+			})
 		}
-
-		const nActive = Object.values($activeTabs).filter(Boolean).length
-		if (!nActive) return
-		const panelWidth = 100 / nActive
-
-		$left_pane_size = $activeTabs['html'] ? panelWidth : 4
-		$center_pane_size = $activeTabs['css'] ? panelWidth : 4
-		$right_pane_size = $activeTabs['js'] ? panelWidth : 4
-
-		html_pane?.resize($left_pane_size)
-		css_pane?.resize($center_pane_size)
-		js_pane?.resize($right_pane_size)
 	}
 
-	// close empty tabs
-	if (!css && $activeTabs['css']) {
-		toggleTab(1)
-	}
-	if (!js && $activeTabs['js']) {
-		toggleTab(2)
-	}
+	// close empty tabs on mount only
+	onMount(() => {
+		if (!css || !js) {
+			programmaticResize = true
+			
+			const activeCount = (html ? 1 : 0) + (css ? 1 : 0) + (js ? 1 : 0)
+			const collapsedWidth = 4
+			const totalCollapsedWidth = collapsedWidth * (3 - activeCount)
+			const activeWidth = (100 - totalCollapsedWidth) / activeCount
+			
+			if (!css) $center_pane_size = collapsedWidth
+			else $center_pane_size = activeWidth
+			
+			if (!js) $right_pane_size = collapsedWidth
+			else $right_pane_size = activeWidth
+			
+			if (html) $left_pane_size = activeWidth
+			
+			requestAnimationFrame(() => {
+				programmaticResize = false
+			})
+		}
+	})
 
 	let showing_format_button = $state(true)
 	async function format_all_code() {
@@ -103,14 +203,20 @@
 
 <PaneGroup direction="horizontal" class="flex h-full" autoSaveId="page-view">
 	<Pane
-		bind:pane={html_pane}
+		bind:this={html_pane_component}
 		minSize={4}
+		collapsible={true}
+		collapsedSize={4}
+		defaultSize={$left_pane_size}
 		onResize={(size) => {
-			$left_pane_size = size
+			// Only update if user is dragging, not programmatic changes
+			if (!programmaticResize) {
+				$left_pane_size = size
+			}
 		}}
 	>
 		<div class="tabs">
-			<button class:tab-hidden={$left_pane_size <= 5} onclick={() => toggleTab(0)}>
+			<button class:tab-hidden={$left_pane_size <= 5} onclick={(e) => { e.stopPropagation(); toggleTab(0) }}>
 				{#if showing_local_key_hint}
 					<span class="vertical">&#8984; 1</span>
 				{:else}
@@ -149,14 +255,21 @@
 		</span>
 	</PaneResizer>
 	<Pane
+		bind:this={css_pane_component}
 		minSize={4}
+		collapsible={true}
+		collapsedSize={4}
+		defaultSize={$center_pane_size}
 		style="position: relative;"
 		onResize={(size) => {
-			$center_pane_size = size
+			// Only update if user is dragging, not programmatic changes
+			if (!programmaticResize) {
+				$center_pane_size = size
+			}
 		}}
 	>
 		<div class="tabs">
-			<button class:tab-hidden={$center_pane_size <= 5} onclick={() => toggleTab(1)}>
+			<button class:tab-hidden={$center_pane_size <= 5} onclick={(e) => { e.stopPropagation(); toggleTab(1) }}>
 				{#if showing_local_key_hint}
 					<span class="vertical">&#8984; 2</span>
 				{:else}
@@ -197,14 +310,20 @@
 	</PaneResizer>
 	<Pane
 		minSize={4}
-		bind:pane={js_pane}
+		collapsible={true}
+		collapsedSize={4}
+		bind:this={js_pane_component}
+		defaultSize={$right_pane_size}
 		style="position: relative;"
 		onResize={(size) => {
-			$right_pane_size = size
+			// Only update if user is dragging, not programmatic changes
+			if (!programmaticResize) {
+				$right_pane_size = size
+			}
 		}}
 	>
 		<div class="tabs">
-			<button class:tab-hidden={$right_pane_size <= 5} onclick={() => toggleTab(2)}>
+			<button class:tab-hidden={$right_pane_size <= 5} onclick={(e) => { e.stopPropagation(); toggleTab(2) }}>
 				{#if showing_local_key_hint}
 					<span class="vertical">&#8984; 3</span>
 				{:else}
@@ -234,24 +353,13 @@
 	</Pane>
 </PaneGroup>
 
-<!-- <footer>
-	{#if showing_format_button}
-		<button onclick={() => format_all_code()} transition:fade|local={{ duration: 100 }}>
-			<Icon icon="carbon:clean" />
-			<span>Format</span>
-		</button>
-	{/if}
-	<a target="blank" href={'https://docs.primocms.org/development'}>
-		<span>Docs</span>
-		<Icon icon="mdi:external-link" />
-	</a>
-</footer> -->
 
 <style lang="postcss">
 	.tabs {
 		width: 100%;
 		height: 100%;
 		position: relative;
+		overflow: hidden;
 
 		button {
 			background: var(--color-gray-9);
@@ -263,14 +371,19 @@
 			font-size: var(--font-size-1);
 			/* font-weight: 700; */
 			z-index: 10;
+			position: relative;
 
 			&.tab-hidden {
 				height: 100%;
 				position: absolute;
+				top: 0;
+				left: 0;
+				right: 0;
 				background: #111;
 				transition:
 					background 0.1s,
 					color 0.1s;
+				z-index: 20;
 
 				&:hover {
 					background: var(--weave-primary-color);
@@ -288,33 +401,4 @@
 			}
 		}
 	}
-
-	/* footer {
-		position: sticky;
-		bottom: 0.25rem;
-		left: 100%;
-		margin-right: 0.25rem;
-		display: flex;
-		justify-content: flex-end;
-		gap: 0.25rem;
-		z-index: 99;
-		pointer-events: none;
-
-		a,
-		button {
-			color: var(--color-gray-2);
-			background: var(--color-gray-9);
-			transition: 0.1s background;
-			padding: 0.25rem 0.5rem;
-			font-size: 0.75rem;
-			display: inline-flex;
-			align-items: center;
-			gap: 0.25rem;
-			pointer-events: all;
-
-			&:hover {
-				background: var(--color-gray-8);
-			}
-		}
-	} */
 </style>
