@@ -13,7 +13,7 @@
 	import CodeMirror from '$lib/builder/components/CodeEditor/CodeMirror.svelte'
 
 	const dispatch = createEventDispatcher()
-	
+
 	const left_pane_size = writable(33)
 	const center_pane_size = writable(33)
 	const right_pane_size = writable(33)
@@ -38,26 +38,26 @@
 		css: 0,
 		js: 0
 	})
-	
+
 	let programmaticResize = false
 
 	function toggleTab(tab) {
 		const paneComponents = [html_pane_component, css_pane_component, js_pane_component]
 		const paneSizes = [$left_pane_size, $center_pane_size, $right_pane_size]
 		const paneStores = [left_pane_size, center_pane_size, right_pane_size]
-		
+
 		// Check if this tab is currently collapsed (visually)
 		const isCollapsed = paneSizes[tab] <= 5
-		
+
 		if (isCollapsed) {
 			// Opening a collapsed tab - calculate new sizes
-			const visibleCount = paneSizes.filter(size => size > 5).length
+			const visibleCount = paneSizes.filter((size) => size > 5).length
 			const newVisibleCount = visibleCount + 1
-			
+
 			const collapsedWidth = 4
 			const totalCollapsedWidth = collapsedWidth * (3 - newVisibleCount)
 			const activeWidth = (100 - totalCollapsedWidth) / newVisibleCount
-			
+
 			// Calculate new sizes first
 			const newSizes = []
 			for (let i = 0; i < 3; i++) {
@@ -72,15 +72,15 @@
 					newSizes[i] = collapsedWidth
 				}
 			}
-			
+
 			// Set flag to prevent resize callbacks from updating stores
 			programmaticResize = true
-			
+
 			// Update stores
 			$left_pane_size = newSizes[0]
 			$center_pane_size = newSizes[1]
 			$right_pane_size = newSizes[2]
-			
+
 			// Use resize() method directly on each component
 			requestAnimationFrame(() => {
 				if (html_pane_component) {
@@ -92,25 +92,25 @@
 				if (js_pane_component) {
 					js_pane_component.resize(newSizes[2])
 				}
-				
+
 				setTimeout(() => {
 					programmaticResize = false
 				}, 100)
 			})
 		} else {
 			// Closing an open tab
-			const visibleCount = paneSizes.filter(size => size > 5).length
-			
+			const visibleCount = paneSizes.filter((size) => size > 5).length
+
 			// Don't allow closing the last visible tab
 			if (visibleCount === 1) {
 				return
 			}
-			
+
 			const newVisibleCount = visibleCount - 1
 			const collapsedWidth = 4
 			const totalCollapsedWidth = collapsedWidth * (3 - newVisibleCount)
 			const activeWidth = (100 - totalCollapsedWidth) / newVisibleCount
-			
+
 			// Calculate new sizes for closing
 			const newSizes = []
 			for (let i = 0; i < 3; i++) {
@@ -125,15 +125,15 @@
 					newSizes[i] = collapsedWidth
 				}
 			}
-			
+
 			// Set flag to prevent resize callbacks from updating stores
 			programmaticResize = true
-			
+
 			// Update stores
 			$left_pane_size = newSizes[0]
 			$center_pane_size = newSizes[1]
 			$right_pane_size = newSizes[2]
-			
+
 			// Use resize() method directly on each component
 			requestAnimationFrame(() => {
 				if (html_pane_component) {
@@ -145,7 +145,7 @@
 				if (js_pane_component) {
 					js_pane_component.resize(newSizes[2])
 				}
-				
+
 				setTimeout(() => {
 					programmaticResize = false
 				}, 100)
@@ -155,25 +155,46 @@
 
 	// close empty tabs on mount only
 	onMount(() => {
-		if (!css || !js) {
-			programmaticResize = true
-			
-			const activeCount = (html ? 1 : 0) + (css ? 1 : 0) + (js ? 1 : 0)
+		programmaticResize = true
+
+		// Count tabs with content
+		const hasContent = {
+			html: !!html,
+			css: !!css,
+			js: !!js
+		}
+		const activeCount = (hasContent.html ? 1 : 0) + (hasContent.css ? 1 : 0) + (hasContent.js ? 1 : 0)
+		
+		// Only adjust if there are empty tabs
+		if (activeCount < 3 && activeCount > 0) {
 			const collapsedWidth = 4
 			const totalCollapsedWidth = collapsedWidth * (3 - activeCount)
 			const activeWidth = (100 - totalCollapsedWidth) / activeCount
-			
-			if (!css) $center_pane_size = collapsedWidth
-			else $center_pane_size = activeWidth
-			
-			if (!js) $right_pane_size = collapsedWidth
-			else $right_pane_size = activeWidth
-			
-			if (html) $left_pane_size = activeWidth
-			
+
+			// Set each pane size based on content
+			$left_pane_size = hasContent.html ? activeWidth : collapsedWidth
+			$center_pane_size = hasContent.css ? activeWidth : collapsedWidth
+			$right_pane_size = hasContent.js ? activeWidth : collapsedWidth
+
+			// Ensure pane components resize properly
 			requestAnimationFrame(() => {
-				programmaticResize = false
+				if (html_pane_component) {
+					html_pane_component.resize($left_pane_size)
+				}
+				if (css_pane_component) {
+					css_pane_component.resize($center_pane_size)
+				}
+				if (js_pane_component) {
+					js_pane_component.resize($right_pane_size)
+				}
+
+				setTimeout(() => {
+					programmaticResize = false
+				}, 100)
 			})
+		} else {
+			// All tabs have content or no tabs have content, use default sizes
+			programmaticResize = false
 		}
 	})
 
@@ -216,7 +237,13 @@
 		}}
 	>
 		<div class="tabs">
-			<button class:tab-hidden={$left_pane_size <= 5} onclick={(e) => { e.stopPropagation(); toggleTab(0) }}>
+			<button
+				class:tab-hidden={$left_pane_size <= 5}
+				onclick={(e) => {
+					e.stopPropagation()
+					toggleTab(0)
+				}}
+			>
 				{#if showing_local_key_hint}
 					<span class="vertical">&#8984; 1</span>
 				{:else}
@@ -269,7 +296,13 @@
 		}}
 	>
 		<div class="tabs">
-			<button class:tab-hidden={$center_pane_size <= 5} onclick={(e) => { e.stopPropagation(); toggleTab(1) }}>
+			<button
+				class:tab-hidden={$center_pane_size <= 5}
+				onclick={(e) => {
+					e.stopPropagation()
+					toggleTab(1)
+				}}
+			>
 				{#if showing_local_key_hint}
 					<span class="vertical">&#8984; 2</span>
 				{:else}
@@ -298,7 +331,6 @@
 		</div>
 	</Pane>
 	<PaneResizer
-		bind:pane={css_pane}
 		class="PaneResizer"
 		style="display: flex;
 		align-items: center;
@@ -323,7 +355,13 @@
 		}}
 	>
 		<div class="tabs">
-			<button class:tab-hidden={$right_pane_size <= 5} onclick={(e) => { e.stopPropagation(); toggleTab(2) }}>
+			<button
+				class:tab-hidden={$right_pane_size <= 5}
+				onclick={(e) => {
+					e.stopPropagation()
+					toggleTab(2)
+				}}
+			>
 				{#if showing_local_key_hint}
 					<span class="vertical">&#8984; 3</span>
 				{:else}
@@ -352,7 +390,6 @@
 		</div>
 	</Pane>
 </PaneGroup>
-
 
 <style lang="postcss">
 	.tabs {
