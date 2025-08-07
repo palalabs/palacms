@@ -82,7 +82,7 @@ async function rollup_worker({ component, head, hydrated, buildStatic = true, cs
 	if (buildStatic) {
 		const bundle = await compile({
 			generate: 'server',
-			css
+			css: 'injected'
 		})
 
 		const output = (await bundle.generate({ format })).output[0].code
