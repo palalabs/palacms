@@ -1,13 +1,18 @@
 <script lang="ts">
 	import { goto } from '$app/navigation'
+	import { page } from '$app/state'
 	import { Users } from '$lib/pocketbase/collections'
 	import { Loader } from 'lucide-svelte'
 
-	type AuthAction = 'sign_in' | 'sign_up' | 'reset_password' | 'confirm_password_reset'
+	type AuthAction = 'sign_in' | 'reset_password' | 'confirm_password_reset'
 
-	let { title, email = $bindable(), password = $bindable(null), action, footer = null, error, disable_email = false }: { action: AuthAction } & Record<string, any> = $props()
+	let { title, email = $bindable(), password = $bindable(null), action, footer = null }: { action: AuthAction } & Record<string, any> = $props()
 
+	let confirm_password = $state('')
+	let passwordResetRequested = $state(false)
 	let loading = $state(false)
+	let error = $state('')
+
 	const submit = async (event: SubmitEvent) => {
 		event.preventDefault()
 		switch (action) {
@@ -20,17 +25,27 @@
 					})
 				loading = false
 				break
-			case 'sign_up':
-				throw new Error('Not implemented')
 			case 'reset_password':
 				loading = true
-				await Users.requestPasswordReset(email).catch(({ message }) => {
-					error = message
-				})
+				await Users.requestPasswordReset(email)
+					.then(() => {
+						passwordResetRequested = true
+					})
+					.catch(({ message }) => {
+						error = message
+					})
 				loading = false
 				break
 			case 'confirm_password_reset':
-				throw new Error('Not implemented')
+				loading = true
+				const token = page.url.searchParams.get('reset') ?? ''
+				await Users.confirmPasswordReset(token, password, confirm_password)
+					.then(() => goto('/admin/auth'))
+					.catch(({ message }) => {
+						error = message
+					})
+				loading = false
+				break
 			default:
 				throw new Error('Unknown action')
 		}
@@ -43,21 +58,31 @@
 {#if error}
 	<div class="error">{error}</div>
 {/if}
+{#if passwordResetRequested}
+	<div class="message">Password reset has been sent to your email. Remember to also check the spam folder.</div>
+{/if}
 <form class="form" onsubmit={submit}>
 	<div class="fields">
-		<label>
-			<span>Email</span>
-			<input data-test-id="email" bind:value={email} type="text" name="email" disabled={disable_email} />
-		</label>
-		{#if password !== null}
+		{#if action !== 'confirm_password_reset'}
+			<label>
+				<span>Email</span>
+				<input data-test-id="email" bind:value={email} type="text" name="email" disabled={passwordResetRequested} />
+			</label>
+		{/if}
+		{#if action !== 'reset_password'}
 			<label>
 				<span>Password</span>
 				<input data-test-id="password" bind:value={password} type="password" name="password" />
 			</label>
 		{/if}
-		<!-- <input name="invitation_id" type="text" class="hidden" value={$page.url.searchParams.get('join')} /> -->
+		{#if action === 'confirm_password_reset'}
+			<label>
+				<span>Confirm Password</span>
+				<input data-test-id="confirm-password" bind:value={confirm_password} type="password" name="confirm-password" />
+			</label>
+		{/if}
 	</div>
-	<button class="button" type="submit" data-test-id="submit">
+	<button class="button" type="submit" data-test-id="submit" disabled={passwordResetRequested}>
 		<span class:invisible={loading}>{title}</span>
 		{#if loading}
 			<div class="animate-spin absolute">
@@ -69,10 +94,6 @@
 {#if footer}
 	<span class="footer-text">{@render footer()}</span>
 {/if}
-
-<!-- <span class="footer-text"
-	>Don't have an account? <button on:click={() => dispatch('switch')}>Sign Up</button></span
-> -->
 
 <style lang="postcss">
 	header {
@@ -86,6 +107,9 @@
 	}
 	.error {
 		color: #f72228;
+		margin-bottom: 1rem;
+	}
+	.message {
 		margin-bottom: 1rem;
 	}
 	.form {
