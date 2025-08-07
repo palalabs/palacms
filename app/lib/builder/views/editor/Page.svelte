@@ -91,32 +91,32 @@
 			await repair_section_indices()
 		}
 
-		if (sections.length === 0 && page_type_body_sections.length !== 0) {
-			await copy_default_sections()
-		}
-
 		// Adjust indices of existing sections that come after the insertion position
 		const existing_sections = sections.filter((section) => section.index >= position)
 
-		for (const section of existing_sections) {
-			PageSections.update(section.id, { index: section.index + 1 })
-		}
-
-		// Create new section
+		// Create new section with correct index
 		const new_section = PageSections.create({
 			page: page.id,
 			symbol: symbol.id,
 			index: position
 		})
+
+		// Copy symbol entries to the new section instance
+		for (const entry of symbol.entries()) {
+			PageSectionEntries.create({
+				section: new_section.id,
+				field: entry.field,
+				locale: entry.locale,
+				value: entry.value,
+				index: entry.index || 0
+			})
+		}
+
+		for (const section of existing_sections) {
+			PageSections.update(section.id, { index: section.index + 1 })
+		}
+
 		await manager.commit()
-
-		// Add to newly added sections for animation
-		newly_added_sections.add(new_section.id)
-
-		// Remove from newly added set after animation completes
-		setTimeout(() => {
-			newly_added_sections.delete(new_section.id)
-		}, 500)
 
 		return new_section.id
 	}
@@ -271,10 +271,10 @@
 	let moving = $state(false) // workaround to prevent block toolbar from showing when moving blocks
 	let newly_added_sections = $state(new Set()) // track newly added sections for animation
 
-	let dragging = {
+	let dragging = $state({
 		id: null,
 		position: null
-	}
+	})
 	function reset_drag() {
 		// Clear any pending drag leave timeout
 		if (drag_leave_timeout) {
@@ -713,7 +713,6 @@
 				role="presentation"
 				data-section={section.id}
 				data-symbol={block?.id}
-				class:fade-in={is_newly_added}
 				onmousemove={(e) => {
 					if (show_block_toolbar_on_hover && hovered_section_id === section.id) {
 						show_block_toolbar()
@@ -803,10 +802,6 @@
 		position: relative;
 		min-height: 2rem;
 		line-height: 0;
-	}
-
-	.fade-in {
-		animation: fadeIn 0.2s ease-out;
 	}
 
 	@keyframes fadeIn {

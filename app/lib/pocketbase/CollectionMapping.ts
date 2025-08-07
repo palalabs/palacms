@@ -93,7 +93,12 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 				untrack(() => {
 					lists.set(listId, existingList ? { invalidated: false, ids: existingList?.ids } : undefined)
 					collection
-						.getFullList(options)
+						.getFullList({
+							...options,
+							// Use a unique request key based on the filter to prevent cancellation
+							// of requests for different records
+							requestKey: options?.filter ? `${name}-${options.filter}` : undefined
+						})
 						.then((fetchedRecords) => {
 							// Store the full records
 							fetchedRecords.forEach((record) => {
@@ -142,17 +147,17 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 					// Separate (duplicate) cases for each operation type to satify TypeScript
 					operation.operation == 'create'
 						? {
-								collection,
-								operation: operation.operation,
-								processed: false,
-								data: { ...operation.data, ...values }
-							}
+							collection,
+							operation: operation.operation,
+							processed: false,
+							data: { ...operation.data, ...values }
+						}
 						: {
-								collection,
-								operation: operation.operation,
-								processed: false,
-								data: { ...operation.data, ...values }
-							}
+							collection,
+							operation: operation.operation,
+							processed: false,
+							data: { ...operation.data, ...values }
+						}
 				staged.set(id, updatedOperation)
 			} else {
 				operation = { collection, operation: 'update', processed: false, data: values }
