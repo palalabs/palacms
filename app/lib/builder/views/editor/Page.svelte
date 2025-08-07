@@ -102,13 +102,13 @@
 		})
 
 		// Copy symbol entries to the new section instance
-		for (const entry of symbol.entries()) {
+		for (const entry of symbol.entries() ?? []) {
 			PageSectionEntries.create({
 				section: new_section.id,
 				field: entry.field,
 				locale: entry.locale,
 				value: entry.value,
-				index: entry.index || 0
+				index: entry.index
 			})
 		}
 
@@ -269,7 +269,6 @@
 	}
 
 	let moving = $state(false) // workaround to prevent block toolbar from showing when moving blocks
-	let newly_added_sections = $state(new Set()) // track newly added sections for animation
 
 	let dragging = $state({
 		id: null,
@@ -708,7 +707,6 @@
 			{@const locked = $locked_blocks.find((b) => b === section.id)}
 			{@const in_current_tab = false}
 			{@const show_block_toolbar_on_hover = page_mounted && !moving}
-			{@const is_newly_added = newly_added_sections.has(section.id)}
 			<div
 				role="presentation"
 				data-section={section.id}

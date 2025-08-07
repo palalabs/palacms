@@ -13,7 +13,7 @@
 	import { locale } from '../../../stores/app/misc.js'
 	import hotkey_events from '../../../stores/app/hotkey_events.js'
 	import { getContent } from '$lib/pocketbase/content'
-	import { PageSectionEntries, PageSections, PageEntries, PageTypeSectionEntries, SiteSymbolFields, SiteSymbols, SiteEntries, manager } from '$lib/pocketbase/collections'
+	import { PageSectionEntries, PageSections, PageTypeSectionEntries, SiteSymbolFields, SiteSymbols, SiteSymbolEntries, SiteEntries, manager } from '$lib/pocketbase/collections'
 	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
 	import type { PageTypeSection } from '$lib/common/models/PageTypeSection'
 
@@ -41,6 +41,7 @@
 	const component_data = $derived(fields && entries && (getContent(component, fields, entries)[$locale] ?? {}))
 
 	let loading = false
+	let newly_created_fields = new Set()
 
 	hotkey_events.on('e', toggle_tab)
 
@@ -54,6 +55,28 @@
 		// }
 
 		if (!$has_error && symbol) {
+			// Copy entries for newly created fields to the symbol
+			if (newly_created_fields.size > 0 && entries) {
+				for (const fieldId of newly_created_fields) {
+					// Find entries for this field in the section (only top-level entries for now)
+					const fieldEntries = entries.filter((e) => e.field === fieldId && !e.parent)
+
+					// Copy each entry to the symbol (newly created fields won't have symbol entries yet)
+					for (const entry of fieldEntries) {
+						SiteSymbolEntries.create({
+							field: entry.field,
+							locale: entry.locale,
+							value: entry.value,
+							index: entry.index
+							// Note: not copying parent relationships for now as that would require complex mapping
+						})
+					}
+				}
+
+				// Clear the set after copying
+				newly_created_fields.clear()
+			}
+
 			SiteSymbols.update(symbol.id, { html, css, js })
 			await manager.commit()
 
@@ -115,7 +138,7 @@
 						const siblingFields = (fields ?? []).filter((f) => (data?.parent ? f.parent === data.parent : !f.parent))
 						const nextIndex = Math.max(...siblingFields.map((f) => f.index || 0), -1) + 1
 
-						return SiteSymbolFields.create({
+						const newField = SiteSymbolFields.create({
 							type: 'text',
 							key: '',
 							label: '',
@@ -124,6 +147,13 @@
 							...data,
 							index: nextIndex
 						})
+
+						// Track this as a newly created field
+						if (newField) {
+							newly_created_fields.add(newField.id)
+						}
+
+						return newField
 					}}
 					oninput={(values) => {
 						if ('page_type' in component) {
