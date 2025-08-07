@@ -15,9 +15,7 @@
 
 	let stage = $state('signin')
 	$effect.pre(() => {
-		if ($page.url.searchParams.has('signup')) {
-			stage = 'signup'
-		} else if ($page.url.searchParams.has('reset')) {
+		if ($page.url.searchParams.has('reset')) {
 			stage = 'confirm_reset'
 		}
 	})
@@ -37,8 +35,6 @@
 						<button onclick={() => (stage = 'reset_password')}>Forgot your password?</button>
 					{/snippet}
 					<AuthForm action="sign_in" title="Sign In" bind:email bind:password {footer} {error} />
-				{:else if stage === 'signup'}
-					<AuthForm action="sign_up" title="Sign Up" bind:email bind:password {error} />
 				{:else if stage === 'reset_password'}
 					{#if form?.success}
 						<span>A link to reset your password has been emailed to you.</span>

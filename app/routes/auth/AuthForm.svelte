@@ -3,7 +3,7 @@
 	import { Users } from '$lib/pocketbase/collections'
 	import { Loader } from 'lucide-svelte'
 
-	type AuthAction = 'sign_in' | 'sign_up' | 'reset_password' | 'confirm_password_reset'
+	type AuthAction = 'sign_in' | 'reset_password' | 'confirm_password_reset'
 
 	let { title, email = $bindable(), password = $bindable(null), action, footer = null, error, disable_email = false }: { action: AuthAction } & Record<string, any> = $props()
 
@@ -20,8 +20,6 @@
 					})
 				loading = false
 				break
-			case 'sign_up':
-				throw new Error('Not implemented')
 			case 'reset_password':
 				loading = true
 				await Users.requestPasswordReset(email).catch(({ message }) => {
@@ -55,7 +53,6 @@
 				<input data-test-id="password" bind:value={password} type="password" name="password" />
 			</label>
 		{/if}
-		<!-- <input name="invitation_id" type="text" class="hidden" value={$page.url.searchParams.get('join')} /> -->
 	</div>
 	<button class="button" type="submit" data-test-id="submit">
 		<span class:invisible={loading}>{title}</span>
@@ -69,10 +66,6 @@
 {#if footer}
 	<span class="footer-text">{@render footer()}</span>
 {/if}
-
-<!-- <span class="footer-text"
-	>Don't have an account? <button on:click={() => dispatch('switch')}>Sign Up</button></span
-> -->
 
 <style lang="postcss">
 	header {
