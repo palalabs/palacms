@@ -4,6 +4,7 @@
 	import { compilers_registered } from '$lib/stores'
 	import { registerProcessors } from '$lib/builder/component'
 	import { Toaster } from '$lib/components/ui/sonner'
+	import { set_current_user } from '$lib/pocketbase/user'
 
 	let { children } = $props()
 

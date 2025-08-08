@@ -93,7 +93,10 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 				untrack(() => {
 					lists.set(listId, existingList ? { invalidated: false, ids: existingList?.ids } : undefined)
 					collection
-						.getFullList(options)
+						.getFullList({
+							...options,
+							requestKey: listId
+						})
 						.then((fetchedRecords) => {
 							// Store the full records
 							fetchedRecords.forEach((record) => {

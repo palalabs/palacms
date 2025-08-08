@@ -5,6 +5,7 @@
 	import { mod_key_held } from '../../../stores/app/misc'
 	import { click_to_copy } from '../../../utilities'
 	import { Code, Edit3, Trash2, ChevronUp, ChevronDown } from 'lucide-svelte'
+	import { current_user } from '$lib/pocketbase/user'
 
 	const dispatch = createEventDispatcher()
 
@@ -31,8 +32,7 @@
 <div in:fade={{ duration: 100 }} class="BlockToolbar primo-reset" bind:this={node}>
 	<div class="top">
 		<div class="component-button">
-			<!-- TODO: $userRole === 'DEV' -->
-			{#if true}
+			{#if $current_user?.siteRole === 'developer'}
 				<button class:showing_key_hint={$mod_key_held} onclick={() => dispatch('edit-code')} aria-label="Edit Block Code">
 					{#if $mod_key_held}
 						<span class="key-hint">⌘ E</span>
@@ -46,8 +46,7 @@
 				<span class="icon">
 					<Edit3 size={14} />
 				</span>
-				<!-- TODO: $userRole !== 'DEV' -->
-				{#if false}
+				{#if $current_user?.siteRole === 'developer'}
 					<span>Edit Content</span>
 				{/if}
 			</button>
@@ -158,7 +157,7 @@
 		&:hover {
 			z-index: 1;
 			background: #292929;
-			color: #E7E7E7;
+			color: #e7e7e7;
 		}
 	}
 	button:focus {

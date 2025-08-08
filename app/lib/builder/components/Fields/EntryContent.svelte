@@ -7,6 +7,7 @@
 	import { fieldTypes } from '../../stores/app/index.js'
 	import type { Component } from 'svelte'
 	import Icon from '@iconify/svelte'
+	import { current_user } from '$lib/pocketbase/user'
 
 	let {
 		entity,
@@ -87,8 +88,7 @@
 	<Card {title} {icon}>
 		<Field_Component {entity} {field} {fields} {entries} {entry} {level} {onchange} />
 	</Card>
-	<!-- TODO: $userRole === 'DEV' -->
-{:else if !is_visible}
+{:else if $current_user?.siteRole === 'developer' && !is_visible}
 	<div class="hidden-field">
 		<Icon icon="mdi:hidden" />
 		<span>This field will be hidden from content editors</span>

@@ -17,6 +17,7 @@
 	import { SiteSymbols } from '$lib/pocketbase/collections'
 	import { getContext } from 'svelte'
 	import { setFieldEntries } from '../Fields/FieldsContent.svelte'
+	import { current_user } from '$lib/pocketbase/user'
 
 	let active_tab = $state((browser && localStorage.getItem('page-tab')) || 'BLOCKS')
 
@@ -105,8 +106,7 @@
 						</div>
 					{/if}
 				</div>
-				<!-- $userRole === 'DEV' -->
-				{#if true}
+				{#if $current_user?.siteRole === 'developer'}
 					<button
 						onclick={() => {
 							const base_path = pageState.url.pathname.includes('/sites/') ? `/admin/sites/${site?.id}` : '/admin/site'
@@ -140,8 +140,7 @@
 						/>
 					</div>
 				{/if}
-				<!-- $userRole === 'DEV' -->
-				{#if true}
+				{#if $current_user?.siteRole === 'developer'}
 					<button
 						onclick={() => {
 							const base_path = pageState.url.pathname.startsWith('/admin/sites/') ? `/admin/sites/${site?.id}` : '/admin/site'
@@ -176,8 +175,7 @@
 				/>
 			</div>
 		{/if}
-		<!-- $userRole === 'DEV' -->
-		{#if true}
+		{#if $current_user?.siteRole === 'developer'}
 			<button
 				onclick={() => {
 					const base_path = pageState.url.pathname.includes('/sites/') ? `/admin/sites/${site?.id}` : '/admin/site'

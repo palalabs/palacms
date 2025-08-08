@@ -1,16 +1,19 @@
 /// <reference path="../pb_data/types.d.ts" />
 migrate(
 	(app) => {
-		const collection = app.findCollectionByNameOrId('pbc_2147490902')
+		const collection = app.findCollectionByNameOrId('pbc_638150767')
 
 		// update collection data
+		const authorizeServerMembersRule = '@request.auth.serverRole != ""'
+		const authorizeSiteMembersRule = '@collection.site_role_assignments.user.id = @request.auth.id && @collection.site_role_assignments.site.id = field.page_type.site.id'
+		const authorizeRule = `(${authorizeServerMembersRule}) || (${authorizeSiteMembersRule})`
 		unmarshal(
 			{
-				createRule: '@request.auth.id != ""',
-				deleteRule: '@request.auth.id != ""',
-				listRule: '@request.auth.id != ""',
-				updateRule: '@request.auth.id != ""',
-				viewRule: '@request.auth.id != ""'
+				createRule: authorizeRule,
+				deleteRule: authorizeRule,
+				listRule: authorizeRule,
+				updateRule: authorizeRule,
+				viewRule: authorizeRule
 			},
 			collection
 		)
@@ -18,7 +21,7 @@ migrate(
 		return app.save(collection)
 	},
 	(app) => {
-		const collection = app.findCollectionByNameOrId('pbc_2147490902')
+		const collection = app.findCollectionByNameOrId('pbc_638150767')
 
 		// update collection data
 		unmarshal(
