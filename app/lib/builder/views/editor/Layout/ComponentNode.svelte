@@ -17,7 +17,7 @@
 	import { all, createLowlight } from 'lowlight'
 	import { tick, createEventDispatcher } from 'svelte'
 	import { createUniqueID } from '$lib/builder/utils'
-	import { processCode, compare_urls } from '$lib/builder/utils'
+	import { processCode, compare_urls, convert_html_to_markdown } from '$lib/builder/utils'
 	import { hovering_outside } from '$lib/builder/utilities'
 	import { locale } from '$lib/builder/stores/app/misc'
 	import { site_html } from '$lib/builder/stores/app/page'
@@ -74,8 +74,18 @@
 	}
 
 	let scrolling = false
+	let is_editing = $state(false)
 
 	const markdown_classes = {}
+	let field_save_timeout
+
+	function handle_lock() {
+		is_editing = true
+	}
+
+	function handle_unlock() {
+		is_editing = false
+	}
 
 	async function make_content_editable() {
 		if (!node?.contentDocument) return
@@ -228,14 +238,26 @@
 					Extension.create({
 						onFocus() {
 							active_editor = editor
+							handle_lock()
 							dispatch('lock')
 						},
-						onBlur() {
+						onBlur: async () => {
+							handle_unlock()
 							dispatch('unlock')
+							// Final save on blur
+							clearTimeout(field_save_timeout)
+							const html = editor.getHTML()
+							const markdown = await convert_html_to_markdown(html)
+							save_edited_value({ id, value: { html, markdown } })
 						},
 						onUpdate: async ({ editor }) => {
 							const html = editor.getHTML()
-							save_edited_value({ id, value: { html } })
+							// Debounce saves to avoid constant re-renders while editing
+							clearTimeout(field_save_timeout)
+							field_save_timeout = setTimeout(async () => {
+								const markdown = await convert_html_to_markdown(html)
+								save_edited_value({ id, value: { html, markdown } })
+							}, 200)
 						}
 					})
 				],
@@ -337,11 +359,22 @@
 					e.target.blur()
 				}
 			}
+			element.oninput = (e) => {
+				// Debounce saves to avoid constant re-renders while editing
+				clearTimeout(field_save_timeout)
+				field_save_timeout = setTimeout(() => {
+					save_edited_value({ id, value: e.target.innerText })
+				}, 200)
+			}
 			element.onblur = (e) => {
+				handle_unlock()
 				dispatch('unlock')
+				// Final save on blur
+				clearTimeout(field_save_timeout)
 				save_edited_value({ id, value: e.target.innerText })
 			}
 			element.onfocus = () => {
+				handle_lock()
 				dispatch('lock')
 			}
 			element.contentEditable = true
@@ -565,7 +598,7 @@
 	}
 
 	$effect(() => {
-		if (setup_complete && component_data) {
+		if (setup_complete && component_data && !is_editing) {
 			send_component_to_iframe(generated_js, component_data)
 		}
 	})
