@@ -78,7 +78,7 @@ migrate(
 				}
 			],
 			id: 'pbc_2362756690',
-			indexes: ['CREATE UNIQUE INDEX `idx_Z47WHtRrTe` ON `site_role_assignments` (\n  `site`,\n  `user`,\n  `role`\n)'],
+			indexes: ['CREATE UNIQUE INDEX `idx_Z47WHtRrTe` ON `site_role_assignments` (\n  `site`,\n  `user`\n)'],
 			listRule: "@request.auth.serverRole != ''",
 			name: 'site_role_assignments',
 			system: false,
