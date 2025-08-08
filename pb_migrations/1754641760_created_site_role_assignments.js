@@ -79,12 +79,12 @@ migrate(
 			],
 			id: 'pbc_2362756690',
 			indexes: ['CREATE UNIQUE INDEX `idx_Z47WHtRrTe` ON `site_role_assignments` (\n  `site`,\n  `user`\n)'],
-			listRule: "@request.auth.serverRole != ''",
+			listRule: "@request.auth.serverRole != '' || user.id = @request.auth.id",
 			name: 'site_role_assignments',
 			system: false,
 			type: 'base',
 			updateRule: "@request.auth.serverRole != ''",
-			viewRule: "@request.auth.serverRole != ''"
+			viewRule: "@request.auth.serverRole != '' || user.id = @request.auth.id"
 		})
 
 		return app.save(collection)

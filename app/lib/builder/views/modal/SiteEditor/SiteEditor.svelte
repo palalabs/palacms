@@ -8,6 +8,7 @@
 	import { setContext } from 'svelte'
 	import { page } from '$app/state'
 	import { Sites, SiteFields, SiteEntries, manager } from '$lib/pocketbase/collections'
+	import { current_user } from '$lib/pocketbase/user'
 
 	let { onClose } = $props()
 
@@ -65,8 +66,7 @@
 
 {#if site}
 	<main class="SiteEditor">
-		<!-- TODO: $userRole === 'DEV' -->
-		{#if true}
+		{#if $current_user?.siteRole === 'developer'}
 			<PaneGroup direction="horizontal" style="display: flex;">
 				<Pane defaultSize={50}>
 					<Fields

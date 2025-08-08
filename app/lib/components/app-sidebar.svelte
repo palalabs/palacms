@@ -10,9 +10,10 @@
 	import * as Collapsible from '$lib/components/ui/collapsible'
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
 	import { useSidebar } from '$lib/components/ui/sidebar/index.js'
-	import { marketplace, self, user } from '$lib/pocketbase/PocketBase'
+	import { marketplace, self } from '$lib/pocketbase/PocketBase'
 	import type { Component } from 'svelte'
 	import { LibrarySymbolGroups, manager, SiteGroups } from '$lib/pocketbase/collections'
+	import { current_user } from '$lib/pocketbase/user'
 
 	const sidebar = useSidebar()
 
@@ -41,7 +42,7 @@
 	let new_site_group_name = $state('')
 	async function create_site_group(e) {
 		e.preventDefault()
-		const userId = user()?.id
+		const userId = $current_user?.id
 		if (!userId) return
 		SiteGroups.create({ name: new_site_group_name, index: 0 })
 		await manager.commit()
@@ -52,7 +53,7 @@
 	let new_symbol_group_name = $state('')
 	async function create_symbol_group(e) {
 		e.preventDefault()
-		const userId = user()?.id
+		const userId = $current_user?.id
 		if (!userId) return
 		LibrarySymbolGroups.create({ name: new_symbol_group_name, index: 0 })
 		await manager.commit()
@@ -177,10 +178,10 @@
 								<Sidebar.MenuButton {...props} size="lg" class="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground md:h-8 md:p-0">
 									<Avatar.Root class="h-8 w-8 rounded-lg">
 										<!-- <Avatar.Image src={user.avatar} alt={user.name} /> -->
-										<Avatar.Fallback class="rounded-lg uppercase">{user()?.email.slice(0, 2)}</Avatar.Fallback>
+										<Avatar.Fallback class="rounded-lg uppercase">{$current_user?.email.slice(0, 2)}</Avatar.Fallback>
 									</Avatar.Root>
 									<div class="grid flex-1 text-left text-sm leading-tight">
-										<span class="truncate font-semibold">{user()?.email}</span>
+										<span class="truncate font-semibold">{$current_user?.email}</span>
 										<!-- <span class="truncate text-xs">{user.email}</span> -->
 									</div>
 									<ChevronsUpDown class="ml-auto size-4" />
@@ -192,10 +193,10 @@
 								<div class="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
 									<Avatar.Root class="h-8 w-8 rounded-lg">
 										<!-- <Avatar.Image src={user.avatar} alt={user.name} /> -->
-										<Avatar.Fallback class="rounded-lg uppercase">{user()?.email.slice(0, 2)}</Avatar.Fallback>
+										<Avatar.Fallback class="rounded-lg uppercase">{$current_user?.email.slice(0, 2)}</Avatar.Fallback>
 									</Avatar.Root>
 									<div class="grid flex-1 text-left text-sm leading-tight">
-										<span class="truncate font-semibold">{user()?.email}</span>
+										<span class="truncate font-semibold">{$current_user?.email}</span>
 										<!-- <span class="truncate text-xs">{user.email}</span> -->
 									</div>
 								</div>

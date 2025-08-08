@@ -4,6 +4,7 @@
 	import type { Entry } from '$lib/common/models/Entry'
 	import type { FieldValueHandler } from './Fields/FieldsContent.svelte'
 	import EntryContent from './Fields/EntryContent.svelte'
+	import { current_user } from '$lib/pocketbase/user'
 
 	const { entity, fields, entries, oninput }: { entity: Entity; entries: Entry[]; fields: Field[]; oninput: FieldValueHandler } = $props()
 </script>
@@ -13,8 +14,7 @@
 		<EntryContent {entity} {field} {fields} {entries} level={0} onchange={oninput} />
 	{:else}
 		<p class="empty-description">
-			<!-- $userRole === 'DEV' -->
-			{#if true}
+			{#if $current_user?.siteRole === 'developer'}
 				When you create fields, they'll be editable from here
 			{:else}
 				When the site developer creates fields, they'll be editable from here
