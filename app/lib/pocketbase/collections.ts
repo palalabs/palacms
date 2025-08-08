@@ -28,7 +28,7 @@ export const manager = createCollectionManager()
 export const Users = createCollectionMapping('users', User, manager, {
 	links: {
 		site_groups() {
-			return SiteGroups.list({ filter: `owner = "${this.id}"` })
+			return SiteGroups.list()
 		}
 	}
 })

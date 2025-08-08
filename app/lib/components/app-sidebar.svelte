@@ -43,7 +43,7 @@
 		e.preventDefault()
 		const userId = user()?.id
 		if (!userId) return
-		SiteGroups.create({ name: new_site_group_name, owner: userId, index: 0 })
+		SiteGroups.create({ name: new_site_group_name, index: 0 })
 		await manager.commit()
 		is_creating_site_group = false
 	}
@@ -54,7 +54,7 @@
 		e.preventDefault()
 		const userId = user()?.id
 		if (!userId) return
-		LibrarySymbolGroups.create({ name: new_symbol_group_name, owner: userId, index: 0 })
+		LibrarySymbolGroups.create({ name: new_symbol_group_name, index: 0 })
 		await manager.commit()
 		is_creating_symbol_group = false
 	}

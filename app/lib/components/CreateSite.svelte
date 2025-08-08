@@ -31,8 +31,7 @@
 
 		SiteGroups.create({
 			name: 'Default',
-			index: 0,
-			owner: currentUser.id
+			index: 0
 		})
 		manager.commit()
 	})
