@@ -14,7 +14,7 @@ migrate(
 						avatarURL: ''
 					}
 				},
-				updateRule: "@request.auth.serverRole != '' || id = @request.auth.id",
+				updateRule: "@request.auth.serverRole != ''",
 				viewRule: "@request.auth.serverRole != '' || id = @request.auth.id"
 			},
 			collection
