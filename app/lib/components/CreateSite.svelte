@@ -6,13 +6,14 @@
 	import { Input } from '$lib/components/ui/input/index.js'
 	import { Label } from '$lib/components/ui/label/index.js'
 	import { Site } from '$lib/common/models/Site'
-	import { Sites, PageTypes, Pages, SiteSymbols, PageSections, PageTypeSections, SiteGroups, manager } from '$lib/pocketbase/collections'
+	import { Sites, PageTypes, Pages, SiteSymbols, PageSections, PageSectionEntries, PageTypeSymbols, SiteSymbolFields, SiteSymbolEntries, SiteGroups, manager } from '$lib/pocketbase/collections'
 	import { page as pageState } from '$app/state'
 	import type { PageType } from '$lib/common/models/PageType'
 	import type { Page } from '$lib/common/models/Page'
 	import Button from './ui/button/button.svelte'
 	import { user } from '$lib/pocketbase/PocketBase'
 	import { useCloneSite } from '$lib/CloneSite.svelte'
+	import { convert_markdown_to_html } from '$lib/builder/utils'
 
 	const { oncreated }: { oncreated?: () => void } = $props()
 
@@ -58,7 +59,7 @@
 		head: '',
 		foot: '',
 		color: '',
-		icon: ''
+		icon: 'iconoir:page'
 	} satisfies Partial<PageType>
 
 	const black_site_home_page = {
@@ -104,17 +105,102 @@
 			// Create a default "Welcome" symbol for the homepage
 			const welcome_symbol = SiteSymbols.create({
 				name: 'Welcome',
-				html: '<div class="welcome"><h1>Welcome to Pala</h1><p>Start building your site by editing this content.</p></div>',
-				css: '.welcome { padding: 2rem; text-align: center; }\n.welcome h1 { margin-bottom: 1rem; }',
+				html: '<div class="welcome">\n\t<h1>{heading}</h1>\n\t<h2>{subheading}</h2>\n\t<div class="body" data-key="body">{@html body.html}</div>\n</div>',
+				css: '.welcome {\n  font-family: sans-serif;\n  padding: 3rem;\n\n  h1 {\n    margin-bottom: 1rem;\n  }\n  \n  h2 {\n    margin-bottom: 2rem;\n    font-weight: 500;\n  }\n  \n  .body {\n    color: #444;\n  }\n}',
 				js: '',
 				site: site.id
 			})
 
-			PageTypeSections.create({
+			// Create fields for the Welcome symbol
+			const heading_field = SiteSymbolFields.create({
+				type: 'text',
+				key: 'heading',
+				label: 'Heading',
 				symbol: welcome_symbol.id,
 				index: 0,
+				config: null
+			})
+
+			const subheading_field = SiteSymbolFields.create({
+				type: 'text',
+				key: 'subheading',
+				label: 'Subheading',
+				symbol: welcome_symbol.id,
+				index: 1,
+				config: null
+			})
+
+			const body_field = SiteSymbolFields.create({
+				type: 'markdown',
+				key: 'body',
+				label: 'Body',
+				symbol: welcome_symbol.id,
+				index: 2,
+				config: null
+			})
+
+			// Create field entries with default content
+			SiteSymbolEntries.create({
+				field: heading_field.id,
+				locale: 'en',
+				value: 'Welcome to Pala, the modern monolithic CMS',
+				index: 0
+			})
+
+			SiteSymbolEntries.create({
+				field: subheading_field.id,
+				locale: 'en',
+				value: "Pala gives developers the flexibility they need and content editors the simplicity they've always wanted",
+				index: 0
+			})
+
+			const body_markdown =
+				"Editing content in Pala is as simple as clicking on a section and typing. You can also edit a section's content by hovering over it and clicking the edit button that appears in the top left corner. \n\nTo edit component code and integrate new fields, click the code button to open the integrated code editor. You can get more advanced by setting up new Page Types for anything you can think of: blog posts, profiles, events, and more. \n\nWhen you're ready to go live, just click the Publish button in the top left corner of the screen and Pala will publish your site as static files and serve it from the root domain. Hope you love it! \n\n- Matthew & Jesse"
+			const body_html = await convert_markdown_to_html(body_markdown)
+
+			SiteSymbolEntries.create({
+				field: body_field.id,
+				locale: 'en',
+				value: { markdown: body_markdown, html: body_html },
+				index: 0
+			})
+
+			// Toggle the symbol for the page type (instead of adding it as a section)
+			PageTypeSymbols.create({
 				page_type: page_type.id,
-				zone: 'body'
+				symbol: welcome_symbol.id
+			})
+
+			// Add the symbol directly to the Home page
+			const page_section = PageSections.create({
+				symbol: welcome_symbol.id,
+				index: 0,
+				page: page.id
+			})
+
+			// Add the same field entries to the page section
+			PageSectionEntries.create({
+				section: page_section.id,
+				field: heading_field.id,
+				locale: 'en',
+				value: 'Welcome to Pala, the modern monolithic CMS',
+				index: 0
+			})
+
+			PageSectionEntries.create({
+				section: page_section.id,
+				field: subheading_field.id,
+				locale: 'en',
+				value: "Pala gives developers the flexibility they need and content editors the simplicity they've always wanted",
+				index: 0
+			})
+
+			PageSectionEntries.create({
+				section: page_section.id,
+				field: body_field.id,
+				locale: 'en',
+				value: { markdown: body_markdown, html: body_html },
+				index: 0
 			})
 
 			await manager.commit()

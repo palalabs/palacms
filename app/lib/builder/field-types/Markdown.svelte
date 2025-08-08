@@ -44,7 +44,7 @@
 
 	async function parseContent(markdown) {
 		const html = await convert_markdown_to_html(markdown)
-		onchange({ [field.key]: { 0: { html, markdown } } })
+		onchange({ [field.key]: { 0: { value: { html, markdown } } } })
 	}
 </script>
 
