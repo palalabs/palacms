@@ -125,13 +125,13 @@
 
 <Dialog.Root bind:open={editing_collaborators}>
 	<Dialog.Content class="z-[999] max-w-[600px] flex flex-col p-4">
-		<Collaboration />
+		<Collaboration {site} />
 	</Dialog.Content>
 </Dialog.Root>
 
 <Dialog.Root bind:open={publishing}>
 	<Dialog.Content class="z-[999] max-w-[500px] flex flex-col p-0">
-		<Deploy 
+		<Deploy
 			bind:stage={publish_stage}
 			publish_fn={publish.publish}
 			loading={publish.status !== 'standby'}
@@ -234,7 +234,7 @@
 			{/if}
 			{@render children?.()}
 			<!-- <LocaleSelector /> -->
-			<ToolbarButton type="primo" icon="entypo:publish" label="Publish" loading={publish.status !== 'standby'} on:click={() => publishing = true} />
+			<ToolbarButton type="primo" icon="entypo:publish" label="Publish" loading={publish.status !== 'standby'} on:click={() => (publishing = true)} />
 		</div>
 	</div>
 </nav>

@@ -15,7 +15,8 @@ migrate(
 					}
 				},
 				updateRule: "@request.auth.serverRole != ''",
-				viewRule: "@request.auth.serverRole != '' || id = @request.auth.id"
+				viewRule: "@request.auth.serverRole != '' || id = @request.auth.id",
+				manageRule: "@request.auth.serverRole != ''"
 			},
 			collection
 		)
@@ -84,7 +85,8 @@ migrate(
 					}
 				},
 				updateRule: 'id = @request.auth.id',
-				viewRule: 'id = @request.auth.id'
+				viewRule: 'id = @request.auth.id',
+				manageRule: null
 			},
 			collection
 		)
