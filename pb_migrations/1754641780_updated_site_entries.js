@@ -4,13 +4,16 @@ migrate(
 		const collection = app.findCollectionByNameOrId('pbc_298548709')
 
 		// update collection data
+		const authorizeServerMembersRule = '@request.auth.serverRole != ""'
+		const authorizeSiteMembersRule = '@collection.site_role_assignments.user.id = @request.auth.id && @collection.site_role_assignments.site.id = field.site.id'
+		const authorizeRule = `(${authorizeServerMembersRule}) || (${authorizeSiteMembersRule})`
 		unmarshal(
 			{
-				createRule: '@request.auth.id != ""',
-				deleteRule: '@request.auth.id != ""',
-				listRule: '@request.auth.id != ""',
-				updateRule: '@request.auth.id != ""',
-				viewRule: '@request.auth.id != ""'
+				createRule: authorizeRule,
+				deleteRule: authorizeRule,
+				listRule: authorizeRule,
+				updateRule: authorizeRule,
+				viewRule: authorizeRule
 			},
 			collection
 		)

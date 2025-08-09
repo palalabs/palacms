@@ -51,6 +51,7 @@
 	import type { Entry } from '$lib/common/models/Entry'
 	import type { Component } from 'svelte'
 	import EntryContent from './EntryContent.svelte'
+	import { current_user } from '$lib/pocketbase/user'
 
 	let {
 		entity,
@@ -148,12 +149,10 @@
 
 <div class="Fields">
 	{#each (fields || []).filter((f) => !f.parent || f.parent === '').sort((a, b) => a.index - b.index) as field (field.id)}
-		<!-- TODO: $userRole === 'DEV' -->
 		{@const active_tab = selected_tabs[field.id] || 'field'}
 		<div class="entries-item">
 			<!-- TODO: hotkeys for tab switching  -->
-			<!-- TODO: $userRole === 'DEV' -->
-			{#if true}
+			{#if $current_user?.siteRole === 'developer'}
 				<div class="top-tabs">
 					<button
 						data-test-id="field"
@@ -214,8 +213,7 @@
 			</div>
 		</div>
 	{/each}
-	<!-- TODO: $userRole === 'DEV' -->
-	{#if true}
+	{#if $current_user?.siteRole === 'developer'}
 		<button class="field-button" onclick={() => create_field()}>
 			<div class="icon">
 				<Icon icon="fa-solid:plus" />

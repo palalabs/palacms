@@ -11,8 +11,8 @@
 	import type { PageType } from '$lib/common/models/PageType'
 	import type { Page } from '$lib/common/models/Page'
 	import Button from './ui/button/button.svelte'
-	import { user } from '$lib/pocketbase/PocketBase'
 	import { useCloneSite } from '$lib/CloneSite.svelte'
+	import { current_user } from '$lib/pocketbase/user'
 
 	const { oncreated }: { oncreated?: () => void } = $props()
 
@@ -24,15 +24,14 @@
 			return
 		}
 
-		const currentUser = user()
+		const currentUser = $current_user
 		if (!currentUser) {
 			return
 		}
 
 		SiteGroups.create({
 			name: 'Default',
-			index: 0,
-			owner: currentUser.id
+			index: 0
 		})
 		manager.commit()
 	})

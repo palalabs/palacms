@@ -4,8 +4,9 @@
 	import { onMount } from 'svelte'
 	import { goto } from '$app/navigation'
 	import { page } from '$app/state'
-	import { Sites, Pages, SiteGroups } from '$lib/pocketbase/collections'
+	import { Sites } from '$lib/pocketbase/collections'
 	import CreateSite from '$lib/components/CreateSite.svelte'
+	import { current_user, set_current_user } from '$lib/pocketbase/user'
 
 	onMount(async () => {
 		if (!(await checkSession())) {
@@ -25,9 +26,13 @@
 			creating_site = true
 		}
 	})
+
+	$effect(() => set_current_user(site || undefined))
 </script>
 
-{#if creating_site}
+{#if site && $current_user && !$current_user?.siteRole === null}
+	<div style="display: flex; justify-content: center; align-items: center; height: 100vh; color: white;">Forbidden</div>
+{:else if creating_site}
 	<CreateSite
 		oncreated={() => {
 			creating_site = false
