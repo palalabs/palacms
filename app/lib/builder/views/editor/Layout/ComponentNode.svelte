@@ -72,6 +72,11 @@
 	let link_editor_is_visible = $state(false)
 
 	let active_editor = $state()
+	let formatting_state = $state({
+		bold: false,
+		italic: false,
+		highlight: false
+	})
 
 	let error = $state('')
 
@@ -109,6 +114,16 @@
 	function handle_unlock() {
 		is_editing = false
 		dispatch('unlock')
+	}
+
+	function update_formatting_state() {
+		if (active_editor) {
+			formatting_state = {
+				bold: active_editor.isActive('bold'),
+				italic: active_editor.isActive('italic'),
+				highlight: active_editor.isActive('highlight')
+			}
+		}
 	}
 
 	async function make_content_editable() {
@@ -248,6 +263,10 @@
 							active_editor = editor
 							handle_lock()
 							dispatch('lock')
+							update_formatting_state()
+						},
+						onSelectionUpdate() {
+							update_formatting_state()
 						},
 						onBlur: async ({ event }) => {
 							// Don't call handle_unlock for markdown - let it stay locked
@@ -907,9 +926,9 @@
 				editing_link = true
 			}}
 		/>
-		<MarkdownButton icon="fa-solid:bold" onclick={() => active_editor.chain().focus().toggleBold().run()} active={active_editor.isActive('bold')} />
-		<MarkdownButton icon="fa-solid:italic" onclick={() => active_editor.chain().focus().toggleItalic().run()} active={active_editor.isActive('italic')} />
-		<MarkdownButton icon="fa-solid:highlighter" onclick={() => active_editor.chain().focus().toggleHighlight().run()} active={active_editor.isActive('highlight')} />
+		<MarkdownButton icon="fa-solid:bold" onclick={() => { active_editor.chain().focus().toggleBold().run(); update_formatting_state(); }} active={formatting_state.bold} />
+		<MarkdownButton icon="fa-solid:italic" onclick={() => { active_editor.chain().focus().toggleItalic().run(); update_formatting_state(); }} active={formatting_state.italic} />
+		<MarkdownButton icon="fa-solid:highlighter" onclick={() => { active_editor.chain().focus().toggleHighlight().run(); update_formatting_state(); }} active={formatting_state.highlight} />
 	{/if}
 </div>
 
