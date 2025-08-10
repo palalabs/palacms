@@ -31,8 +31,14 @@
 					console.warn('Component not going anywhere', component)
 				}
 			}
-		}
-	}: { component: ObjectOf<typeof PageTypeSection> | ObjectOf<typeof PageSections>; tab: string; header?: any } = $props()
+		},
+		beforeClose
+	}: { 
+		component: ObjectOf<typeof PageTypeSection> | ObjectOf<typeof PageSections>; 
+		tab: string; 
+		header?: any;
+		beforeClose?: () => boolean;
+	} = $props()
 
 	// Data will be loaded automatically by CollectionMapping system when accessed
 
@@ -69,6 +75,35 @@
 	let html = $state(symbol?.html ?? '')
 	let css = $state(symbol?.css ?? '')
 	let js = $state(symbol?.js ?? '')
+
+	// Track initial values to detect changes
+	const initial_values = $derived({
+		html: symbol?.html ?? '',
+		css: symbol?.css ?? '',
+		js: symbol?.js ?? ''
+	})
+
+	// Track if there are unsaved changes
+	const has_unsaved_changes = $derived(
+		html !== initial_values.html ||
+		css !== initial_values.css ||
+		js !== initial_values.js
+	)
+
+	// Handle close confirmation
+	function handleBeforeClose() {
+		if (has_unsaved_changes) {
+			return confirm('You have unsaved changes. Are you sure you want to close without saving?')
+		}
+		return true
+	}
+
+	// Set the beforeClose handler if provided
+	$effect(() => {
+		if (beforeClose) {
+			beforeClose = handleBeforeClose
+		}
+	})
 
 	// Create code object for ComponentPreview)
 	let code = $derived({

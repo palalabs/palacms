@@ -1,6 +1,6 @@
 import {svelteLanguage} from '@replit/codemirror-lang-svelte'
 import { cssLanguage } from "@codemirror/lang-css"
-import { snippetCompletion } from '@codemirror/autocomplete'
+import { snippetCompletion, autocompletion } from '@codemirror/autocomplete'
 import * as _ from 'lodash-es';
 
 const Completion_Label = (value) => {
@@ -13,7 +13,7 @@ const Completion_Label = (value) => {
   }
 }
 
-function svelteCompletions(data) { 
+function svelteCompletions(data) {
   const completions = [
     snippetCompletion('{#if ${true}}\n\t${<span>Shown if true</span>}\n{:else}\n\t${<span>Shown if false</span>}\n{/if', {
       label: "{#if}",
@@ -51,7 +51,9 @@ function svelteCompletions(data) {
   ]
   return svelteLanguage.data.of({
     autocomplete: (context) => {
-      const word = context.matchBefore(/\S*/)
+      // More aggressive pattern - match any sequence that might be a field reference
+      const word = context.matchBefore(/[^}\s]*\{[^}]*/) || context.matchBefore(/\{[^}]*/)
+      if (!word) return null
 
       // Svelte blocks
       if ((word.text.includes('{#') || word.text.includes('{@'))) {
@@ -78,34 +80,45 @@ function svelteCompletions(data) {
           })
           return {
             from: word.from + position + 1,
-            options: _.flattenDeep(options)
+            options: _.flattenDeep(options),
+            validFor: /.*/ // Keep completion active always
           }
         }
 
         // matches root-level fields
+        const currentText = word.text.substring(position + 1) // text after {
+        const allOptions = [
+          ...Object.entries(data).map(([key, value]) => ({ 
+            label: key, 
+            type: 'variable', 
+            detail: Completion_Label(value) 
+          })),
+          {
+            label: '{#block}', 
+            apply: '#',
+            type: 'text', 
+            detail: 'each, if, key, await',
+            boost: -1
+          },
+          {
+            label: '{@tag}',
+            apply: '@', 
+            type: 'text', 
+            detail: 'html, const, debug',
+            boost: -2
+          }
+        ]
+        
+        // Filter options based on what user has typed so far
+        const filteredOptions = allOptions.filter(option => 
+          option.label.toLowerCase().startsWith(currentText.toLowerCase())
+        )
+        
         return {
           from: word.from + position + 1, // offset for bracket
-          options: [
-            ...Object.entries(data).map(([key, value]) => ({ 
-              label: key, 
-              type: 'variable', 
-              detail: Completion_Label(value) 
-            })),
-            {
-              label: '{#block}', 
-              apply: '#',
-              type: 'text', 
-              detail: 'each, if, key, await',
-              boost: -1
-            },
-            {
-              label: '{@tag}',
-              apply: '@', 
-              type: 'text', 
-              detail: 'html, const, debug',
-              boost: -2
-            }
-          ]
+          options: filteredOptions.length > 0 ? filteredOptions : allOptions,
+          filter: false, // Disable CodeMirror's built-in filtering since we're doing it manually
+          validFor: /.*/ // Keep completion active always
         }
       }
     }

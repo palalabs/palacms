@@ -8,12 +8,14 @@
 	import { highlightedElement } from '../../stores/app/misc'
 	import { basicSetup } from 'codemirror'
 	import { EditorView, keymap } from '@codemirror/view'
-	import { standardKeymap, indentWithTab } from '@codemirror/commands'
+	import { standardKeymap, indentWithTab, insertTab } from '@codemirror/commands'
 	import { EditorState, Compartment } from '@codemirror/state'
+	import { indentUnit } from '@codemirror/language'
 	import { oneDarkTheme, ThemeHighlighting } from './theme'
 	import { svelteCompletions, cssCompletions } from './extensions/autocomplete'
 	import { getLanguage } from './extensions'
 	import highlight_active_line from './extensions/inspector'
+	import { emmetExtension, expandAbbreviation } from './extensions/emmet'
 	import * as prettier from 'prettier/standalone'
 	import * as prettierPostcss from 'prettier/plugins/postcss'
 	import * as prettierBabel from 'prettier/plugins/babel'
@@ -95,6 +97,10 @@
 			ThemeHighlighting,
 			keymap.of([
 				...standardKeymap,
+				{
+					key: 'Tab',
+					run: expandAbbreviation
+				},
 				indentWithTab,
 				{
 					key: 'Escape',
@@ -193,7 +199,8 @@
 			}),
 			basicSetup,
 			svelteCompletions(data),
-			...(mode === 'css' ? [css_completions_compartment.of(cssCompletions(css_variables))] : [])
+			...(mode === 'css' ? [css_completions_compartment.of(cssCompletions(css_variables))] : []),
+			emmetExtension(mode === 'css' ? 'css' : 'html')
 		]
 	})
 
