@@ -6,10 +6,6 @@
 	import Icon from '@iconify/svelte'
 	import { createEventDispatcher, onMount } from 'svelte'
 	import { PaneGroup, Pane, PaneResizer } from 'paneforge'
-	import prettier from 'prettier'
-	import * as prettierPostcss from 'prettier/parser-postcss'
-	import * as prettierBabel from 'prettier/parser-babel'
-	import * as prettierSvelte from 'prettier-plugin-svelte'
 	import CodeMirror from '$lib/builder/components/CodeEditor/CodeMirror.svelte'
 
 	const dispatch = createEventDispatcher()
@@ -42,9 +38,7 @@
 	let programmaticResize = false
 
 	function toggleTab(tab) {
-		const paneComponents = [html_pane_component, css_pane_component, js_pane_component]
 		const paneSizes = [$left_pane_size, $center_pane_size, $right_pane_size]
-		const paneStores = [left_pane_size, center_pane_size, right_pane_size]
 
 		// Check if this tab is currently collapsed (visually)
 		const isCollapsed = paneSizes[tab] <= 5
@@ -164,7 +158,7 @@
 			js: !!js
 		}
 		const activeCount = (hasContent.html ? 1 : 0) + (hasContent.css ? 1 : 0) + (hasContent.js ? 1 : 0)
-		
+
 		// Only adjust if there are empty tabs
 		if (activeCount < 3 && activeCount > 0) {
 			const collapsedWidth = 4
@@ -197,27 +191,6 @@
 			programmaticResize = false
 		}
 	})
-
-	let showing_format_button = $state(true)
-	async function format_all_code() {
-		html = await format(html, 'svelte', prettierSvelte)
-		css = await format(css, 'css', prettierPostcss)
-		js = await format(js, 'babel', prettierBabel)
-	}
-
-	async function format(code, mode, plugin) {
-		let formatted
-		try {
-			formatted = await prettier.format(code, {
-				parser: mode,
-				// bracketSameLine: true,
-				plugins: [plugin]
-			})
-		} catch (e) {
-			console.warn(e)
-		}
-		return formatted
-	}
 
 	let showing_local_key_hint = $state(false)
 </script>
@@ -252,7 +225,6 @@
 			</button>
 			<CodeMirror
 				mode="html"
-				docs="https://docs.primo.so/development#html"
 				{data}
 				bind:value={html}
 				bind:selection={selections['html']}
@@ -265,7 +237,6 @@
 					dispatch('htmlChange')
 					oninput()
 				}}
-				on:format={() => (showing_format_button = false)}
 				on:save
 				on:refresh
 			/>
@@ -316,15 +287,12 @@
 				bind:selection={selections['css']}
 				bind:value={css}
 				mode="css"
-				docs="https://docs.primo.so/development#css"
 				on:change={() => {
-					// showing_format_button = true
 					dispatch('cssChange')
 					oninput()
 				}}
 				on:mod-e
 				on:mod-r
-				on:format={() => (showing_format_button = false)}
 				on:save
 				on:refresh
 			/>
@@ -375,15 +343,12 @@
 				bind:selection={selections['js']}
 				bind:value={js}
 				mode="javascript"
-				docs="https://docs.primo.so/development#javascript"
 				on:change={() => {
-					// showing_format_button = true
 					dispatch('jsChange')
 					oninput()
 				}}
 				on:mod-e
 				on:mod-r
-				on:format={() => (showing_format_button = false)}
 				on:save
 				on:refresh
 			/>
