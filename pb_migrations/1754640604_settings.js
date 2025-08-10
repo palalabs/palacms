@@ -21,6 +21,8 @@ migrate((app) => {
 		const record = new Record(collection)
 		record.set('email', userEmail)
 		record.set('password', userPassword)
+		record.set('name', 'Test User')
+		record.set('serverRole', 'developer')
 		app.save(record)
 	}
 })
