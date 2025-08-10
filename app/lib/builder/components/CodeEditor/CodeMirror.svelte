@@ -10,7 +10,6 @@
 	import { EditorView, keymap } from '@codemirror/view'
 	import { standardKeymap, indentWithTab, insertTab } from '@codemirror/commands'
 	import { EditorState, Compartment } from '@codemirror/state'
-	import { indentUnit } from '@codemirror/language'
 	import { autocompletion } from '@codemirror/autocomplete'
 	import { oneDarkTheme, ThemeHighlighting } from './theme'
 	import { svelteCompletions, cssCompletions } from './extensions/autocomplete'

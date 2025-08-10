@@ -13,6 +13,8 @@
 	import { locale } from '../../../stores/app/misc.js'
 	import hotkey_events from '../../../stores/app/hotkey_events.js'
 	import { getContent } from '$lib/pocketbase/content'
+	import * as Mousetrap from 'mousetrap'
+	import { browser } from '$app/environment'
 	import { PageSectionEntries, PageSections, PageEntries, PageTypeSectionEntries, SiteSymbolFields, SiteSymbols, SiteEntries, manager } from '$lib/pocketbase/collections'
 	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
 	import type { PageTypeSection } from '$lib/common/models/PageTypeSection'
@@ -53,7 +55,7 @@
 			? fields
 				.filter(field => field.key && component_data.hasOwnProperty(field.key))
 				.sort((a, b) => (a.index || 0) - (b.index || 0))
-				.map(field => {
+				.map((field, index) => {
 					const value = component_data[field.key]
 					const detail = Array.isArray(value) 
 						? `[ ${typeof(value[0])} ]`
@@ -64,7 +66,9 @@
 					return {
 						label: field.key,
 						type: 'variable',
-						detail
+						detail,
+						boost: 100 - index, // Higher boost for earlier fields (maintains order)
+						apply: field.key + '}' // Add closing bracket when selected
 					}
 				})
 			: []
@@ -73,6 +77,14 @@
 	let loading = false
 
 	hotkey_events.on('e', toggle_tab)
+
+	// Bind global Command-E hotkey for the modal
+	if (browser) {
+		Mousetrap.bind('mod+e', (e) => {
+			e.preventDefault()
+			toggle_tab()
+		})
+	}
 
 	function toggle_tab() {
 		if ($current_user?.siteRole !== 'developer') {

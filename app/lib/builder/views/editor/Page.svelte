@@ -15,6 +15,7 @@
 	import { beforeNavigate } from '$app/navigation'
 	import { Pages, Sites, SiteSymbols, PageSections, PageTypes, PageSectionEntries, manager } from '$lib/pocketbase/collections'
 	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
+	import hotkey_events from '$lib/builder/stores/app/hotkey_events'
 
 	let { page }: { page: ObjectOf<typeof Pages> } = $props()
 
@@ -267,6 +268,15 @@
 		editing_section = true
 		editing_section_tab = tab
 	}
+
+	// Listen for Command-E hotkey to open section editor
+	hotkey_events.on('e', () => {
+		if (hovered_section) {
+			lock_block(hovered_section.id)
+			editing_section = true
+			editing_section_tab = 'code'
+		}
+	})
 
 	let moving = $state(false) // workaround to prevent block toolbar from showing when moving blocks
 	let newly_added_sections = $state(new Set()) // track newly added sections for animation
