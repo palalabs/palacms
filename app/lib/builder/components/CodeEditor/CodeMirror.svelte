@@ -11,6 +11,7 @@
 	import { standardKeymap, indentWithTab, insertTab } from '@codemirror/commands'
 	import { EditorState, Compartment } from '@codemirror/state'
 	import { indentUnit } from '@codemirror/language'
+	import { autocompletion } from '@codemirror/autocomplete'
 	import { oneDarkTheme, ThemeHighlighting } from './theme'
 	import { svelteCompletions, cssCompletions } from './extensions/autocomplete'
 	import { getLanguage } from './extensions'
@@ -83,6 +84,7 @@
 	const language = getLanguage(mode)
 
 	const css_completions_compartment = new Compartment()
+	const svelte_completions_compartment = new Compartment()
 	let css_variables = $state([])
 
 	const editor_state = EditorState.create({
@@ -198,7 +200,7 @@
 				selection = view.state.selection.main.from
 			}),
 			basicSetup,
-			svelteCompletions(data),
+			...(mode === 'html' ? [svelte_completions_compartment.of(autocompletion({ override: [svelteCompletions(data)] }))] : []),
 			...(mode === 'css' ? [css_completions_compartment.of(cssCompletions(css_variables))] : []),
 			emmetExtension(mode === 'css' ? 'css' : 'html')
 		]
@@ -209,6 +211,14 @@
 			Editor &&
 			Editor.dispatch({
 				effects: css_completions_compartment.reconfigure(cssCompletions(css_variables))
+			})
+	})
+
+	$effect(() => {
+		mode === 'html' &&
+			Editor &&
+			Editor.dispatch({
+				effects: svelte_completions_compartment.reconfigure(autocompletion({ override: [svelteCompletions(data)] }))
 			})
 	})
 
