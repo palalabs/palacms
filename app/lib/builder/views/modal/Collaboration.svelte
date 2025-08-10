@@ -54,11 +54,9 @@
 		developer: 'Developer',
 		editor: 'Content Editor'
 	}
-
-	let adding_collaborator = false
 </script>
 
-<Dialog.Header class="mb-2" title="Collaborators" />
+<Dialog.Header class="mb-2" title="Site Collaborators" />
 
 <div class="Invitation">
 	<main>

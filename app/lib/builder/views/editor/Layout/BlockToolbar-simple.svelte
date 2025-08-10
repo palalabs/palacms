@@ -46,7 +46,7 @@
 				<span class="icon">
 					<Edit3 size={14} />
 				</span>
-				{#if $current_user?.siteRole === 'developer'}
+				{#if $current_user?.siteRole !== 'developer'}
 					<span>Edit Content</span>
 				{/if}
 			</button>

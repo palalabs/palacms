@@ -122,6 +122,8 @@ export async function convert_html_to_markdown(html) {
 		showdown = modules[0].default
 		showdown_highlight = modules[1].default
 		converter = new showdown.Converter({
+			simpleLineBreaks: true,
+			backslashEscapesHTMLTags: true,
 			extensions: [showdown_highlight()]
 		})
 		return converter.makeMarkdown(html)
@@ -136,6 +138,8 @@ export async function convert_markdown_to_html(markdown) {
 		showdown = modules[0].default
 		showdown_highlight = modules[1].default
 		converter = new showdown.Converter({
+			simpleLineBreaks: true,
+			backslashEscapesHTMLTags: true,
 			extensions: [showdown_highlight()]
 		})
 		return converter.makeHtml(markdown)

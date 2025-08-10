@@ -242,12 +242,7 @@
 
 <style lang="postcss">
 	#primo-toolbar {
-		z-index: 9;
-		/* position: fixed;
-		top: 0;
-		left: 0;
-		right: 0;
-		z-index: 999; */
+		z-index: 99;
 		border-bottom: 1px solid var(--color-gray-8);
 	}
 

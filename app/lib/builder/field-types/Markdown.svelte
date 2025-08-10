@@ -37,10 +37,6 @@
 	let element = $state()
 
 	onMount(() => autosize(element))
-	// easily delete default entries
-	function selectAll({ target }) {
-		// if (field.default === value.markdown) target.select() // TODO?: restore, using symbol entries as default value
-	}
 
 	async function parseContent(markdown) {
 		const html = await convert_markdown_to_html(markdown)
@@ -50,7 +46,7 @@
 
 <label for={field.id}>
 	<span class="primo--field-label">{field.label}</span>
-	<textarea rows="1" bind:this={element} id={field.id} onfocus={selectAll} oninput={({ target }) => parseContent(target.value)} value={value.markdown}></textarea>
+	<textarea rows="1" bind:this={element} id={field.id} oninput={({ target }) => parseContent(target.value)} value={value.markdown}></textarea>
 </label>
 
 <style lang="postcss">

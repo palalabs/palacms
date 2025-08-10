@@ -154,7 +154,7 @@
 			})
 
 			const body_markdown =
-				"Editing content in Pala is as simple as clicking on a section and typing. You can also edit a section's content by hovering over it and clicking the edit button that appears in the top left corner. \n\nTo edit component code and integrate new fields, click the code button to open the integrated code editor. You can get more advanced by setting up new Page Types for anything you can think of: blog posts, profiles, events, and more. \n\nWhen you're ready to go live, just click the Publish button and Pala will deploy your site as static files and serve it from the root domain. Plus, you can host unlimited sites from the same server!\n\nWe hope you love it — because we’re just getting started.\n\nCheers,<br>Matthew & Jesse"
+				"Editing content in Pala is as simple as clicking on a section and typing. You can also edit a section's content by hovering over it and clicking the edit button that appears in the top left corner. \n\nTo edit component code and integrate new fields, click the code button to open the integrated code editor. You can get more advanced by setting up new Page Types for anything you can think of: blog posts, profiles, events, and more. \n\nWhen you're ready to go live, just click the Publish button and Pala will deploy your site as static files and serve it from the root domain. Plus, you can host unlimited sites from the same server!\n\nWe hope you love it — because we're just getting started.\n\nCheers,<br>Matthew & Jesse"
 			const body_html = await convert_markdown_to_html(body_markdown)
 
 			SiteSymbolEntries.create({
