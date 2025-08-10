@@ -38,7 +38,7 @@
 	 */
 
 	/** @type {Props} */
-	let { data = {}, prefix = '', value = $bindable(''), mode = 'html', style = '', debounce = false, selection = $bindable(0), disabled = false } = $props()
+	let { data = {}, completions, prefix = '', value = $bindable(''), mode = 'html', style = '', debounce = false, selection = $bindable(0), disabled = false } = $props()
 
 	const dispatch = createEventDispatcher()
 
@@ -200,7 +200,7 @@
 				selection = view.state.selection.main.from
 			}),
 			basicSetup,
-			...(mode === 'html' ? [svelte_completions_compartment.of(autocompletion({ override: [svelteCompletions(data)] }))] : []),
+			...(mode === 'html' ? [svelte_completions_compartment.of(autocompletion({ override: [svelteCompletions(completions)] }))] : []),
 			...(mode === 'css' ? [css_completions_compartment.of(cssCompletions(css_variables))] : []),
 			emmetExtension(mode === 'css' ? 'css' : 'html')
 		]
@@ -218,7 +218,7 @@
 		mode === 'html' &&
 			Editor &&
 			Editor.dispatch({
-				effects: svelte_completions_compartment.reconfigure(autocompletion({ override: [svelteCompletions(data)] }))
+				effects: svelte_completions_compartment.reconfigure(autocompletion({ override: [svelteCompletions(completions)] }))
 			})
 	})
 

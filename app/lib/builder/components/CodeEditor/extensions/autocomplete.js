@@ -13,23 +13,16 @@ const Completion_Label = (value) => {
   }
 }
 
-function svelteCompletions(data) {
-  // Create field completions only
-  const fieldCompletions = Object.entries(data).map(([key, value]) => ({
-    label: key,
-    type: 'variable',
-    detail: Completion_Label(value)
-  }))
-
+function svelteCompletions(completions) {
   // Return an autocompletion source function
   return (context) => {
     const word = context.matchBefore(/\{[^}]*/)
-    if (!word) return null
+    if (!word || !completions || completions.length === 0) return null
     
     // For any match starting with {
     return {
       from: word.from + 1, // Skip the opening brace
-      options: fieldCompletions,
+      options: completions,
       validFor: /^[a-zA-Z0-9_]*$/
     }
   }

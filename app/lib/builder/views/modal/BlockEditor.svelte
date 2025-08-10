@@ -30,8 +30,9 @@
 					console.warn('Component not going anywhere', component)
 				}
 			}
-		}
-	}: { block?: ObjectOf<typeof SiteSymbols>; tab?: string; header?: any } = $props()
+		},
+		beforeClose
+	}: { block?: ObjectOf<typeof SiteSymbols>; tab?: string; header?: any; beforeClose?: () => boolean } = $props()
 
 	const host = $derived(page.url.host)
 	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
@@ -78,6 +79,35 @@
 	let html = $state(block.html)
 	let css = $state(block.css)
 	let js = $state(block.js)
+
+	// Track initial values to detect changes
+	const initial_values = $derived({
+		html: block.html,
+		css: block.css,
+		js: block.js
+	})
+
+	// Track if there are unsaved changes
+	const has_unsaved_changes = $derived(
+		html !== initial_values.html ||
+		css !== initial_values.css ||
+		js !== initial_values.js
+	)
+
+	// Handle close confirmation
+	function handleBeforeClose() {
+		if (has_unsaved_changes) {
+			return confirm('You have unsaved changes. Are you sure you want to close without saving?')
+		}
+		return true
+	}
+
+	// Set the beforeClose handler if provided
+	$effect(() => {
+		if (beforeClose) {
+			beforeClose = handleBeforeClose
+		}
+	})
 
 	// Create code object for ComponentPreview)
 	let code = $derived({

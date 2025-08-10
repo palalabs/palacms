@@ -23,7 +23,7 @@
 	 */
 
 	/** @type {Props} */
-	let { data = {}, html = $bindable(''), css = $bindable(''), js = $bindable(''), onmod_e = () => {}, onmod_r = () => {}, oninput = () => {} } = $props()
+	let { data = {}, completions, html = $bindable(''), css = $bindable(''), js = $bindable(''), onmod_e = () => {}, onmod_r = () => {}, oninput = () => {} } = $props()
 
 	let html_pane_component = $state()
 	let css_pane_component = $state()
@@ -226,6 +226,7 @@
 			<CodeMirror
 				mode="html"
 				{data}
+				{completions}
 				bind:value={html}
 				bind:selection={selections['html']}
 				on:mod-e

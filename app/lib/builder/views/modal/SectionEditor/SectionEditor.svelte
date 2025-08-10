@@ -46,6 +46,29 @@
 	const fields = $derived(symbol?.fields())
 	const entries = $derived('page_type' in component ? component.entries() : 'page' in component ? component.entries() : undefined)
 	const component_data = $derived(fields && entries && (getContent(component, fields, entries)[$locale] ?? {}))
+	
+	// Create completions array in field order for autocomplete
+	const completions = $derived(
+		fields && component_data 
+			? fields
+				.filter(field => field.key && component_data.hasOwnProperty(field.key))
+				.sort((a, b) => (a.index || 0) - (b.index || 0))
+				.map(field => {
+					const value = component_data[field.key]
+					const detail = Array.isArray(value) 
+						? `[ ${typeof(value[0])} ]`
+						: typeof value === 'object' && value !== null
+						? '{ ' + Object.entries(value).map(([key, val]) => `${key}:${typeof(val)}`).join(', ') + ' }'
+						: typeof(value)
+					
+					return {
+						label: field.key,
+						type: 'variable',
+						detail
+					}
+				})
+			: []
+	)
 
 	let loading = false
 
@@ -136,6 +159,7 @@
 					bind:css
 					bind:js
 					data={component_data}
+					{completions}
 					on:save={save_component}
 					on:mod-e={toggle_tab}
 					on:mod-r={() => $refresh_preview()}
