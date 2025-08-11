@@ -271,7 +271,7 @@
 
 	// Listen for Command-E hotkey to open section editor
 	hotkey_events.on('e', () => {
-		if (hovered_section) {
+		if (hovered_section && showing_block_toolbar) {
 			lock_block(hovered_section.id)
 			editing_section = true
 			editing_section_tab = 'code'
@@ -518,7 +518,6 @@
 	>
 		<Dialog.Content class="z-[999] max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4">
 			<SectionEditor
-				bind:this={sectionEditorRef}
 				bind:has_unsaved_changes={section_has_unsaved_changes}
 				component={hovered_section}
 				tab={editing_section_tab}

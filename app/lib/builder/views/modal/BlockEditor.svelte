@@ -50,22 +50,19 @@
 	const entries = $derived(block.entries())
 	let component_data = $derived(fields && entries && (getContent(block, fields, entries)[$locale] ?? {}))
 
-	let loading = false
+	let loading = $state(false)
 
-	hotkey_events.on('e', toggle_tab)
+	// Set up hotkey listeners with cleanup
+	$effect(() => {
+		const unsubscribe_e = hotkey_events.on('e', toggle_tab)
+		const unsubscribe_save = hotkey_events.on('save', save_component)
 
-	// detect hotkeys from within inputs
-	function handle_hotkey(e) {
-		const { metaKey, key } = e
-		if (metaKey && key === 's') {
-			e.preventDefault()
-			save_component()
+		// Cleanup on unmount
+		return () => {
+			unsubscribe_e()
+			unsubscribe_save()
 		}
-		if (metaKey && key === 'e') {
-			e.preventDefault()
-			toggle_tab()
-		}
-	}
+	})
 
 	function toggle_tab() {
 		tab = tab === 'code' ? 'content' : 'code'
@@ -73,7 +70,9 @@
 
 	async function save_component() {
 		if (!$has_error) {
+			loading = true
 			await manager.commit()
+			loading = false
 			header.button.onclick(block)
 		}
 	}
@@ -106,8 +105,10 @@
 	title={block.name || 'Block'}
 	button={{
 		...header.button,
+		hint: '⌘S',
+		loading,
 		onclick: save_component,
-		disabled: $has_error
+		disabled: $has_error || loading
 	}}
 >
 	<LargeSwitch bind:active_tab_id={tab} />

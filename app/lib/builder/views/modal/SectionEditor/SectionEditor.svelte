@@ -83,17 +83,19 @@
 			: []
 	)
 
-	let loading = false
+	let loading = $state(false)
 
-	hotkey_events.on('e', toggle_tab)
+	// Set up hotkey listeners with cleanup
+	$effect.pre(() => {
+		const unsubscribe_e = hotkey_events.on('e', toggle_tab)
+		const unsubscribe_save = hotkey_events.on('save', save_component)
 
-	// Bind global Command-E hotkey for the modal
-	if (browser) {
-		Mousetrap.bind('mod+e', (e) => {
-			e.preventDefault()
-			toggle_tab()
-		})
-	}
+		// Cleanup on unmount
+		return () => {
+			unsubscribe_e()
+			unsubscribe_save()
+		}
+	})
 
 	function toggle_tab() {
 		if ($current_user?.siteRole !== 'developer') {
@@ -109,8 +111,10 @@
 		// }
 
 		if (!$has_error && symbol) {
+			loading = true
 			SiteSymbols.update(symbol.id, { html, css, js })
 			await manager.commit()
+			loading = false
 
 			header.button.onclick()
 		}
@@ -140,8 +144,10 @@
 	title={symbol?.name || 'Block'}
 	button={{
 		label: header.button.label || 'Save',
+		hint: '⌘S',
+		loading,
 		onclick: save_component,
-		disabled: $has_error
+		disabled: $has_error || loading
 	}}
 >
 	{#if $current_user?.siteRole === 'developer'}
