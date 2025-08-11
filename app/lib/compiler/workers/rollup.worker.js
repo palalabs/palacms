@@ -52,7 +52,7 @@ async function rollup_worker({ component, head, hydrated, buildStatic = true, cs
 			html = html + svelteWindowTag
 		}
 
-		const field_keys = Object.entries(data).filter((field) => field[0])
+		const field_keys = Object.keys(data).filter((key) => !!key)
 
 		// html must come first for LoC (inspector) to work
 		return `\
