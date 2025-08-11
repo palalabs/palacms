@@ -107,6 +107,32 @@ onRecordValidate((e) => {
 	e.next()
 })
 
+onRecordAfterCreateSuccess((e) => {
+	if (e.record.get('invite') === 'pending') {
+		try {
+			const { sendInvitation } = require(`${__hooks}/invitation.cjs`)
+			sendInvitation(e)
+		} catch (error) {
+			console.error(error)
+		}
+	}
+
+	e.next()
+}, 'users')
+
+onRecordAfterUpdateSuccess((e) => {
+	if (e.record.get('invite') === 'pending') {
+		try {
+			const { sendInvitation } = require(`${__hooks}/invitation.cjs`)
+			sendInvitation(e)
+		} catch (error) {
+			console.error(error)
+		}
+	}
+
+	e.next()
+}, 'users')
+
 routerAdd('GET', '/admin/{path...}', $apis.static('./pb_public', true))
 
 routerAdd('GET', '/{path...}', (e) => {

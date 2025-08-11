@@ -16,6 +16,7 @@
 	import { PageSectionEntries, PageSections, PageTypeSectionEntries, SiteSymbolFields, SiteSymbols, SiteSymbolEntries, SiteEntries, manager } from '$lib/pocketbase/collections'
 	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
 	import type { PageTypeSection } from '$lib/common/models/PageTypeSection'
+	import { current_user } from '$lib/pocketbase/user'
 
 	let {
 		component,
@@ -46,6 +47,10 @@
 	hotkey_events.on('e', toggle_tab)
 
 	function toggle_tab() {
+		if ($current_user?.siteRole !== 'developer') {
+			return
+		}
+
 		tab = tab === 'code' ? 'content' : 'code'
 	}
 
@@ -105,7 +110,9 @@
 		disabled: $has_error
 	}}
 >
-	<LargeSwitch bind:active_tab_id={tab} />
+	{#if $current_user?.siteRole === 'developer'}
+		<LargeSwitch bind:active_tab_id={tab} />
+	{/if}
 </Dialog.Header>
 
 <main lang={$locale}>

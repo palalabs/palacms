@@ -23,6 +23,7 @@
 	import { usePublishSite } from '$lib/Publish.svelte'
 	import type { Snippet } from 'svelte'
 	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
+	import { current_user } from '$lib/pocketbase/user'
 
 	let { children, site }: { children: Snippet; site?: ObjectOf<typeof Sites> } = $props()
 
@@ -127,13 +128,13 @@
 
 <Dialog.Root bind:open={editing_collaborators}>
 	<Dialog.Content class="z-[999] max-w-[600px] flex flex-col p-4">
-		<Collaboration />
+		<Collaboration {site} />
 	</Dialog.Content>
 </Dialog.Root>
 
 <Dialog.Root bind:open={publishing}>
 	<Dialog.Content class="z-[999] max-w-[500px] flex flex-col p-0">
-		<Deploy 
+		<Deploy
 			bind:stage={publish_stage}
 			publish_fn={publish.publish}
 			loading={publish.status !== 'standby'}
@@ -149,7 +150,9 @@
 <nav aria-label="toolbar" id="primo-toolbar" class="primo-reset">
 	<div class="menu-container">
 		<div class="left">
-			<PrimoButton />
+			{#if $current_user?.serverRole}
+				<PrimoButton />
+			{/if}
 			<div class="button-group">
 				<div class="flex rounded" style="border: 1px solid #222">
 					<!-- <ToolbarButton label="Site" icon="gg:website" on:click={() => modal.show('SITE_EDITOR', {}, { showSwitch: true, disabledBgClose: true })} /> -->
@@ -197,8 +200,7 @@
 				<span class="separator">/</span>
 				<span class="page">{page.name}</span>
 				{#if page_page_type}
-					<!-- $userRole === 'DEV' -->
-					{#if true}
+					{#if $current_user?.siteRole === 'developer'}
 						{@const base_path = pageState.url.pathname.includes('/sites/') ? `/admin/sites/${resolved_site?.id}` : '/admin/site'}
 						<a class="page-type-badge" style="background-color: {page_page_type.color};" href="{base_path}/page-type--{page_page_type.id}">
 							<Icon icon={page_page_type.icon} />
@@ -230,13 +232,12 @@
 			{#if !$timeline.last}
 				<ToolbarButton id="redo" title="Redo" icon="material-symbols:redo" style="border: 0; font-size: 1.5rem;" on:click={redo_change} />
 			{/if} -->
-			<!-- $userRole === 'DEV' -->
-			{#if true}
+			{#if $current_user?.serverRole}
 				<ToolbarButton icon="clarity:users-solid" on:click={() => (editing_collaborators = true)} />
 			{/if}
 			{@render children?.()}
 			<!-- <LocaleSelector /> -->
-			<ToolbarButton type="primo" icon="entypo:publish" label="Publish" loading={publish.status !== 'standby'} on:click={() => publishing = true} />
+			<ToolbarButton type="primo" icon="entypo:publish" label="Publish" loading={publish.status !== 'standby'} on:click={() => (publishing = true)} />
 		</div>
 	</div>
 </nav>

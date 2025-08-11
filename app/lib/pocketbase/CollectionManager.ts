@@ -60,10 +60,29 @@ export const createCollectionManager = () => {
 			} finally {
 				commitsInProgress--
 				if (commitsInProgress === 0) {
+					// Invalidate all the lists when all the commits are done
 					for (const [id, list] of [...lists]) {
-						lists.set(id, { invalidated: true, ids: list?.ids ?? [] })
+						lists.set(id, {
+							invalidated: true,
+							ids: [...(list?.ids ?? [])]
+						})
 					}
-					staged.clear()
+
+					// Wait until all the lists have loaded again, until staged operations are cleared
+					const checkIntervalMs = 100
+					const checkLoaded = () => {
+						for (const list of [...lists.values()]) {
+							if (!list || list.invalidated) {
+								// This list is still loading
+								setTimeout(checkLoaded, checkIntervalMs)
+								return
+							}
+						}
+
+						// All lists loaded, clear staged operations.
+						staged.clear()
+					}
+					setTimeout(checkLoaded, checkIntervalMs)
 				}
 			}
 		},

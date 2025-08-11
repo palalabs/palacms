@@ -30,10 +30,12 @@ async function rollup_worker({ component, head, hydrated, buildStatic = true, cs
 				${head.code}
 			</svelte:head>
 			<script>
-				${components.map((_, i) => `import Component_${i} from './Component_${i}.svelte';`).join('\n')}
-				${components.map((_, i) => `export let component_${i}_props`).join(`\n`)}
+			  let props = $props();
 
-				export let head_props
+				${components.map((_, i) => `import Component_${i} from './Component_${i}.svelte';`).join('\n')}
+				${components.map((_, i) => `let { component_${i}_props } = props;`).join(`\n`)}
+
+				let { head_props } = props;
 				${field_keys.map((field) => `let ${field[0]} = head_props['${field[0]}'];`).join(`\n`)}
 			</script>
 			${components.map((component, i) => `<Component_${i} {...component_${i}_props} /> \n`).join('')}
@@ -56,7 +58,7 @@ async function rollup_worker({ component, head, hydrated, buildStatic = true, cs
 		return `\
 					${html}
           <script>
-            ${field_keys.map((field) => `let ${field[0]} = $$props['${field[0]}'];`).join(`\n`) /* e.g. let heading = props['heading'] */}
+            ${`let { ${field_keys.join(', ')} } = $props();` /* e.g. let { heading, body } = $props(); */}
             ${js}
           </script>
           ${css ? `<style>${css}</style>` : ``}`
@@ -82,7 +84,8 @@ async function rollup_worker({ component, head, hydrated, buildStatic = true, cs
 	if (buildStatic) {
 		const bundle = await compile({
 			generate: 'server',
-			css
+			css: 'injected',
+			runes: true
 		})
 
 		const output = (await bundle.generate({ format })).output[0].code
@@ -91,7 +94,8 @@ async function rollup_worker({ component, head, hydrated, buildStatic = true, cs
 		const bundle = await compile({
 			generate: 'client',
 			css,
-			dev: dev_mode
+			dev: dev_mode,
+			runes: true
 		})
 
 		const output = (await bundle.generate({ format })).output[0].code
@@ -102,7 +106,8 @@ async function rollup_worker({ component, head, hydrated, buildStatic = true, cs
 	if (hydrated) {
 		const bundle = await compile({
 			generate: 'client',
-			css: 'external'
+			css: 'external',
+			runes: true
 		})
 		const output = (await bundle.generate({ format })).output[0].code
 		final.dom = output

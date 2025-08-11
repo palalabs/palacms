@@ -22,6 +22,7 @@
 	import { exportSymbol, importSiteSymbol } from '$lib/builder/utils/symbolImportExport'
 	import { Button } from '$lib/components/ui/button'
 	import { setFieldEntries } from '../Fields/FieldsContent.svelte'
+	import { current_user } from '$lib/pocketbase/user.js'
 
 	const host = $derived(page.url.host)
 	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
@@ -242,23 +243,24 @@
 		</Tabs.List>
 		<Tabs.Content value="blocks" class="px-1">
 			{#if site_symbols.length > 0}
-				<div class="primo-buttons">
-					<button class="primo-button" onclick={show_block_picker}>
-						<Icon icon="mdi:plus" />
-						<span>Add</span>
-					</button>
-					<!-- $userRole === 'DEV' -->
-					{#if true}
-						<button class="primo-button" onclick={create_block}>
-							<Icon icon="mdi:code" />
-							<span>Create</span>
+				{#if $current_user?.siteRole === 'developer'}
+					<div class="primo-buttons">
+						<button class="primo-button" onclick={show_block_picker}>
+							<Icon icon="mdi:plus" />
+							<span>Add</span>
 						</button>
-						<button class="primo-button" onclick={() => (upload_dialog_open = true)}>
-							<Icon icon="mdi:upload" />
-							<span>Import</span>
-						</button>
-					{/if}
-				</div>
+						{#if $current_user?.siteRole === 'developer'}
+							<button class="primo-button" onclick={create_block}>
+								<Icon icon="mdi:code" />
+								<span>Create</span>
+							</button>
+							<button class="primo-button" onclick={() => (upload_dialog_open = true)}>
+								<Icon icon="mdi:upload" />
+								<span>Import</span>
+							</button>
+						{/if}
+					</div>
+				{/if}
 				{#if $site_html !== null}
 					<div class="block-list">
 						{#each site_symbols as symbol (symbol.id)}
@@ -296,6 +298,7 @@
 										SiteSymbols.delete(symbol.id)
 										manager.commit()
 									}}
+									controls_enabled={$current_user?.siteRole === 'developer'}
 								/>
 							</div>
 						{/each}

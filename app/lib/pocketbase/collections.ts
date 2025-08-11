@@ -16,6 +16,7 @@ import { Site } from '$lib/common/models/Site'
 import { SiteEntry } from '$lib/common/models/SiteEntry'
 import { SiteField } from '$lib/common/models/SiteField'
 import { SiteGroup } from '$lib/common/models/SiteGroup'
+import { SiteRoleAssignment } from '$lib/common/models/SiteRoleAssignment'
 import { SiteSymbol } from '$lib/common/models/SiteSymbol'
 import { SiteSymbolEntry } from '$lib/common/models/SiteSymbolEntry'
 import { SiteSymbolField } from '$lib/common/models/SiteSymbolField'
@@ -28,7 +29,10 @@ export const manager = createCollectionManager()
 export const Users = createCollectionMapping('users', User, manager, {
 	links: {
 		site_groups() {
-			return SiteGroups.list({ filter: `owner = "${this.id}"` })
+			return SiteGroups.list()
+		},
+		site_role_assignments() {
+			return SiteRoleAssignments.list({ filter: `user = "${this.id}"` })
 		}
 	}
 })
@@ -74,6 +78,9 @@ export const SiteGroups = createCollectionMapping('site_groups', SiteGroup, mana
 
 export const Sites = createCollectionMapping('sites', Site, manager, {
 	links: {
+		role_assignments() {
+			return SiteRoleAssignments.from(this.collection.instance).list({ filter: `site = "${this.id}"` })
+		},
 		symbols() {
 			return SiteSymbols.from(this.collection.instance).list({ filter: `site = "${this.id}"` })
 		},
@@ -93,6 +100,10 @@ export const Sites = createCollectionMapping('sites', Site, manager, {
 			return Pages.from(this.collection.instance).list({ filter: `site = "${this.id}" && parent = ''` })?.[0]
 		}
 	}
+})
+
+export const SiteRoleAssignments = createCollectionMapping('site_role_assignments', SiteRoleAssignment, manager, {
+	links: {}
 })
 
 export const SiteFields = createCollectionMapping('site_fields', SiteField, manager, {

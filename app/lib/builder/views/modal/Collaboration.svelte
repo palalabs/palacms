@@ -1,44 +1,62 @@
-<script>
+<script lang="ts">
+	import type { SiteRoleAssignment } from '$lib/common/models/SiteRoleAssignment'
 	import * as Dialog from '$lib/components/ui/dialog'
-	// import * as timeago from 'timeago.js'
+	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
+	import { manager, SiteRoleAssignments, Users, type Sites } from '$lib/pocketbase/collections'
 	import Icon from '@iconify/svelte'
-	import { page } from '$app/stores'
+	import { nanoid } from 'nanoid'
 
-	const site = $page.data.site
+	let { site }: { site: ObjectOf<typeof Sites> } = $props()
 
 	let loading = $state(false)
 	let email = $state('')
-	let role = $state('DEV')
+	let role = $state<SiteRoleAssignment['role']>('developer')
 
-	async function invite_editor() {
-		// TODO: Implement
+	async function invite_collaborator() {
+		const loading = !users || !server_members || !site_collborators
+		if (loading) {
+			throw new Error('Still loading')
+		}
+
+		const hasSiteAccess = [...server_members, ...site_collborators.map(({ user }) => user)].some((user) => user?.email === email)
+		if (hasSiteAccess) {
+			throw new Error('Collaborator already exists')
+		}
+
+		const password = nanoid(30)
+		const user =
+			users.find((user) => user.email === email) ??
+			Users.create({
+				email,
+				password,
+				passwordConfirm: password,
+				invite: 'pending'
+			})
+		SiteRoleAssignments.create({
+			site: site.id,
+			user: user.id,
+			role
+		})
+
+		await manager.commit()
 	}
 
-	let editors = $state([])
-	let owner = $derived(editors[0])
-	get_collaborators()
+	let users = $derived(Users.list())
+	let server_members = $derived(users?.filter(({ serverRole }) => !!serverRole))
+	let site_collborators = $derived(
+		site.role_assignments()?.map((assignment) => ({
+			assignment,
+			user: users?.find((user) => user.id === assignment.user)
+		}))
+	)
 
-	export async function get_collaborators() {
-		// TODO: Implement
-	}
-
-	let invitations = $state([])
-	get_invitations()
-
-	async function get_invitations() {
-		// TODO: Implement
+	const role_names = {
+		developer: 'Developer',
+		editor: 'Content Editor'
 	}
 
 	let adding_collaborator = false
 </script>
-
-<!-- <ModalHeader
-	title="Editors"
-	icon="clarity:users-solid"
-	warn={() => {
-		return true
-	}}
-/> -->
 
 <Dialog.Header class="mb-2" title="Collaborators" />
 
@@ -48,7 +66,7 @@
 		<form
 			onsubmit={(e) => {
 				e.preventDefault()
-				invite_editor()
+				invite_collaborator()
 			}}
 		>
 			<label class="subheading" for="email">Enter collaborator email</label>
@@ -56,8 +74,8 @@
 				<div class="input-group">
 					<input bind:value={email} type="email" placeholder="Email address" name="email" />
 					<select bind:value={role}>
-						<option value="DEV">Developer</option>
-						<option value="EDITOR">Content Editor</option>
+						<option value="developer">Developer</option>
+						<option value="editor">Content Editor</option>
 					</select>
 				</div>
 				<button type="submit">
@@ -69,38 +87,32 @@
 				</button>
 			</div>
 		</form>
-		{#if invitations.length > 0}
-			<section>
-				<h3 class="subheading">Invitations</h3>
+		<section>
+			<h3 class="subheading">People with Access</h3>
+			{#if !server_members || !site_collborators}
+				<span>Loading...</span>
+			{:else}
 				<ul>
-					{#each invitations as { email, created_at }}
+					{#each server_members ?? [] as { email, serverRole }}
 						<li>
 							<span class="letter">{email[0]}</span>
 							<span class="email">{email}</span>
-							<!-- <span>Sent {timeago.format(created_at)}</span> -->
+							<span class="role">
+								{role_names[serverRole ?? 'none']}
+							</span>
+						</li>
+					{/each}
+					{#each site_collborators ?? [] as { user, assignment }}
+						<li>
+							<span class="letter">{user?.email[0]}</span>
+							<span class="email">{user?.email}</span>
+							<span class="role">
+								{role_names[assignment.role]}
+							</span>
 						</li>
 					{/each}
 				</ul>
-			</section>
-		{/if}
-		<section>
-			<h3 class="subheading">People with Access</h3>
-			<ul>
-				{#if owner}
-					<li>
-						<span class="letter">{owner.email[0]}</span>
-						<span class="email">{owner.email}</span>
-						<span class="role">Owner</span>
-					</li>
-				{/if}
-				{#each editors.slice(1) as { email }}
-					<li>
-						<span class="letter">{email[0]}</span>
-						<span class="email">{email}</span>
-						<span class="role">Editor</span>
-					</li>
-				{/each}
-			</ul>
+			{/if}
 		</section>
 	</main>
 </div>
