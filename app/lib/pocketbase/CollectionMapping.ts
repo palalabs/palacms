@@ -95,6 +95,8 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 					collection
 						.getFullList({
 							...options,
+							// Use a unique request key based on the list ID to prevent cancellation
+							// of requests for different lists
 							requestKey: listId
 						})
 						.then((fetchedRecords) => {
