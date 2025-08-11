@@ -92,6 +92,9 @@
 
 	let showing_block_toolbar = $state(false)
 	let hovering_toolbar = $state(false)
+	
+	// Handle unsaved changes for section editor
+	let section_has_unsaved_changes = $state(false)
 	async function show_block_toolbar() {
 		showing_block_toolbar = true
 		await tick()
@@ -416,7 +419,16 @@
 	bind:open={editing_section}
 	onOpenChange={(open) => {
 		if (!open) {
-			manager.discard()
+			// Check for unsaved changes before closing
+			if (section_has_unsaved_changes) {
+				if (!confirm('You have unsaved changes. Are you sure you want to close without saving?')) {
+					// Prevent closing by reopening the dialog
+					editing_section = true
+					return
+				}
+				// User confirmed, discard changes
+				manager.discard()
+			}
 		}
 	}}
 >
@@ -424,6 +436,7 @@
 		<SectionEditor
 			component={editing_section_target}
 			tab={editing_section_tab}
+			bind:has_unsaved_changes={section_has_unsaved_changes}
 			header={{
 				button: {
 					label: 'Save',

@@ -281,6 +281,9 @@
 	let moving = $state(false) // workaround to prevent block toolbar from showing when moving blocks
 	let newly_added_sections = $state(new Set()) // track newly added sections for animation
 
+	// Handle unsaved changes for section editor
+	let section_has_unsaved_changes = $state(false)
+
 	let dragging = {
 		id: null,
 		position: null
@@ -498,13 +501,25 @@
 	<Dialog.Root
 		bind:open={editing_section}
 		onOpenChange={(open) => {
+			console.log('Dialog onOpenChange, open:', open, 'has_unsaved_changes:', section_has_unsaved_changes)
 			if (!open) {
-				manager.discard()
+				// Check for unsaved changes before closing
+				if (section_has_unsaved_changes) {
+					if (!confirm('You have unsaved changes. Are you sure you want to close without saving?')) {
+						// Prevent closing by reopening the dialog
+						editing_section = true
+						return
+					}
+					// User confirmed, discard changes
+					manager.discard()
+				}
 			}
 		}}
 	>
 		<Dialog.Content class="z-[999] max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4">
 			<SectionEditor
+				bind:this={sectionEditorRef}
+				bind:has_unsaved_changes={section_has_unsaved_changes}
 				component={hovered_section}
 				tab={editing_section_tab}
 				header={{

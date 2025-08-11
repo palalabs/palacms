@@ -3,6 +3,7 @@
 	const orientation = writable('horizontal')
 </script>
 
+<!-- svelte-ignore state_referenced_locally -->
 <script lang="ts">
 	import * as Dialog from '$lib/components/ui/dialog'
 	import LargeSwitch from '$lib/builder/ui/LargeSwitch.svelte'
@@ -16,10 +17,12 @@
 	import { manager, Sites, SiteSymbolEntries, SiteSymbolFields, SiteSymbols } from '$lib/pocketbase/collections'
 	import { page } from '$app/state'
 	import { getContent } from '$lib/pocketbase/content'
+	import _ from 'lodash-es'
 
 	let {
 		block: existing_block,
 		tab = $bindable('content'),
+		has_unsaved_changes = $bindable(false),
 		header = {
 			label: 'Create Component',
 			icon: 'fas fa-code',
@@ -30,9 +33,8 @@
 					console.warn('Component not going anywhere', component)
 				}
 			}
-		},
-		beforeClose
-	}: { block?: ObjectOf<typeof SiteSymbols>; tab?: string; header?: any; beforeClose?: () => boolean } = $props()
+		}
+	}: { block?: ObjectOf<typeof SiteSymbols>; tab?: string; has_unsaved_changes?: boolean; header?: any } = $props()
 
 	const host = $derived(page.url.host)
 	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
@@ -80,33 +82,15 @@
 	let css = $state(block.css)
 	let js = $state(block.js)
 
-	// Track initial values to detect changes
-	const initial_values = $derived({
-		html: block.html,
-		css: block.css,
-		js: block.js
-	})
+	// Store initial data for comparison
+	const initial_code = { html: block.html, css: block.css, js: block.js }
+	const initial_data = _.cloneDeep(component_data)
 
-	// Track if there are unsaved changes
-	const has_unsaved_changes = $derived(
-		html !== initial_values.html ||
-		css !== initial_values.css ||
-		js !== initial_values.js
-	)
-
-	// Handle close confirmation
-	function handleBeforeClose() {
-		if (has_unsaved_changes) {
-			return confirm('You have unsaved changes. Are you sure you want to close without saving?')
-		}
-		return true
-	}
-
-	// Set the beforeClose handler if provided
+	// Compare current state to initial data
 	$effect(() => {
-		if (beforeClose) {
-			beforeClose = handleBeforeClose
-		}
+		const code_changed = html !== initial_code.html || css !== initial_code.css || js !== initial_code.js
+		const data_changed = !_.isEqual(initial_data, component_data)
+		has_unsaved_changes = code_changed || data_changed
 	})
 
 	// Create code object for ComponentPreview)

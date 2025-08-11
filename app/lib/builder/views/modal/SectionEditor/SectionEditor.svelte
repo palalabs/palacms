@@ -3,6 +3,7 @@
 	const orientation = writable('horizontal')
 </script>
 
+<!-- svelte-ignore state_referenced_locally -->
 <script lang="ts">
 	import * as Dialog from '$lib/components/ui/dialog'
 	import { PaneGroup, Pane, PaneResizer } from 'paneforge'
@@ -19,10 +20,12 @@
 	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
 	import type { PageTypeSection } from '$lib/common/models/PageTypeSection'
 	import { current_user } from '$lib/pocketbase/user'
+	import _ from 'lodash-es'
 
 	let {
 		component,
 		tab = $bindable('content'),
+		has_unsaved_changes = $bindable(false),
 		header = {
 			label: 'Create Component',
 			icon: 'fas fa-code',
@@ -33,13 +36,12 @@
 					console.warn('Component not going anywhere', component)
 				}
 			}
-		},
-		beforeClose
-	}: { 
-		component: ObjectOf<typeof PageTypeSection> | ObjectOf<typeof PageSections>; 
-		tab: string; 
-		header?: any;
-		beforeClose?: () => boolean;
+		}
+	}: {
+		component: ObjectOf<typeof PageTypeSection> | ObjectOf<typeof PageSections>
+		tab: string
+		has_unsaved_changes: boolean
+		header?: any
 	} = $props()
 
 	// Data will be loaded automatically by CollectionMapping system when accessed
@@ -48,29 +50,36 @@
 	const fields = $derived(symbol?.fields())
 	const entries = $derived('page_type' in component ? component.entries() : 'page' in component ? component.entries() : undefined)
 	const component_data = $derived(fields && entries && (getContent(component, fields, entries)[$locale] ?? {}))
-	
+
+	const initial_code = { html: symbol?.html, css: symbol?.css, js: symbol?.js }
+	const initial_data = _.cloneDeep(component_data)
+
 	// Create completions array in field order for autocomplete
 	const completions = $derived(
-		fields && component_data 
+		fields && component_data
 			? fields
-				.filter(field => field.key && component_data.hasOwnProperty(field.key))
-				.sort((a, b) => (a.index || 0) - (b.index || 0))
-				.map((field, index) => {
-					const value = component_data[field.key]
-					const detail = Array.isArray(value) 
-						? `[ ${typeof(value[0])} ]`
-						: typeof value === 'object' && value !== null
-						? '{ ' + Object.entries(value).map(([key, val]) => `${key}:${typeof(val)}`).join(', ') + ' }'
-						: typeof(value)
-					
-					return {
-						label: field.key,
-						type: 'variable',
-						detail,
-						boost: 100 - index, // Higher boost for earlier fields (maintains order)
-						apply: field.key + '}' // Add closing bracket when selected
-					}
-				})
+					.filter((field) => field.key && component_data.hasOwnProperty(field.key))
+					.sort((a, b) => (a.index || 0) - (b.index || 0))
+					.map((field, index) => {
+						const value = component_data[field.key]
+						const detail = Array.isArray(value)
+							? `[ ${typeof value[0]} ]`
+							: typeof value === 'object' && value !== null
+								? '{ ' +
+									Object.entries(value)
+										.map(([key, val]) => `${key}:${typeof val}`)
+										.join(', ') +
+									' }'
+								: typeof value
+
+						return {
+							label: field.key,
+							type: 'variable',
+							detail,
+							boost: 100 - index, // Higher boost for earlier fields (maintains order)
+							apply: field.key + '}' // Add closing bracket when selected
+						}
+					})
 			: []
 	)
 
@@ -111,33 +120,11 @@
 	let css = $state(symbol?.css ?? '')
 	let js = $state(symbol?.js ?? '')
 
-	// Track initial values to detect changes
-	const initial_values = $derived({
-		html: symbol?.html ?? '',
-		css: symbol?.css ?? '',
-		js: symbol?.js ?? ''
-	})
-
-	// Track if there are unsaved changes
-	const has_unsaved_changes = $derived(
-		html !== initial_values.html ||
-		css !== initial_values.css ||
-		js !== initial_values.js
-	)
-
-	// Handle close confirmation
-	function handleBeforeClose() {
-		if (has_unsaved_changes) {
-			return confirm('You have unsaved changes. Are you sure you want to close without saving?')
-		}
-		return true
-	}
-
-	// Set the beforeClose handler if provided
+	// Compare current state to initial data
 	$effect(() => {
-		if (beforeClose) {
-			beforeClose = handleBeforeClose
-		}
+		const code_changed = html !== initial_code.html || css !== initial_code.css || js !== initial_code.js
+		const data_changed = !_.isEqual(initial_data, component_data)
+		has_unsaved_changes = code_changed || data_changed
 	})
 
 	// Create code object for ComponentPreview)
