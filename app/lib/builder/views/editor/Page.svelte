@@ -27,10 +27,11 @@
 	const footer_sections = $derived(page_type_sections.filter((s) => s.zone === 'footer'))
 	const page_type_body_sections = $derived(page_type_sections.filter((s) => s.zone === 'body'))
 
-	// Check if page type is static (no symbols toggled)
-	const is_static_page_type = $derived(page_type ? page_type.symbols()?.length === 0 : false)
 
 	const sections = $derived(page.sections() ?? [])
+
+	// Check if page type is static (no symbols toggled - sections can't be added/removed/reordered)
+	const is_static_page_type = $derived(page_type ? page_type.symbols()?.length === 0 : false)
 
 	// Fade in page when all components mounted
 	let page_mounted = $state(false)
@@ -60,29 +61,6 @@
 		}
 	}
 
-	async function copy_default_sections() {
-		// Create default sections from page type
-		const copied_sections: ObjectOf<typeof PageSections>[] = []
-		for (const section of page_type_body_sections) {
-			const copied_section = PageSections.create({
-				page: page.id,
-				symbol: section.symbol,
-				index: section.index
-			})
-			for (const entry of section.entries() ?? []) {
-				PageSectionEntries.create({
-					section: copied_section.id,
-					field: entry.field,
-					locale: entry.locale,
-					value: entry.value,
-					index: entry.index
-				})
-			}
-			copied_sections.push(copied_section)
-		}
-		await manager.commit()
-		return copied_sections
-	}
 
 	async function add_section_to_page({ symbol, position }) {
 		// Check if indices need repair
@@ -101,8 +79,10 @@
 			index: position
 		})
 
-		// Copy symbol entries to the new section instance
-		for (const entry of symbol.entries() ?? []) {
+		// Copy only root-level symbol entries to the new section instance
+		// Nested entries will be created on-demand by FieldsContent
+		const rootEntries = symbol.entries()?.filter(e => !e.parent) ?? []
+		for (const entry of rootEntries) {
 			PageSectionEntries.create({
 				section: new_section.id,
 				field: entry.field,
@@ -256,14 +236,7 @@
 	async function edit_section(tab) {
 		if (!hovered_section) return
 
-		if (sections.length === 0 && page_type_body_sections.length !== 0) {
-			const copied_sections = await copy_default_sections()
-
-			// Now that the sections exist on the page, target the correct section for editing.
-			hovered_section_id = copied_sections[hovered_section.index].id
-		}
-
-		lock_block(hovered_section_id)
+		lock_block(hovered_section.id)
 		editing_section = true
 		editing_section_tab = tab
 	}
@@ -479,7 +452,13 @@
 	})
 
 	let hovered_section_id: string | null = $state(null)
-	let hovered_section = $derived(sections.find((s) => s.id === hovered_section_id) ?? page_type_body_sections.find((s) => s.id === hovered_section_id))
+	let hovered_section = $derived(sections.find((s) => s.id === hovered_section_id))
+	// Check if hovered section is a page type section (header/footer)
+	let is_page_type_section = $derived(
+		hovered_section_id && 
+		(header_sections.some(s => s.id === hovered_section_id) || 
+		 footer_sections.some(s => s.id === hovered_section_id))
+	)
 	let editing_section = $state(false)
 </script>
 
@@ -542,6 +521,9 @@
 		<BlockToolbar
 			bind:node={block_toolbar_element}
 			id={hovered_section_id}
+			i={hovered_section?.index ?? 0}
+			is_last={hovered_section?.index === sections.length - 1}
+			is_instance_block={is_static_page_type || is_page_type_section}
 			on:delete={async () => {
 				// Get the section ID before clearing state
 				const section_id_to_delete = hovered_section_id
@@ -567,12 +549,6 @@
 				if (!hovered_section) return
 
 				let section_to_move = hovered_section
-				if (sections.length === 0 && page_type_body_sections.length !== 0) {
-					const copied_sections = await copy_default_sections()
-
-					// Now that the sections exist on the page, target the correct section for editing.
-					section_to_move = copied_sections[section_to_move.index]
-				}
 
 				if (!section_to_move || section_to_move.index === 0) return
 
@@ -594,12 +570,6 @@
 				if (!hovered_section) return
 
 				let section_to_move = hovered_section
-				if (sections.length === 0 && page_type_body_sections.length !== 0) {
-					const copied_sections = await copy_default_sections()
-
-					// Now that the sections exist on the page, target the correct section for editing.
-					section_to_move = copied_sections[section_to_move.index]
-				}
 
 				if (!section_to_move || section_to_move.index === sections.length - 1) return
 
@@ -639,67 +609,6 @@
 
 	<!-- Page Content Area -->
 	<section class="page-content-zone flex-1 flex flex-col">
-		<!-- Page Type Body Sections (Static Page Type) -->
-		{#if is_static_page_type}
-			{#each page_type_body_sections as page_type_section (page_type_section.id)}
-				{@const block = SiteSymbols.one(page_type_section.symbol)}
-				{#if block}
-					<div role="presentation" data-section={page_type_section.id} data-symbol={block?.id} class="page-type-section static-content-section">
-						<ComponentNode {block} section={page_type_section} on:lock={() => {}} on:unlock={() => {}} on:mount={() => sections_mounted++} on:resize={() => {}} />
-					</div>
-				{/if}
-			{/each}
-		{/if}
-
-		<!-- Page Type Body Sections (Dynamic Page Type - Default Content) -->
-		{#if !is_static_page_type && sections.length === 0}
-			{#each page_type_body_sections as page_type_section (page_type_section.id)}
-				{@const block = SiteSymbols.one(page_type_section.symbol)}
-				{@const locked = $locked_blocks.find((b) => b === page_type_section.id)}
-				{@const show_block_toolbar_on_hover = page_mounted && !moving}
-				{#if block}
-					<div
-						role="presentation"
-						data-section={page_type_section.id}
-						data-symbol={block?.id}
-						class="page-type-section default-content-section"
-						onmouseenter={async (e) => {
-							hovered_section_id = page_type_section.id
-							hovered_block_el = e.currentTarget
-							if (show_block_toolbar_on_hover) {
-								show_block_toolbar()
-							}
-						}}
-						onmouseleave={() => {
-							// Only hide if we're not immediately entering another section
-							setTimeout(() => {
-								// Check if we've hovered over a different section in the meantime
-								if (hovered_section_id === page_type_section.id) {
-									hide_block_toolbar()
-								}
-							}, 50)
-						}}
-						use:drag_item={page_type_section}
-					>
-						{#if locked}
-							<LockedOverlay {locked} />
-						{/if}
-						<ComponentNode
-							{block}
-							section={page_type_section}
-							on:lock={() => lock_block(page_type_section.id)}
-							on:unlock={() => unlock_block()}
-							on:mount={() => sections_mounted++}
-							on:resize={() => {
-								if (showing_block_toolbar) {
-									position_block_toolbar()
-								}
-							}}
-						/>
-					</div>
-				{/if}
-			{/each}
-		{/if}
 
 		<!-- Page's Own Sections -->
 		{#each sections.filter((s) => SiteSymbols.one(s.symbol)) as section (section.id)}
@@ -753,8 +662,8 @@
 			</div>
 		{/each}
 
-		<!-- Empty State (only show if no content at all) -->
-		{#if sections.length === 0 && page_type_body_sections.length === 0}
+		<!-- Empty State (show when page has no sections) -->
+		{#if sections.length === 0}
 			<div
 				class="empty-state"
 				class:dragging-over={hovered_block_el && dragging}

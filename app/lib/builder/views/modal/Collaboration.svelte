@@ -1,6 +1,6 @@
 <script>
 	import * as Dialog from '$lib/components/ui/dialog'
-	import * as timeago from 'timeago.js'
+	// import * as timeago from 'timeago.js'
 	import Icon from '@iconify/svelte'
 	import { page } from '$app/stores'
 
@@ -77,7 +77,7 @@
 						<li>
 							<span class="letter">{email[0]}</span>
 							<span class="email">{email}</span>
-							<span>Sent {timeago.format(created_at)}</span>
+							<!-- <span>Sent {timeago.format(created_at)}</span> -->
 						</li>
 					{/each}
 				</ul>

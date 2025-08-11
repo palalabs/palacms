@@ -121,6 +121,8 @@
 	let editing_block = $state(false)
 	let creating_block = $state(false)
 	let adding_block = $state(false)
+	let static_transition_dialog = $state(false)
+	let pending_symbol_toggle = $state<{ relation: any; symbol: any } | null>(null)
 	let commit_task = $state<NodeJS.Timeout>()
 </script>
 
@@ -191,6 +193,41 @@
 	</Dialog.Content>
 </Dialog.Root>
 
+<!-- Static Transition Dialog -->
+<Dialog.Root bind:open={static_transition_dialog}>
+	<Dialog.Content class="sm:max-w-[500px] p-6 pt-12">
+		<div class="mb-6">
+			<h2 class="text-lg font-semibold mb-2">Page Type Becoming Static</h2>
+			<p class="text-sm text-gray-400 leading-relaxed">
+				This page type will become static. Existing pages will keep their current sections but you won't be able to add to, remove, or reorder them. New pages will use the current template.
+			</p>
+		</div>
+		<div class="flex gap-2 justify-end">
+			<Button
+				variant="outline"
+				onclick={() => {
+					static_transition_dialog = false
+					pending_symbol_toggle = null
+				}}
+			>
+				Cancel
+			</Button>
+			<Button
+				onclick={() => {
+					if (pending_symbol_toggle) {
+						PageTypeSymbols.delete(pending_symbol_toggle.relation.id)
+						manager.commit()
+					}
+					static_transition_dialog = false
+					pending_symbol_toggle = null
+				}}
+			>
+				Continue
+			</Button>
+		</div>
+	</Dialog.Content>
+</Dialog.Root>
+
 <div class="sidebar primo-reset">
 	<Tabs.Root value={active_tab === 'CONTENT' ? 'content' : 'blocks'} class="p-2">
 		<Tabs.List class="w-full mb-2">
@@ -235,9 +272,20 @@
 									{toggled}
 									on:toggle={({ detail }) => {
 										if (!page_type || detail === toggled) return // dispatches on creation for some reason
+
+										// Check if this toggle would make the page type static
+										const current_symbol_count = page_type_symbols.length
+										const will_be_static = toggled && current_symbol_count === 1 // removing last symbol
+
 										if (toggled) {
-											PageTypeSymbols.delete(relation.id)
-											manager.commit()
+											// Show dialog before making static
+											if (will_be_static) {
+												pending_symbol_toggle = { relation, symbol }
+												static_transition_dialog = true
+											} else {
+												PageTypeSymbols.delete(relation.id)
+												manager.commit()
+											}
 										} else {
 											PageTypeSymbols.create({ page_type: page_type.id, symbol: symbol.id })
 											manager.commit()
