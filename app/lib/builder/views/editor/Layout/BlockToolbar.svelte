@@ -49,7 +49,7 @@
 				<span class="icon">
 					<Icon icon="material-symbols:edit-square-outline-rounded" />
 				</span>
-				{#if $current_user?.siteRole === 'developer'}
+				{#if $current_user?.siteRole !== 'developer'}
 					<span>Edit Content</span>
 				{/if}
 			</button>
