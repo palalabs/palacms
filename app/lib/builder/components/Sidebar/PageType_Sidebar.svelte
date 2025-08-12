@@ -19,7 +19,6 @@
 	import { Sites, PageTypes, SiteSymbols, PageTypeSymbols, SiteSymbolFields, SiteSymbolEntries, PageTypeFields, PageTypeEntries, manager } from '$lib/pocketbase/collections'
 	import { site_html } from '$lib/builder/stores/app/page.js'
 	import DropZone from '$lib/components/DropZone.svelte'
-	import { exportSymbol } from '$lib/builder/utils/symbolImportExport'
 	import { Button } from '$lib/components/ui/button'
 	import { setFieldEntries } from '../Fields/FieldsContent.svelte'
 	import { current_user } from '$lib/pocketbase/user.js'
@@ -71,10 +70,6 @@
 			upload_file_invalid = true
 			file = undefined
 		}
-	}
-
-	function export_block(symbol) {
-		exportSymbol(symbol)
 	}
 
 	let active_block_id = $state(null)
