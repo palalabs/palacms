@@ -1,4 +1,4 @@
-import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
+import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
 import { manager, type LibrarySymbols, type SiteSymbols } from '$lib/pocketbase/collections'
 
 /**

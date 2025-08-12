@@ -12,7 +12,7 @@
 	import { getContent } from '$lib/pocketbase/content'
 	import { createEventDispatcher, onMount } from 'svelte'
 	import { block_html } from '$lib/builder/code_generators'
-	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
+	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
 	import { SiteSymbols } from '$lib/pocketbase/collections'
 
 	const dispatch = createEventDispatcher()
