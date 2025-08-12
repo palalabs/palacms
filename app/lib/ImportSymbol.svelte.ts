@@ -1,6 +1,6 @@
 import { get_empty_value } from './builder/utils'
-import type { SiteSymbolEntry } from './common/models/SiteSymbolEntry'
-import type { SiteSymbolField } from './common/models/SiteSymbolField'
+import type { Entry } from './common/models/Entry'
+import type { Field } from './common/models/Field'
 import { LibrarySymbolEntries, LibrarySymbolFields, LibrarySymbolGroups, LibrarySymbols, manager, Sites, SiteSymbolEntries, SiteSymbolFields, SiteSymbols } from './pocketbase/collections'
 import { useSvelteWorker } from './Worker.svelte'
 
@@ -59,10 +59,10 @@ const createImportWorker =
 
 				const symbol = collections.Symbols.create(createData)
 
-				const symbol_field_map = new Map<string, SiteSymbolField>()
-				const create_symbol_fields = (parent_field_import_id?: string) => {
+				const symbol_field_map = new Map<string, Field>()
+				const create_symbol_fields = (parent_field_import?: any) => {
 					for (const symbol_field_import of importData.fields) {
-						if (parent_field_import_id ? symbol_field_import.parent !== parent_field_import_id : symbol_field_import.parent) {
+						if (parent_field_import ? symbol_field_import.parent !== parent_field_import.id : symbol_field_import.parent) {
 							continue
 						}
 
@@ -146,26 +146,45 @@ const createImportWorker =
 
 						const field = collections.Fields.create(fieldData)
 						symbol_field_map.set(symbol_field_import.id, field)
-						create_symbol_fields(symbol_field_import.id)
+						create_symbol_fields(symbol_field_import)
 					}
 				}
 				create_symbol_fields()
 
-				const symbol_entry_map = new Map<string, SiteSymbolEntry>()
-				const create_symbol_entries = (parent_entry_import_id?: string) => {
+				const symbol_entry_map = new Map<string, Entry>()
+				const create_symbol_entries = (parent_entry_import?: any) => {
 					for (const symbol_entry_import of importData.entries) {
-						if (parent_entry_import_id ? symbol_entry_import.parent !== parent_entry_import_id : symbol_entry_import.parent) {
+						if (parent_entry_import ? symbol_entry_import.parent !== parent_entry_import.id : symbol_entry_import.parent) {
 							continue
 						}
 
-						const field = symbol_field_map.get(symbol_entry_import.field)
-						if (!field) {
-							throw new Error('No symbol field for symbol entry')
-						}
+						let field: Field | undefined
+						let parent: Entry | undefined
+						if (symbol_entry_import.index === null && symbol_entry_import.value === null) {
+							// Guessing it's repeater entry, ignore and create entries for each items
+							create_symbol_entries(symbol_entry_import)
+							continue
+						} else if (symbol_entry_import.field === null && symbol_entry_import.value === null) {
+							// Guessing it's repeater item entry, use field and parent IDs from ignored parent entry
+							field = symbol_field_map.get(parent_entry_import.field)
+							if (!field) {
+								throw new Error('No symbol field for symbol entry')
+							}
 
-						const parent = symbol_entry_import.parent ? symbol_entry_map.get(symbol_entry_import.parent) : undefined
-						if (symbol_entry_import.parent && !parent) {
-							throw new Error('No parent symbol entry')
+							parent = parent_entry_import.parent ? symbol_entry_map.get(parent_entry_import.parent) : undefined
+							if (parent_entry_import.parent && !parent) {
+								throw new Error('No parent symbol entry')
+							}
+						} else {
+							field = symbol_field_map.get(symbol_entry_import.field)
+							if (!field) {
+								throw new Error('No symbol field for symbol entry')
+							}
+
+							parent = symbol_entry_import.parent ? symbol_entry_map.get(symbol_entry_import.parent) : undefined
+							if (symbol_entry_import.parent && !parent) {
+								throw new Error('No parent symbol entry')
+							}
 						}
 
 						const entry = collections.Entries.create({
@@ -176,7 +195,7 @@ const createImportWorker =
 							value: symbol_entry_import.value || get_empty_value(field)
 						})
 						symbol_entry_map.set(symbol_entry_import.id, entry)
-						create_symbol_entries(symbol_entry_import.id)
+						create_symbol_entries(symbol_entry_import)
 					}
 				}
 				create_symbol_entries()
