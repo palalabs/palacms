@@ -68,7 +68,7 @@ const createImportWorker =
 
 						const parent = symbol_field_import.parent ? symbol_field_map.get(symbol_field_import.parent) : undefined
 						if (symbol_field_import.parent && !parent) {
-							throw new Error('No parent symbol field')
+							throw new Error(`No parent symbol field (${symbol_field_import.parent})`)
 						}
 
 						// Use existing field type or default to text if missing
@@ -134,7 +134,7 @@ const createImportWorker =
 							}
 						}
 
-						const fieldData = {
+						const field = collections.Fields.create({
 							key: symbol_field_import.key,
 							label: symbol_field_import.label,
 							type: fieldType,
@@ -142,9 +142,7 @@ const createImportWorker =
 							parent: parent?.id,
 							index: symbol_field_import.index || 0,
 							symbol: symbol.id
-						}
-
-						const field = collections.Fields.create(fieldData)
+						})
 						symbol_field_map.set(symbol_field_import.id, field)
 						create_symbol_fields(symbol_field_import)
 					}
@@ -158,44 +156,52 @@ const createImportWorker =
 							continue
 						}
 
-						let field: Field | undefined
-						let parent: Entry | undefined
-						if (symbol_entry_import.index === null && symbol_entry_import.value === null) {
-							// Guessing it's repeater entry, ignore and create entries for each items
+						if (symbol_entry_import.index === null && symbol_entry_import.value === null && symbol_field_map.get(symbol_entry_import.field)?.type === 'repeater') {
+							// It's repeater entry, ignore and create entries for each items
 							create_symbol_entries(symbol_entry_import)
 							continue
 						} else if (symbol_entry_import.field === null && symbol_entry_import.value === null) {
-							// Guessing it's repeater item entry, use field and parent IDs from ignored parent entry
-							field = symbol_field_map.get(parent_entry_import.field)
+							// It's repeater item entry, use field and parent IDs from ignored parent entry
+							const field = symbol_field_map.get(parent_entry_import.field)
 							if (!field) {
-								throw new Error('No symbol field for symbol entry')
+								throw new Error(`No symbol field (${parent_entry_import.field}) for repeater item entry`)
 							}
 
-							parent = parent_entry_import.parent ? symbol_entry_map.get(parent_entry_import.parent) : undefined
+							const parent = parent_entry_import.parent ? symbol_entry_map.get(parent_entry_import.parent) : undefined
 							if (parent_entry_import.parent && !parent) {
-								throw new Error('No parent symbol entry')
+								throw new Error(`No parent symbol entry (${parent_entry_import.parent}) for repeater item entry`)
 							}
+
+							const entry = collections.Entries.create({
+								locale: parent_entry_import.locale || 'en',
+								index: symbol_entry_import.index || 0,
+								field: field.id,
+								parent: parent?.id,
+								value: null
+							})
+							symbol_entry_map.set(symbol_entry_import.id, entry)
+							create_symbol_entries(symbol_entry_import)
 						} else {
-							field = symbol_field_map.get(symbol_entry_import.field)
+							const field = symbol_field_map.get(symbol_entry_import.field)
 							if (!field) {
-								throw new Error('No symbol field for symbol entry')
+								throw new Error(`No symbol field (${symbol_entry_import.field}) for symbol entry`)
 							}
 
-							parent = symbol_entry_import.parent ? symbol_entry_map.get(symbol_entry_import.parent) : undefined
+							const parent = symbol_entry_import.parent ? symbol_entry_map.get(symbol_entry_import.parent) : undefined
 							if (symbol_entry_import.parent && !parent) {
-								throw new Error('No parent symbol entry')
+								throw new Error(`No parent symbol entry (${symbol_entry_import.parent})`)
 							}
-						}
 
-						const entry = collections.Entries.create({
-							locale: symbol_entry_import.locale || 'en',
-							index: symbol_entry_import.index || 0,
-							field: field.id,
-							parent: parent?.id,
-							value: symbol_entry_import.value || get_empty_value(field)
-						})
-						symbol_entry_map.set(symbol_entry_import.id, entry)
-						create_symbol_entries(symbol_entry_import)
+							const entry = collections.Entries.create({
+								locale: symbol_entry_import.locale || 'en',
+								index: symbol_entry_import.index || 0,
+								field: field.id,
+								parent: parent?.id,
+								value: symbol_entry_import.value || get_empty_value(field)
+							})
+							symbol_entry_map.set(symbol_entry_import.id, entry)
+							create_symbol_entries(symbol_entry_import)
+						}
 					}
 				}
 				create_symbol_entries()
