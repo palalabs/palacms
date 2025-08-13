@@ -17,7 +17,7 @@
 	import { manager, PageTypes, PageTypeSections, Sites } from '$lib/pocketbase/collections'
 
 	import { page } from '$app/state'
-	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.js'
+	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
 
 	const host = $derived(page.url.host)
 	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])

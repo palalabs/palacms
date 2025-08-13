@@ -22,7 +22,7 @@ import { SiteSymbolEntry } from '$lib/common/models/SiteSymbolEntry'
 import { SiteSymbolField } from '$lib/common/models/SiteSymbolField'
 import { User } from '$lib/common/models/User'
 import { createCollectionManager } from './CollectionManager'
-import { createCollectionMapping } from './CollectionMapping'
+import { createCollectionMapping } from './CollectionMapping.svelte'
 
 export const manager = createCollectionManager()
 

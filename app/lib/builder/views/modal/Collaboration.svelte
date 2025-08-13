@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { SiteRoleAssignment } from '$lib/common/models/SiteRoleAssignment'
 	import * as Dialog from '$lib/components/ui/dialog'
-	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
+	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
 	import { manager, SiteRoleAssignments, Users, type Sites } from '$lib/pocketbase/collections'
 	import Icon from '@iconify/svelte'
 	import { nanoid } from 'nanoid'
