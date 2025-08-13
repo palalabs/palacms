@@ -201,7 +201,7 @@
 			basicSetup,
 			...(mode === 'html' ? [svelte_completions_compartment.of(autocompletion({ override: [svelteCompletions(completions)] }))] : []),
 			...(mode === 'css' ? [css_completions_compartment.of(cssCompletions(css_variables))] : []),
-			emmetExtension(mode === 'css' ? 'css' : 'html')
+			...(mode !== 'javascript' ? [emmetExtension(mode === 'css' ? 'css' : 'html')] : [])
 		]
 	})
 
@@ -240,7 +240,6 @@
 				cursorOffset: position,
 				plugins: [prettierSvelte, prettierPostcss, prettierBabel, prettierEstree]
 			})
-			console.log({ formatted })
 		} catch (e) {
 			console.warn(e)
 		}
