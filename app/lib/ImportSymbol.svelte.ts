@@ -15,7 +15,8 @@ const createImportWorker =
 			() => !!file && !!targetId,
 			() => !!existingSymbols,
 			async () => {
-				const text = (await file?.text()) || ''
+				try {
+					const text = (await file?.text()) || ''
 				const importData = JSON.parse(text)
 
 				// Validate required fields
@@ -208,6 +209,10 @@ const createImportWorker =
 
 				await manager.commit()
 				console.log('Symbol imported successfully:', finalName)
+				} catch (error) {
+					manager.discard()
+					throw error
+				}
 			}
 		)
 
