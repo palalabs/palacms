@@ -35,14 +35,14 @@
 	{#if creating_page}
 		<div class="p-2 pt-0 bg-[var(--primo-color-black)]">
 			<PageForm
-				on:create={async ({ detail: new_page }) => {
+				oncreate={async (new_page) => {
 					creating_page = false
 					const url_taken = all_pages.some((page) => page?.slug === new_page.slug)
 					if (url_taken) {
 						alert(`That URL is already in use`)
 					} else {
 						Pages.create({ ...new_page, parent: home_page.id, site: site.id })
-						manager.commit()
+						await manager.commit()
 					}
 				}}
 			/>

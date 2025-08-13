@@ -160,7 +160,6 @@ const createImportWorker =
 						if (symbol_entry_import.index === null && symbol_entry_import.value === null && symbol_field_map.get(symbol_entry_import.field)?.type === 'repeater') {
 							// It's repeater entry, ignore and create entries for each items
 							create_symbol_entries(symbol_entry_import)
-							continue
 						} else if (symbol_entry_import.field === null && symbol_entry_import.value === null) {
 							// It's repeater item entry, use field and parent IDs from ignored parent entry
 							const field = symbol_field_map.get(parent_entry_import.field)

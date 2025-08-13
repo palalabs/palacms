@@ -67,20 +67,22 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 			const operation = staged.get(id)
 			let data = records.get(id)
 
-			if (operation?.operation === 'delete') {
+			if (operation && operation.operation === 'delete') {
 				return undefined
-			} else if (operation) {
+			} else if (operation && !operation.processed) {
 				data = Object.assign({}, data, operation.data)
 			} else if (!data) {
-				// If no cached record exists, start loading it
-				if (!records.has(id)) {
-					untrack(() => {
-						records.set(id, undefined)
-						collection.getOne(id).then((record) => {
-							records.set(id, record as unknown as T)
+				$effect(() => {
+					// If no cached record exists, start loading it
+					if (!records.has(id)) {
+						untrack(() => {
+							records.set(id, undefined)
+							collection.getOne(id).then((record) => {
+								records.set(id, record as unknown as T)
+							})
 						})
-					})
-				}
+					}
+				})
 				return undefined
 			}
 
@@ -89,29 +91,31 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 		list: (options) => {
 			const listId = name + JSON.stringify(options ?? {})
 
-			// If no cached list exists or it's invalidated, start loading it
-			const existingList = lists.get(listId)
-			if (!lists.has(listId) || existingList?.invalidated) {
-				untrack(() => {
-					lists.set(listId, existingList ? { invalidated: false, ids: existingList?.ids } : undefined)
-					collection
-						.getFullList({
-							...options,
-							requestKey: listId
-						})
-						.then((fetchedRecords) => {
-							// Store the full records
-							fetchedRecords.forEach((record) => {
-								records.set(record.id, record as unknown as T)
+			$effect(() => {
+				// If no cached list exists or it's invalidated, start loading it
+				const existingList = lists.get(listId)
+				if (!lists.has(listId) || existingList?.invalidated) {
+					untrack(() => {
+						lists.set(listId, existingList ? { invalidated: false, ids: existingList?.ids } : undefined)
+						collection
+							.getFullList({
+								...options,
+								requestKey: listId
 							})
-							// Store the list of IDs
-							lists.set(listId, { invalidated: false, ids: fetchedRecords.map(({ id }) => id) })
-						})
-						.catch(() => {
-							lists.set(listId, { invalidated: false, ids: [] })
-						})
-				})
-			}
+							.then((fetchedRecords) => {
+								// Store the full records
+								fetchedRecords.forEach((record) => {
+									records.set(record.id, record as unknown as T)
+								})
+								// Store the list of IDs
+								lists.set(listId, { invalidated: false, ids: fetchedRecords.map(({ id }) => id) })
+							})
+							.catch(() => {
+								lists.set(listId, { invalidated: false, ids: [] })
+							})
+					})
+				}
+			})
 
 			const list = [...(lists.get(listId)?.ids ?? [])]
 			for (const [id, value] of staged) {
@@ -120,8 +124,8 @@ export const createCollectionMapping = <T extends ObjectWithId, Options extends 
 					continue
 				}
 
-				// Only add non-deleted staged items to the list
-				if (value !== null && !list.includes(id)) {
+				// Only add non-deleted and non-processed staged items to the list
+				if (value.operation !== 'delete' && !value.processed && !list.includes(id)) {
 					list.push(id)
 				}
 			}

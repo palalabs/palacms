@@ -12,8 +12,8 @@
 	import { getContent } from '$lib/pocketbase/content'
 	import { createEventDispatcher, onMount } from 'svelte'
 	import { block_html } from '$lib/builder/code_generators'
-	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
-	import { SiteSymbols } from '$lib/pocketbase/collections'
+	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
+	import { manager, SiteSymbols } from '$lib/pocketbase/collections'
 
 	const dispatch = createEventDispatcher()
 
@@ -47,8 +47,8 @@
 		if (!symbol || !new_name.trim()) return
 
 		try {
-			// Update the symbol name directly in the database
-			await symbol.collection.instance.collection('site_symbols').update(symbol.id, { name: new_name.trim() })
+			SiteSymbols.update(symbol.id, { name: new_name.trim() })
+			await manager.commit()
 			renaming = false
 		} catch (error) {
 			console.warn('Failed to rename symbol:', error)

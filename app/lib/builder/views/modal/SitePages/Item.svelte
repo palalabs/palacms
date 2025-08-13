@@ -8,7 +8,7 @@
 	import MenuPopup from '$lib/builder/ui/Dropdown.svelte'
 	import { page as pageState } from '$app/state'
 	import { manager, Pages, PageTypes, Sites } from '$lib/pocketbase/collections'
-	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
+	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
 	import { getContext } from 'svelte'
 	import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
 	import { attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge'
@@ -31,7 +31,8 @@
 	const page_type = $derived(PageTypes.one(page.page_type))
 
 	let showing_children = $state(false)
-	let has_children = $derived((page.children() ?? []).length > 0 && page.slug !== '')
+	let children = $derived(page.children() ?? [])
+	let has_children = $derived(children.length > 0 && page.slug !== '')
 
 	get(`page-list-toggle--${page.id}`).then((toggled) => {
 		if (toggled !== undefined) showing_children = toggled
@@ -186,7 +187,7 @@
 
 	{#if showing_children && has_children}
 		<ul class="page-list child">
-			{#each page.children() as subpage}
+			{#each children as subpage}
 				<Item parent={page} page={subpage} active={false} on:delete on:create />
 			{/each}
 		</ul>
@@ -196,7 +197,7 @@
 		<div style="border-left: 0.5rem solid #111;">
 			<PageForm
 				parent={page}
-				on:create={async ({ detail: new_page }) => {
+				oncreate={async (new_page) => {
 					creating_page = false
 					showing_children = true
 					const url_taken = allPages.some((page) => page?.slug === new_page.slug)
