@@ -77,7 +77,14 @@
 							type: 'variable',
 							detail,
 							boost: 100 - index, // Higher boost for earlier fields (maintains order)
-							apply: field.key + '}' // Add closing bracket when selected
+							apply: (view, completion, from, to) => {
+								// Check if there's already a closing bracket after the cursor
+								const afterCursor = view.state.doc.sliceString(to, to + 1)
+								const insert = field.key + (afterCursor === '}' ? '' : '}')
+								view.dispatch({
+									changes: { from, to, insert }
+								})
+							}
 						}
 					})
 			: []
