@@ -131,6 +131,22 @@
 		has_unsaved_changes = code_changed || data_changed
 	})
 
+	// Add beforeunload listener to warn about unsaved changes
+	$effect(() => {
+		if (!browser) return
+
+		const handleBeforeUnload = (e) => {
+			if (has_unsaved_changes) {
+				e.preventDefault()
+				e.returnValue = ''
+				return ''
+			}
+		}
+
+		window.addEventListener('beforeunload', handleBeforeUnload)
+		return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+	})
+
 	// Create code object for ComponentPreview)
 	let code = $derived({
 		html: html || '<!-- Add your HTML here -->',

@@ -9,8 +9,9 @@
 	import { page } from '$app/state'
 	import { Sites, SiteFields, SiteEntries, manager } from '$lib/pocketbase/collections'
 	import { current_user } from '$lib/pocketbase/user'
+	import { browser } from '$app/environment'
 
-	let { onClose } = $props()
+	let { onClose, has_unsaved_changes = $bindable(false) } = $props()
 
 	const host = $derived(page.url.host)
 	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
@@ -21,6 +22,7 @@
 
 	let head = $state('')
 	let foot = $state('')
+	
 	$effect.pre(() => {
 		if (site) {
 			head = site.head
@@ -29,6 +31,22 @@
 	})
 
 	let disableSave = $state(false)
+
+	// Add beforeunload listener to warn about unsaved changes
+	$effect(() => {
+		if (!browser) return
+
+		const handleBeforeUnload = (e) => {
+			if (has_unsaved_changes) {
+				e.preventDefault()
+				e.returnValue = ''
+				return ''
+			}
+		}
+
+		window.addEventListener('beforeunload', handleBeforeUnload)
+		return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+	})
 
 	async function saveComponent() {
 		if (!site) {
@@ -78,6 +96,7 @@
 							const siblingFields = (fields ?? []).filter((f) => (data?.parent ? f.parent === data.parent : !f.parent))
 							const nextIndex = Math.max(...siblingFields.map((f) => f.index || 0), -1) + 1
 
+							has_unsaved_changes = true
 							return SiteFields.create({
 								type: 'text',
 								key: '',
@@ -89,6 +108,7 @@
 							})
 						}}
 						oninput={(values) => {
+							has_unsaved_changes = true
 							setFieldEntries({
 								fields,
 								entries,
@@ -98,6 +118,7 @@
 							})
 						}}
 						onchange={({ id, data }) => {
+							has_unsaved_changes = true
 							SiteFields.update(id, data)
 						}}
 						ondelete={(field_id) => {
@@ -116,7 +137,7 @@
 						<Pane>
 							<div class="container" style="margin-bottom: 1rem">
 								<span class="primo--field-label">Head</span>
-								<CodeEditor mode="html" bind:value={head} on:save={saveComponent} />
+								<CodeEditor mode="html" bind:value={head} on:save={saveComponent} oninput={() => has_unsaved_changes = true} />
 							</div>
 						</Pane>
 						<PaneResizer class="PaneResizer-secondary">
@@ -127,7 +148,7 @@
 						<Pane>
 							<div class="container">
 								<span class="primo--field-label">Foot</span>
-								<CodeEditor mode="html" bind:value={foot} on:save={saveComponent} />
+								<CodeEditor mode="html" bind:value={foot} on:save={saveComponent} oninput={() => has_unsaved_changes = true} />
 							</div>
 						</Pane>
 					</PaneGroup>

@@ -17,6 +17,7 @@
 	import { manager, Sites, SiteSymbolEntries, SiteSymbolFields, SiteSymbols } from '$lib/pocketbase/collections'
 	import { page } from '$app/state'
 	import { getContent } from '$lib/pocketbase/content'
+	import { browser } from '$app/environment'
 	import _ from 'lodash-es'
 
 	let {
@@ -90,6 +91,22 @@
 		const code_changed = html !== initial_code.html || css !== initial_code.css || js !== initial_code.js
 		const data_changed = !_.isEqual(initial_data, component_data)
 		has_unsaved_changes = code_changed || data_changed
+	})
+
+	// Add beforeunload listener to warn about unsaved changes
+	$effect(() => {
+		if (!browser) return
+
+		const handleBeforeUnload = (e) => {
+			if (has_unsaved_changes) {
+				e.preventDefault()
+				e.returnValue = ''
+				return ''
+			}
+		}
+
+		window.addEventListener('beforeunload', handleBeforeUnload)
+		return () => window.removeEventListener('beforeunload', handleBeforeUnload)
 	})
 
 	// Create code object for ComponentPreview)
