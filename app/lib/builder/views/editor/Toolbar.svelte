@@ -22,7 +22,7 @@
 	import Deploy from '$lib/components/Modals/Deploy/Deploy.svelte'
 	import { usePublishSite } from '$lib/Publish.svelte'
 	import type { Snippet } from 'svelte'
-	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
+	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
 	import { current_user } from '$lib/pocketbase/user'
 
 	let { children, site }: { children: Snippet; site?: ObjectOf<typeof Sites> } = $props()

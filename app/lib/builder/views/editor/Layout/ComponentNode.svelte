@@ -24,7 +24,7 @@
 	import MarkdownButton from './MarkdownButton.svelte'
 	import { component_iframe_srcdoc } from '$lib/builder/components/misc'
 	import { getContent } from '$lib/pocketbase/content'
-	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
+	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
 	import { SiteSymbols, type PageSections, type PageTypeSections, PageSectionEntries, PageTypeSectionEntries, manager } from '$lib/pocketbase/collections'
 	import { Editor, Extension } from '@tiptap/core'
 	import { renderToHTMLString, renderToMarkdown } from '@tiptap/static-renderer'
@@ -926,9 +926,30 @@
 				editing_link = true
 			}}
 		/>
-		<MarkdownButton icon="fa-solid:bold" onclick={() => { active_editor.chain().focus().toggleBold().run(); update_formatting_state(); }} active={formatting_state.bold} />
-		<MarkdownButton icon="fa-solid:italic" onclick={() => { active_editor.chain().focus().toggleItalic().run(); update_formatting_state(); }} active={formatting_state.italic} />
-		<MarkdownButton icon="fa-solid:highlighter" onclick={() => { active_editor.chain().focus().toggleHighlight().run(); update_formatting_state(); }} active={formatting_state.highlight} />
+		<MarkdownButton
+			icon="fa-solid:bold"
+			onclick={() => {
+				active_editor.chain().focus().toggleBold().run()
+				update_formatting_state()
+			}}
+			active={formatting_state.bold}
+		/>
+		<MarkdownButton
+			icon="fa-solid:italic"
+			onclick={() => {
+				active_editor.chain().focus().toggleItalic().run()
+				update_formatting_state()
+			}}
+			active={formatting_state.italic}
+		/>
+		<MarkdownButton
+			icon="fa-solid:highlighter"
+			onclick={() => {
+				active_editor.chain().focus().toggleHighlight().run()
+				update_formatting_state()
+			}}
+			active={formatting_state.highlight}
+		/>
 	{/if}
 </div>
 
