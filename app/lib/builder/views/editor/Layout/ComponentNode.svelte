@@ -24,13 +24,37 @@
 	import MarkdownButton from './MarkdownButton.svelte'
 	import { component_iframe_srcdoc } from '$lib/builder/components/misc'
 	import { getContent } from '$lib/pocketbase/content'
-	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
+	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
 	import { SiteSymbols, type PageSections, type PageTypeSections, PageSectionEntries, PageTypeSectionEntries, manager } from '$lib/pocketbase/collections'
 	import { Editor, Extension } from '@tiptap/core'
+	import { renderToHTMLString, renderToMarkdown } from '@tiptap/static-renderer'
 
 	const lowlight = createLowlight(all)
 
 	const dispatch = createEventDispatcher()
+
+	// Define extensions for both the editor and static HTML generation
+	const tiptapExtensions = [
+		StarterKit.configure({
+			codeBlock: false, // Disable default codeBlock as we're using CodeBlockLowlight
+			link: false // Disable default link as we're using custom Link configuration
+		}),
+		Image,
+		Youtube.configure({
+			modestBranding: true
+		}),
+		Typography,
+		CodeBlockLowlight.configure({
+			lowlight
+		}),
+		Link.configure({
+			HTMLAttributes: {
+				'data-tiptap-link': 'true'
+			},
+			openOnClick: false
+		}),
+		Highlight.configure({ multicolor: false })
+	]
 
 	let { block, section }: { block: ObjectOf<typeof SiteSymbols>; section: ObjectOf<typeof PageTypeSections> | ObjectOf<typeof PageSections> } = $props()
 
@@ -45,10 +69,14 @@
 	let image_editor = $state()
 	let image_editor_is_visible = $state(false)
 
-	let link_editor = $state()
 	let link_editor_is_visible = $state(false)
 
 	let active_editor = $state()
+	let formatting_state = $state({
+		bold: false,
+		italic: false,
+		highlight: false
+	})
 
 	let error = $state('')
 
@@ -74,8 +102,29 @@
 	}
 
 	let scrolling = false
+	let is_editing = $state(false)
 
 	const markdown_classes = {}
+	let field_save_timeout
+
+	function handle_lock() {
+		is_editing = true
+	}
+
+	function handle_unlock() {
+		is_editing = false
+		dispatch('unlock')
+	}
+
+	function update_formatting_state() {
+		if (active_editor) {
+			formatting_state = {
+				bold: active_editor.isActive('bold'),
+				italic: active_editor.isActive('italic'),
+				highlight: active_editor.isActive('highlight')
+			}
+		}
+	}
 
 	async function make_content_editable() {
 		if (!node?.contentDocument) return
@@ -208,34 +257,52 @@
 				content: html,
 				element,
 				extensions: [
-					StarterKit,
-					Image,
-					Youtube.configure({
-						modestBranding: true
-					}),
-					Typography,
-					CodeBlockLowlight.configure({
-						lowlight
-					}),
-					Link.configure({
-						HTMLAttributes: {
-							class: 'link'
-						},
-						openOnClick: false
-					}),
-					// TipTapImage.configure({}),
-					Highlight.configure({ multicolor: false }),
+					...tiptapExtensions,
 					Extension.create({
 						onFocus() {
 							active_editor = editor
+							handle_lock()
 							dispatch('lock')
+							update_formatting_state()
 						},
-						onBlur() {
+						onSelectionUpdate() {
+							update_formatting_state()
+						},
+						onBlur: async ({ event }) => {
+							// Don't call handle_unlock for markdown - let it stay locked
 							dispatch('unlock')
+							// Final save on blur
+							clearTimeout(field_save_timeout)
+							const json = editor.getJSON()
+							const html = renderToHTMLString({
+								extensions: tiptapExtensions,
+								content: json
+							})
+							const markdown = renderToMarkdown({
+								extensions: tiptapExtensions,
+								content: json
+							})
+							save_edited_value({ id, value: { html, markdown } })
+							setTimeout(() => {
+								// Hide floating menu on blur, timeout so click registers first
+								if (floating_menu) floating_menu.style.display = 'none'
+							}, 100)
 						},
 						onUpdate: async ({ editor }) => {
-							const html = editor.getHTML()
-							save_edited_value({ id, value: { html } })
+							// Debounce saves to avoid constant re-renders while editing
+							clearTimeout(field_save_timeout)
+							field_save_timeout = setTimeout(async () => {
+								const json = editor.getJSON()
+								const html = renderToHTMLString({
+									extensions: tiptapExtensions,
+									content: json
+								})
+								const markdown = renderToMarkdown({
+									extensions: tiptapExtensions,
+									content: json
+								})
+								save_edited_value({ id, value: { html, markdown } })
+							}, 200)
 						}
 					})
 				],
@@ -322,6 +389,9 @@
 						label: element.innerText || '',
 						active: true
 					}
+					// Hide menus when opening modal
+					bubble_menu.style.display = 'none'
+					floating_menu.style.display = 'none'
 					editing_link = true
 				},
 				{ capture: true }
@@ -337,11 +407,21 @@
 					e.target.blur()
 				}
 			}
+			element.oninput = (e) => {
+				// Debounce saves to avoid constant re-renders while editing
+				clearTimeout(field_save_timeout)
+				field_save_timeout = setTimeout(() => {
+					save_edited_value({ id, value: e.target.innerText })
+				}, 200)
+			}
 			element.onblur = (e) => {
-				dispatch('unlock')
+				handle_unlock()
+				// Final save on blur
+				clearTimeout(field_save_timeout)
 				save_edited_value({ id, value: e.target.innerText })
 			}
 			element.onfocus = () => {
+				handle_lock()
 				dispatch('lock')
 			}
 			element.contentEditable = true
@@ -390,6 +470,22 @@
 				return
 			}
 
+			// Handle TipTap markdown links
+			if (link.dataset.tiptapLink === 'true') {
+				link.onclick = (e) => {
+					e.preventDefault()
+					current_link_value = {
+						url: link.href || '',
+						label: link.textContent || '',
+						active: true
+					}
+					bubble_menu.style.display = 'none'
+					floating_menu.style.display = 'none'
+					editing_link = true
+				}
+				return
+			}
+
 			link.onclick = (e) => {
 				e.preventDefault()
 			}
@@ -424,9 +520,12 @@
 
 			function openLinkInNewWindow(link) {
 				if (link.dataset.key || link.dataset.entry) return // is editable
-				link.addEventListener('click', () => {
-					window.open(link.href, '_blank')
-				})
+				if (!link.dataset.listenerAdded) {
+					link.addEventListener('click', () => {
+						window.open(link.href, '_blank')
+					})
+					link.dataset.listenerAdded = 'true'
+				}
 			}
 		})
 	}
@@ -485,6 +584,14 @@
 
 	function update_menu_positions() {
 		if (!node?.contentDocument || !floating_menu || !bubble_menu) return
+
+		// Hide menus if any modal is open
+		if (editing_link || editing_image || editing_video) {
+			bubble_menu.style.display = 'none'
+			floating_menu.style.display = 'none'
+			return
+		}
+
 		const iframe_rect = node.getBoundingClientRect()
 		const selection = node.contentDocument.getSelection()
 
@@ -492,25 +599,35 @@
 			const range = selection.getRangeAt(0)
 			const hasSelection = selection.toString().length > 0
 
-			// Bubble menu logic
+			// Bubble menu logic - only show in markdown fields
 			if (hasSelection) {
-				const rect = range.getBoundingClientRect()
-				bubble_menu.style.position = 'fixed'
-				bubble_menu.style.left = `${rect.left + iframe_rect.left}px`
-				bubble_menu.style.top = `${rect.bottom + iframe_rect.top + 10}px`
-				bubble_menu.style.display = 'flex'
+				// Check if selection is within a markdown field
+				const commonAncestor = range.commonAncestorContainer
+				const element = commonAncestor.nodeType === 3 ? commonAncestor.parentElement : commonAncestor
+				const markdownContainer = element?.closest('[data-markdown-id]')
+
+				if (markdownContainer) {
+					const rect = range.getBoundingClientRect()
+					bubble_menu.style.position = 'fixed'
+					bubble_menu.style.left = `${rect.left + iframe_rect.left}px`
+					bubble_menu.style.top = `${rect.bottom + iframe_rect.top + 10}px`
+					bubble_menu.style.display = 'flex'
+				} else {
+					bubble_menu.style.display = 'none'
+				}
 			} else {
 				bubble_menu.style.display = 'none'
 			}
 
-			// Floating menu logic
+			// Floating menu logic - only show in markdown fields
 			const startNode = range.startContainer
 			const blockElement = startNode.nodeType === 3 ? startNode.parentElement : startNode
+			const isInMarkdownField = blockElement?.closest('[data-markdown-id]')
 			const isTopLevelBlock = blockElement?.parentElement?.matches('.ProseMirror')
 			const isEmptyParagraph = blockElement?.textContent === ''
 			const isAtStart = range.startOffset === 0
 
-			if (isEmptyParagraph && isAtStart && isTopLevelBlock) {
+			if (isEmptyParagraph && isAtStart && isTopLevelBlock && isInMarkdownField) {
 				const rect = blockElement.getBoundingClientRect()
 				floating_menu.style.position = 'fixed'
 				floating_menu.style.left = `${rect.left + iframe_rect.left + 10}px`
@@ -565,7 +682,7 @@
 	}
 
 	$effect(() => {
-		if (setup_complete && component_data) {
+		if (setup_complete && component_data && !is_editing) {
 			send_component_to_iframe(generated_js, component_data)
 		}
 	})
@@ -615,9 +732,11 @@
 			entry={{
 				value: current_image_value
 			}}
-			onchange={(value) => {
-				// Only update local state, don't save yet
-				current_image_value = value
+			onchange={(changeData) => {
+				// Extract the actual value from the nested structure
+				const fieldKey = Object.keys(changeData)[0]
+				const newValue = changeData[fieldKey][0].value
+				current_image_value = newValue
 			}}
 		/>
 		<div class="flex justify-end gap-2 mt-2">
@@ -650,16 +769,18 @@
 			entry={{
 				value: current_link_value
 			}}
-			onchange={(value) => {
-				// Only update local state, don't save yet
-				current_link_value = value
+			onchange={(changeData) => {
+				// Extract the actual value from the nested structure
+				const fieldKey = Object.keys(changeData)[0]
+				const newValue = changeData[fieldKey][0].value
+				current_link_value = newValue
 			}}
 		/>
 		<div class="flex justify-end gap-2 mt-2">
 			<button
 				onclick={() => {
 					if (active_editor) {
-						// Handle TipTap editor links
+						// Handle TipTap editor links - just set the URL, TipTap handles the label
 						active_editor.chain().focus().setLink({ href: current_link_value.url }).run()
 					} else if (current_link_element && current_link_id) {
 						// Handle direct link editing
@@ -694,13 +815,13 @@
 </Dialog.Root>
 
 {#if image_editor_is_visible}
-	<button style:pointer-events={scrolling ? 'none' : 'all'} in:fade={{ duration: 100 }} class="primo-reset image-editor" bind:this={image_editor}>
+	<button style:pointer-events={scrolling ? 'none' : 'all'} in:fade={{ duration: 100 }} class="image-editor" bind:this={image_editor}>
 		<Icon icon="uil:image-upload" />
 	</button>
 {/if}
 
 {#if link_editor_is_visible}
-	<div in:fade={{ duration: 100 }} class="primo-reset link-editor" bind:this={link_editor}>
+	<div in:fade={{ duration: 100 }} class="primo-reset link-editor">
 		<button onclick={() => (link_editor_is_visible = false)}>
 			<Icon icon="ic:round-close" />
 		</button>
@@ -731,29 +852,104 @@
   </pre>
 {/if}
 
-<div class="menu floating-menu primo-reset" bind:this={floating_menu} style="display:none">
+<div class="menu floating-menu primo-reset" bind:this={floating_menu} style="display:{editing_link || editing_image || editing_video ? 'none' : 'none'}">
 	{#if active_editor}
 		<MarkdownButton
 			icon="fa-solid:heading"
-			onclick={(e) => {
-				e.target.blur()
+			onclick={() => {
+				floating_menu.style.display = 'none'
 				active_editor.chain().focus().toggleHeading({ level: 1 }).run()
 			}}
 		/>
-		<MarkdownButton icon="fa-solid:code" onclick={() => active_editor.chain().focus().toggleCodeBlock().run()} />
-		<MarkdownButton icon="fa-solid:quote-left" onclick={() => active_editor.chain().focus().toggleBlockquote().run()} />
-		<MarkdownButton icon="fa-solid:list" onclick={() => active_editor.chain().focus().toggleBulletList().run()} />
-		<MarkdownButton icon="fa-solid:list-ol" onclick={() => active_editor.chain().focus().toggleOrderedList().run()} />
-		<MarkdownButton icon="fa-solid:image" onclick={() => (editing_image = true)} />
-		<MarkdownButton icon="lucide:youtube" onclick={() => (editing_video = true)} />
+		<MarkdownButton
+			icon="fa-solid:code"
+			onclick={() => {
+				floating_menu.style.display = 'none'
+				active_editor.chain().focus().toggleCodeBlock().run()
+			}}
+		/>
+		<MarkdownButton
+			icon="fa-solid:quote-left"
+			onclick={() => {
+				floating_menu.style.display = 'none'
+				active_editor.chain().focus().toggleBlockquote().run()
+			}}
+		/>
+		<MarkdownButton
+			icon="fa-solid:list"
+			onclick={() => {
+				floating_menu.style.display = 'none'
+				active_editor.chain().focus().toggleBulletList().run()
+			}}
+		/>
+		<MarkdownButton
+			icon="fa-solid:list-ol"
+			onclick={() => {
+				floating_menu.style.display = 'none'
+				active_editor.chain().focus().toggleOrderedList().run()
+			}}
+		/>
+		<MarkdownButton
+			icon="fa-solid:image"
+			onclick={() => {
+				bubble_menu.style.display = 'none'
+				floating_menu.style.display = 'none'
+				editing_image = true
+			}}
+		/>
+		<MarkdownButton
+			icon="lucide:youtube"
+			onclick={() => {
+				bubble_menu.style.display = 'none'
+				floating_menu.style.display = 'none'
+				editing_video = true
+			}}
+		/>
 	{/if}
 </div>
-<div class="menu bubble-menu primo-reset" bind:this={bubble_menu} style="display:none">
+<div class="menu bubble-menu primo-reset" bind:this={bubble_menu} style="display:{editing_link || editing_image || editing_video ? 'none' : 'none'}">
 	{#if active_editor}
-		<MarkdownButton icon="fa-solid:link" onclick={() => (editing_link = true)} />
-		<MarkdownButton icon="fa-solid:bold" onclick={() => active_editor.chain().focus().toggleBold().run()} active={active_editor.isActive('bold')} />
-		<MarkdownButton icon="fa-solid:italic" onclick={() => active_editor.chain().focus().toggleItalic().run()} active={active_editor.isActive('italic')} />
-		<MarkdownButton icon="fa-solid:highlighter" onclick={() => active_editor.chain().focus().toggleHighlight().run()} active={active_editor.isActive('highlight')} />
+		<MarkdownButton
+			icon="fa-solid:link"
+			onclick={() => {
+				// Get selected text to pre-fill the link label
+				const selection = active_editor.view.state.selection
+				const selectedText = active_editor.view.state.doc.textBetween(selection.from, selection.to)
+				current_link_value = {
+					url: '',
+					label: selectedText || '',
+					active: true
+				}
+				// Hide menus when opening modal
+				bubble_menu.style.display = 'none'
+				floating_menu.style.display = 'none'
+				editing_link = true
+			}}
+		/>
+		<MarkdownButton
+			icon="fa-solid:bold"
+			onclick={() => {
+				active_editor.chain().focus().toggleBold().run()
+				update_formatting_state()
+			}}
+			active={formatting_state.bold}
+		/>
+		<MarkdownButton
+			icon="fa-solid:italic"
+			onclick={() => {
+				active_editor.chain().focus().toggleItalic().run()
+				update_formatting_state()
+			}}
+			active={formatting_state.italic}
+		/>
+		<MarkdownButton
+			icon="fa-solid:highlighter"
+			onclick={() => {
+				active_editor.chain().focus().toggleHighlight().run()
+				update_formatting_state()
+			}}
+			active={formatting_state.highlight}
+		/>
 	{/if}
 </div>
 
@@ -802,7 +998,7 @@
 		background: rgba(0, 0, 0, 0.8);
 		color: white;
 		border-bottom-right-radius: 4px;
-		z-index: 99;
+		z-index: 9;
 		transform-origin: top left;
 		display: flex;
 		justify-content: center;

@@ -15,8 +15,9 @@
 	import { getLanguage } from './extensions'
 	import highlight_active_line from './extensions/inspector'
 	import prettier from 'prettier'
-	import * as prettierPostcss from 'prettier/parser-postcss'
-	import * as prettierBabel from 'prettier/parser-babel'
+	import * as prettierPostcss from 'prettier/plugins/postcss'
+	import * as prettierBabel from 'prettier/plugins/babel'
+	import * as prettierEstree from 'prettier/plugins/estree'
 	import * as prettierSvelte from 'prettier-plugin-svelte'
 
 	const slowDebounce = createDebouncer(1000)
@@ -158,7 +159,6 @@
 						const position = Editor.state.selection.main.head
 						format_code(value, { mode, position }).then((res) => {
 							if (!res) return
-							dispatch('format')
 							const { formatted, cursorOffset } = res
 							Editor.dispatch({
 								changes: [
@@ -222,7 +222,7 @@
 				parser: mode,
 				bracketSameLine: true,
 				cursorOffset: position,
-				plugins: [prettierSvelte, prettierPostcss, prettierBabel]
+				plugins: [prettierSvelte, prettierPostcss, prettierBabel, prettierEstree]
 			})
 			console.log({ formatted })
 		} catch (e) {
