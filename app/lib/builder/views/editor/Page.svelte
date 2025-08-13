@@ -14,7 +14,7 @@
 	import { attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge'
 	import { beforeNavigate } from '$app/navigation'
 	import { Pages, Sites, SiteSymbols, PageSections, PageTypes, PageSectionEntries, manager } from '$lib/pocketbase/collections'
-	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
+	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
 	import hotkey_events from '$lib/builder/stores/app/hotkey_events'
 
 	let { page }: { page: ObjectOf<typeof Pages> } = $props()

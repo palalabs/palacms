@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte'
 	import { fade } from 'svelte/transition'
 	import UI from '../../../ui'
 	import Icon from '@iconify/svelte'
@@ -7,15 +6,13 @@
 	import { Page } from '$lib/common/models/Page'
 	import { page } from '$app/state'
 	import { Sites, PageTypes, Pages } from '$lib/pocketbase/collections'
-	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
+	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
 
-	let { parent }: { parent?: ObjectOf<typeof Pages> } = $props()
+	let { parent, oncreate }: { parent?: ObjectOf<typeof Pages>; oncreate: (new_page: Omit<Page, 'id' | 'parent' | 'site'>) => void | Promise<void> } = $props()
 
 	const host = $derived(page.url.host)
 	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
 	const page_types = $derived(site?.page_types())
-
-	const dispatch = createEventDispatcher()
 
 	// set page type equal to the last type used under this parent
 	const default_page_type_id = $derived(parent?.children()?.[0]?.page_type ?? site?.page_types()?.[0]?.id ?? '')
@@ -42,9 +39,9 @@
 </script>
 
 <form
-	onsubmit={(e) => {
+	onsubmit={async (e) => {
 		e.preventDefault()
-		dispatch('create', new_page)
+		await oncreate(new_page)
 	}}
 	in:fade={{ duration: 100 }}
 	class:has-page-types={!!page_types?.length}

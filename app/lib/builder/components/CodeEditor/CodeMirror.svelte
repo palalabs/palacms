@@ -16,7 +16,7 @@
 	import { getLanguage } from './extensions'
 	import highlight_active_line from './extensions/inspector'
 	import { emmetExtension, expandAbbreviation } from './extensions/emmet'
-	import * as prettier from 'prettier/standalone'
+	import prettier from 'prettier'
 	import * as prettierPostcss from 'prettier/plugins/postcss'
 	import * as prettierBabel from 'prettier/plugins/babel'
 	import * as prettierEstree from 'prettier/plugins/estree'
