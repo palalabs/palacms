@@ -22,7 +22,7 @@
 
 	let head = $state('')
 	let foot = $state('')
-	
+
 	$effect.pre(() => {
 		if (site) {
 			head = site.head
@@ -122,6 +122,7 @@
 							SiteFields.update(id, data)
 						}}
 						ondelete={(field_id) => {
+							has_unsaved_changes = true
 							// PocketBase cascade deletion will automatically clean up all associated entries
 							SiteFields.delete(field_id)
 						}}
@@ -137,7 +138,7 @@
 						<Pane>
 							<div class="container" style="margin-bottom: 1rem">
 								<span class="primo--field-label">Head</span>
-								<CodeEditor mode="html" bind:value={head} on:save={saveComponent} oninput={() => has_unsaved_changes = true} />
+								<CodeEditor mode="html" bind:value={head} on:save={saveComponent} oninput={() => (has_unsaved_changes = true)} />
 							</div>
 						</Pane>
 						<PaneResizer class="PaneResizer-secondary">
@@ -148,7 +149,7 @@
 						<Pane>
 							<div class="container">
 								<span class="primo--field-label">Foot</span>
-								<CodeEditor mode="html" bind:value={foot} on:save={saveComponent} oninput={() => has_unsaved_changes = true} />
+								<CodeEditor mode="html" bind:value={foot} on:save={saveComponent} oninput={() => (has_unsaved_changes = true)} />
 							</div>
 						</Pane>
 					</PaneGroup>
