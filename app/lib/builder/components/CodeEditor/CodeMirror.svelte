@@ -8,7 +8,7 @@
 	import { highlightedElement } from '../../stores/app/misc'
 	import { basicSetup } from 'codemirror'
 	import { EditorView, keymap } from '@codemirror/view'
-	import { standardKeymap, indentWithTab, insertTab } from '@codemirror/commands'
+	import { standardKeymap, indentWithTab } from '@codemirror/commands'
 	import { EditorState, Compartment } from '@codemirror/state'
 	import { autocompletion } from '@codemirror/autocomplete'
 	import { oneDarkTheme, ThemeHighlighting } from './theme'
@@ -98,10 +98,14 @@
 			ThemeHighlighting,
 			keymap.of([
 				...standardKeymap,
-				{
-					key: 'Tab',
-					run: expandAbbreviation
-				},
+				...(mode !== 'javascript'
+					? [
+							{
+								key: 'Tab',
+								run: expandAbbreviation
+							}
+						]
+					: []),
 				indentWithTab,
 				{
 					key: 'Escape',
