@@ -8,12 +8,14 @@
 	import { highlightedElement } from '../../stores/app/misc'
 	import { basicSetup } from 'codemirror'
 	import { EditorView, keymap } from '@codemirror/view'
-	import { standardKeymap, indentWithTab } from '@codemirror/commands'
+	import { standardKeymap, indentWithTab, insertTab } from '@codemirror/commands'
 	import { EditorState, Compartment } from '@codemirror/state'
+	import { autocompletion } from '@codemirror/autocomplete'
 	import { oneDarkTheme, ThemeHighlighting } from './theme'
 	import { svelteCompletions, cssCompletions } from './extensions/autocomplete'
 	import { getLanguage } from './extensions'
 	import highlight_active_line from './extensions/inspector'
+	import { emmetExtension, expandAbbreviation } from './extensions/emmet'
 	import prettier from 'prettier'
 	import * as prettierPostcss from 'prettier/plugins/postcss'
 	import * as prettierBabel from 'prettier/plugins/babel'
@@ -35,7 +37,7 @@
 	 */
 
 	/** @type {Props} */
-	let { data = {}, prefix = '', value = $bindable(''), mode = 'html', style = '', debounce = false, selection = $bindable(0), disabled = false } = $props()
+	let { data = {}, completions, prefix = '', value = $bindable(''), mode = 'html', style = '', debounce = false, selection = $bindable(0), disabled = false } = $props()
 
 	const dispatch = createEventDispatcher()
 
@@ -81,6 +83,7 @@
 	const language = getLanguage(mode)
 
 	const css_completions_compartment = new Compartment()
+	const svelte_completions_compartment = new Compartment()
 	let css_variables = $state([])
 
 	const editor_state = EditorState.create({
@@ -95,6 +98,10 @@
 			ThemeHighlighting,
 			keymap.of([
 				...standardKeymap,
+				{
+					key: 'Tab',
+					run: expandAbbreviation
+				},
 				indentWithTab,
 				{
 					key: 'Escape',
@@ -192,8 +199,9 @@
 				selection = view.state.selection.main.from
 			}),
 			basicSetup,
-			svelteCompletions(data),
-			...(mode === 'css' ? [css_completions_compartment.of(cssCompletions(css_variables))] : [])
+			...(mode === 'html' ? [svelte_completions_compartment.of(autocompletion({ override: [svelteCompletions(completions)] }))] : []),
+			...(mode === 'css' ? [css_completions_compartment.of(cssCompletions(css_variables))] : []),
+			emmetExtension(mode === 'css' ? 'css' : 'html')
 		]
 	})
 
@@ -202,6 +210,14 @@
 			Editor &&
 			Editor.dispatch({
 				effects: css_completions_compartment.reconfigure(cssCompletions(css_variables))
+			})
+	})
+
+	$effect(() => {
+		mode === 'html' &&
+			Editor &&
+			Editor.dispatch({
+				effects: svelte_completions_compartment.reconfigure(autocompletion({ override: [svelteCompletions(completions)] }))
 			})
 	})
 
