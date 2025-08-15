@@ -1,8 +1,57 @@
-# PalaCMS V3 (Work in Progress)
+# PalaCMS (formerly Primo) V3
 
-> PalaCMS V3 is currently in active development. We're working toward a stable beta release with significant improvements over V2. The codebase is functional but features are still being implemented and refined.
+**The modern CMS that gives developers the control they need and content editors the simplicity they've always wanted.**
 
-## ✨ V3 Features & Improvements
+PalaCMS is an open-source content management system that lets you build beautiful, custom websites with a visual editor while maintaining direct control over your code and hosting.
+
+> **🚧 V3 Status**: Currently in active development. The codebase is functional but we're working toward a stable beta release with significant improvements over V2.
+
+## ✨ Why PalaCMS?
+
+### 🎨 **Visual + Code**
+- Build visually with drag-and-drop blocks
+- Direct access to component HTML, CSS, and JavaScript
+- Works with any CSS framework (Tailwind, Bootstrap, etc.)
+
+### ⚡ **Developer-Friendly**
+- Reusable component library
+- Custom page types and dynamic fields
+- Real-time collaboration 
+
+### 🏠 **Self-Hosted Freedom**
+- Run on your own infrastructure with PocketBase
+- No vendor lock-in or monthly fees
+- Your data stays under your control
+
+## 🎯 Perfect For
+
+- **Agencies** building custom sites for clients
+- **Developers** who want visual editing without sacrificing control  
+- **Teams** collaborating on content and design
+- **Anyone** tired of WordPress limitations or expensive SaaS platforms
+
+## 🚀 Quick Start
+
+### Get PalaCMS running in literally 1 minute
+
+1. **Fork this repository** to your GitHub account
+
+2. **Deploy to Railway**
+   - Go to [Railway](https://railway.app)
+   - Connect your GitHub account
+   - Deploy your forked repository
+   - Railway will automatically build and deploy PalaCMS
+
+3. **Set up your database**
+   - Go to your Railway URL + `/_` (e.g. `https://your-app.railway.app/_`)
+   - Create your PocketBase superuser account
+
+4. **Create your first site**
+   - Go to your Railway URL root (e.g. `https://your-app.railway.app`)
+   - Create your site and start building!
+   - Your site will be served from the root domain, CMS accessible at `/admin`
+
+## 🔥 V3 Features & Improvements
 
 ### New in V3
 - **Self-hosting with PocketBase** - Run PalaCMS on your own infrastructure with PocketBase as the backend
@@ -11,7 +60,6 @@
 - **Block/Starter Library** - Reusable components and starter templates
 - **Design System Editor** - Built-in tools for managing your site's design system
 - **Real-time Collaboration** - Multiple users can edit simultaneously (in development)
-- **10x Faster Builds** - Incremental page generation instead of rebuilding everything
 
 ### Enhanced User Experience
 - **Conditional Fields** - Show/hide fields based on other field values
@@ -22,6 +70,25 @@
 - **Refined Block Editor** - Cleaner separation between code and content
 
 ### Coming in Beta
+- **Framework Integration** - Embed PalaCMS content in your existing Next.js, SvelteKit, or other apps
+- **AI Block Generation** - Generate blocks with AI assistance
+- **Local Development Tools** - Full local development environment and CLI tools
 - **Marketplace Integration** - Browse and install community blocks and starters
-- **Plugin API** - Easily create custom plugins to extend Pala's functionality.
-- **Enhanced Deployment** - Streamlined publishing workflow
+- **Plugin API** - Extend functionality with custom plugins
+
+## 📚 Documentation
+
+- **Getting Started**: [Coming Soon]
+- **API Reference**: [Coming Soon]
+- **Developer Guide**: See [CONTRIBUTING.md](CONTRIBUTING.md) for architecture and development setup
+- **Examples**: Check out the `/examples` directory
+
+## 🆘 Support & Community
+
+- **Issues**: [GitHub Issues](https://github.com/palalabs/palacms/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/palalabs/palacms/discussions)
+- **Website**: [palacms.com](https://palacms.com)
+
+---
+
+**Ready to take control of your web projects?** Star the repo and try PalaCMS V3 today!
