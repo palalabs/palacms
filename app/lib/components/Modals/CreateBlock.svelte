@@ -11,19 +11,23 @@
 	import { getContent } from '$lib/pocketbase/content'
 	import { locale } from '$lib/builder/stores/app/misc.js'
 	import { page } from '$app/state'
+	import { browser } from '$app/environment'
+	import _ from 'lodash-es'
 
 	let {
 		symbol: existing_symbol,
 		head = '',
 		append = '',
 		onsubmit,
-		symbol_type = 'site'
+		symbol_type = 'site',
+		has_unsaved_changes = $bindable(false)
 	}: {
 		symbol?: any // Can be SiteSymbol or LibrarySymbol data
 		head?: string
 		append?: string
 		onsubmit: (data: any) => void
 		symbol_type?: 'site' | 'library'
+		has_unsaved_changes?: boolean
 	} = $props()
 
 	// Choose the right collections based on symbol type
@@ -68,6 +72,33 @@
 	let html = $state(symbol?.html ?? '')
 	let css = $state(symbol?.css ?? '')
 	let js = $state(symbol?.js ?? '')
+
+	// Store initial data for comparison
+	const initial_code = { html: symbol?.html, css: symbol?.css, js: symbol?.js }
+	const initial_data = _.cloneDeep(component_data)
+
+	// Compare current state to initial data
+	$effect(() => {
+		const code_changed = html !== initial_code.html || css !== initial_code.css || js !== initial_code.js
+		const data_changed = !_.isEqual(initial_data, component_data)
+		has_unsaved_changes = code_changed || data_changed
+	})
+
+	// Add beforeunload listener to warn about unsaved changes
+	$effect(() => {
+		if (!browser) return
+
+		const handleBeforeUnload = (e) => {
+			if (has_unsaved_changes) {
+				e.preventDefault()
+				e.returnValue = ''
+				return ''
+			}
+		}
+
+		window.addEventListener('beforeunload', handleBeforeUnload)
+		return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+	})
 
 	// Create code object for ComponentPreview)
 	let code = $derived({
@@ -186,6 +217,7 @@
 						})
 					}}
 					oninput={(values) => {
+						has_unsaved_changes = true
 						for (const [key, value] of Object.entries(values)) {
 							const field = fields.find((field) => field.key === key)
 							if (!field) {

@@ -15,6 +15,7 @@
 	import { beforeNavigate } from '$app/navigation'
 	import { Pages, Sites, SiteSymbols, PageSections, PageTypes, PageSectionEntries, manager } from '$lib/pocketbase/collections'
 	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
+	import hotkey_events from '$lib/builder/stores/app/hotkey_events'
 
 	let { page }: { page: ObjectOf<typeof Pages> } = $props()
 
@@ -26,7 +27,6 @@
 	const header_sections = $derived(page_type_sections.filter((s) => s.zone === 'header'))
 	const footer_sections = $derived(page_type_sections.filter((s) => s.zone === 'footer'))
 	const page_type_body_sections = $derived(page_type_sections.filter((s) => s.zone === 'body'))
-
 
 	const sections = $derived(page.sections() ?? [])
 
@@ -61,7 +61,6 @@
 		}
 	}
 
-
 	async function add_section_to_page({ symbol, position }) {
 		// Check if indices need repair
 		const has_incorrect_indices = sections.some((section, i) => section.index !== i)
@@ -81,7 +80,7 @@
 
 		// Copy only root-level symbol entries to the new section instance
 		// Nested entries will be created on-demand by FieldsContent
-		const rootEntries = symbol.entries()?.filter(e => !e.parent) ?? []
+		const rootEntries = symbol.entries()?.filter((e) => !e.parent) ?? []
 		for (const entry of rootEntries) {
 			PageSectionEntries.create({
 				section: new_section.id,
@@ -241,7 +240,19 @@
 		editing_section_tab = tab
 	}
 
+	// Listen for Command-E hotkey to open section editor
+	hotkey_events.on('e', () => {
+		if (hovered_section && showing_block_toolbar) {
+			lock_block(hovered_section.id)
+			editing_section = true
+			editing_section_tab = 'code'
+		}
+	})
+
 	let moving = $state(false) // workaround to prevent block toolbar from showing when moving blocks
+
+	// Handle unsaved changes for section editor
+	let section_has_unsaved_changes = $state(false)
 
 	let dragging = $state({
 		id: null,
@@ -454,11 +465,7 @@
 	let hovered_section_id: string | null = $state(null)
 	let hovered_section = $derived(sections.find((s) => s.id === hovered_section_id))
 	// Check if hovered section is a page type section (header/footer)
-	let is_page_type_section = $derived(
-		hovered_section_id && 
-		(header_sections.some(s => s.id === hovered_section_id) || 
-		 footer_sections.some(s => s.id === hovered_section_id))
-	)
+	let is_page_type_section = $derived(hovered_section_id && (header_sections.some((s) => s.id === hovered_section_id) || footer_sections.some((s) => s.id === hovered_section_id)))
 	let editing_section = $state(false)
 </script>
 
@@ -467,12 +474,22 @@
 		bind:open={editing_section}
 		onOpenChange={(open) => {
 			if (!open) {
-				manager.discard()
+				// Check for unsaved changes before closing
+				if (section_has_unsaved_changes) {
+					if (!confirm('You have unsaved changes. Are you sure you want to close without saving?')) {
+						// Prevent closing by reopening the dialog
+						editing_section = true
+						return
+					}
+					// User confirmed, discard changes
+					manager.discard()
+				}
 			}
 		}}
 	>
 		<Dialog.Content class="z-[999] max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4">
 			<SectionEditor
+				bind:has_unsaved_changes={section_has_unsaved_changes}
 				component={hovered_section}
 				tab={editing_section_tab}
 				header={{
@@ -609,7 +626,6 @@
 
 	<!-- Page Content Area -->
 	<section class="page-content-zone flex-1 flex flex-col">
-
 		<!-- Page's Own Sections -->
 		{#each sections.filter((s) => SiteSymbols.one(s.symbol)) as section (section.id)}
 			{@const block = SiteSymbols.one(section.symbol)!}

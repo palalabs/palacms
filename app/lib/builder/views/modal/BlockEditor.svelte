@@ -3,6 +3,7 @@
 	const orientation = writable('horizontal')
 </script>
 
+<!-- svelte-ignore state_referenced_locally -->
 <script lang="ts">
 	import * as Dialog from '$lib/components/ui/dialog'
 	import LargeSwitch from '$lib/builder/ui/LargeSwitch.svelte'
@@ -16,10 +17,13 @@
 	import { manager, Sites, SiteSymbolEntries, SiteSymbolFields, SiteSymbols } from '$lib/pocketbase/collections'
 	import { page } from '$app/state'
 	import { getContent } from '$lib/pocketbase/content'
+	import { browser } from '$app/environment'
+	import _ from 'lodash-es'
 
 	let {
 		block: existing_block,
 		tab = $bindable('content'),
+		has_unsaved_changes = $bindable(false),
 		header = {
 			label: 'Create Component',
 			icon: 'fas fa-code',
@@ -31,7 +35,7 @@
 				}
 			}
 		}
-	}: { block?: ObjectOf<typeof SiteSymbols>; tab?: string; header?: any } = $props()
+	}: { block?: ObjectOf<typeof SiteSymbols>; tab?: string; has_unsaved_changes?: boolean; header?: any } = $props()
 
 	const host = $derived(page.url.host)
 	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
@@ -47,22 +51,19 @@
 	const entries = $derived(block.entries())
 	let component_data = $derived(fields && entries && (getContent(block, fields, entries)[$locale] ?? {}))
 
-	let loading = false
+	let loading = $state(false)
 
-	hotkey_events.on('e', toggle_tab)
+	// Set up hotkey listeners with cleanup
+	$effect(() => {
+		const unsubscribe_e = hotkey_events.on('e', toggle_tab)
+		const unsubscribe_save = hotkey_events.on('save', save_component)
 
-	// detect hotkeys from within inputs
-	function handle_hotkey(e) {
-		const { metaKey, key } = e
-		if (metaKey && key === 's') {
-			e.preventDefault()
-			save_component()
+		// Cleanup on unmount
+		return () => {
+			unsubscribe_e()
+			unsubscribe_save()
 		}
-		if (metaKey && key === 'e') {
-			e.preventDefault()
-			toggle_tab()
-		}
-	}
+	})
 
 	function toggle_tab() {
 		tab = tab === 'code' ? 'content' : 'code'
@@ -70,7 +71,9 @@
 
 	async function save_component() {
 		if (!$has_error) {
+			loading = true
 			await manager.commit()
+			loading = false
 			header.button.onclick(block)
 		}
 	}
@@ -78,6 +81,33 @@
 	let html = $state(block.html)
 	let css = $state(block.css)
 	let js = $state(block.js)
+
+	// Store initial data for comparison
+	const initial_code = { html: block.html, css: block.css, js: block.js }
+	const initial_data = _.cloneDeep(component_data)
+
+	// Compare current state to initial data
+	$effect(() => {
+		const code_changed = html !== initial_code.html || css !== initial_code.css || js !== initial_code.js
+		const data_changed = !_.isEqual(initial_data, component_data)
+		has_unsaved_changes = code_changed || data_changed
+	})
+
+	// Add beforeunload listener to warn about unsaved changes
+	$effect(() => {
+		if (!browser) return
+
+		const handleBeforeUnload = (e) => {
+			if (has_unsaved_changes) {
+				e.preventDefault()
+				e.returnValue = ''
+				return ''
+			}
+		}
+
+		window.addEventListener('beforeunload', handleBeforeUnload)
+		return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+	})
 
 	// Create code object for ComponentPreview)
 	let code = $derived({
@@ -92,8 +122,10 @@
 	title={block.name || 'Block'}
 	button={{
 		...header.button,
+		hint: '⌘S',
+		loading,
 		onclick: save_component,
-		disabled: $has_error
+		disabled: $has_error || loading
 	}}
 >
 	<LargeSwitch bind:active_tab_id={tab} />

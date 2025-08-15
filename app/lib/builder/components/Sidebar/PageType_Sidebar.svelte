@@ -124,6 +124,11 @@
 	let adding_block = $state(false)
 	let static_transition_dialog = $state(false)
 	let pending_symbol_toggle = $state<{ relation: any; symbol: any } | null>(null)
+	
+	// Handle unsaved changes for block editors
+	let editing_block_has_unsaved_changes = $state(false)
+	let creating_block_has_unsaved_changes = $state(false)
+	
 	let commit_task = $state<NodeJS.Timeout>()
 </script>
 
@@ -131,13 +136,23 @@
 	bind:open={editing_block}
 	onOpenChange={(open) => {
 		if (!open) {
-			manager.discard()
+			// Check for unsaved changes before closing
+			if (editing_block_has_unsaved_changes) {
+				if (!confirm('You have unsaved changes. Are you sure you want to close without saving?')) {
+					// Prevent closing by reopening the dialog
+					editing_block = true
+					return
+				}
+				// User confirmed, discard changes
+				manager.discard()
+			}
 		}
 	}}
 >
 	<Dialog.Content class="z-[999] max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4">
 		<BlockEditor
 			block={active_block}
+			bind:has_unsaved_changes={editing_block_has_unsaved_changes}
 			header={{
 				title: `Edit ${active_block?.title || 'Block'}`,
 				button: {
@@ -156,12 +171,22 @@
 	bind:open={creating_block}
 	onOpenChange={(open) => {
 		if (!open) {
-			manager.discard()
+			// Check for unsaved changes before closing
+			if (creating_block_has_unsaved_changes) {
+				if (!confirm('You have unsaved changes. Are you sure you want to close without saving?')) {
+					// Prevent closing by reopening the dialog
+					creating_block = true
+					return
+				}
+				// User confirmed, discard changes
+				manager.discard()
+			}
 		}
 	}}
 >
 	<Dialog.Content class="z-[999] max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4">
 		<BlockEditor
+			bind:has_unsaved_changes={creating_block_has_unsaved_changes}
 			header={{
 				button: {
 					label: 'Create Block',
