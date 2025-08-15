@@ -67,6 +67,7 @@
 	let customAnchor = $state<HTMLElement>(null!)
 
 	let editing_site = $state(false)
+	let site_has_unsaved_changes = $state(false)
 	let editing_pages = $state(false)
 	let editing_page_types = $state(false)
 	let editing_collaborators = $state(false)
@@ -103,12 +104,18 @@
 	bind:open={editing_site}
 	onOpenChange={(open) => {
 		if (!open) {
+			if (site_has_unsaved_changes) {
+				if (!confirm('You have unsaved changes. Are you sure you want to close without saving?')) {
+					editing_site = true
+					return
+				}
+			}
 			manager.discard()
 		}
 	}}
 >
 	<Dialog.Content class="z-[999] max-w-[1600px] h-full max-h-[100vh] flex flex-col p-4">
-		<SiteEditor onClose={() => (editing_site = false)} />
+		<SiteEditor onClose={() => (editing_site = false)} bind:has_unsaved_changes={site_has_unsaved_changes} />
 	</Dialog.Content>
 </Dialog.Root>
 

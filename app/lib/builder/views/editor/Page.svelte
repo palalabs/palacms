@@ -271,7 +271,7 @@
 
 	// Listen for Command-E hotkey to open section editor
 	hotkey_events.on('e', () => {
-		if (hovered_section) {
+		if (hovered_section && showing_block_toolbar) {
 			lock_block(hovered_section.id)
 			editing_section = true
 			editing_section_tab = 'code'
