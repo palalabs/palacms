@@ -6,16 +6,8 @@
 const sendInvitation = (e) => {
 	const { meta } = e.app.settings()
 	const token = e.record.newPasswordResetToken()
-	
-	// Look up the site assignment to get the site name
-	const userId = e.record.id
-	const assignments = $app.findRecordsByFilter('site_role_assignments', `user = {:userId}`, 'created desc', 1, 0, { userId })
-	let siteName = meta.appName
-	if (assignments.length > 0) {
-		const site = $app.findRecordById('sites', assignments[0].get('site'))
-		siteName = site.get('name')
-	}
-	
+	const siteName = meta.appName
+
 	const message = new MailerMessage({
 		from: {
 			address: meta.senderAddress,
