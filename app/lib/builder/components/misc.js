@@ -109,11 +109,11 @@ export const component_iframe_srcdoc = ({ head = '', foot = '' }) => {
               if (c) unmount(c)
               try {
                 c = mount(App, {
-                  target: document.querySelector('#page'),
+                  target: document.querySelector('body'),
                   props
                 })
               } catch(e) {
-                document.querySelector('#page').innerHTML = ''
+                document.querySelector('body').innerHTML = ''
                 console.error(e.toString())
               }
             })
@@ -121,7 +121,7 @@ export const component_iframe_srcdoc = ({ head = '', foot = '' }) => {
         </script>
         ${head}
       </head>
-      <body id="page" style="margin:0;overflow:hidden;">
+      <body style="margin:0;overflow:hidden;">
         ${foot}
         <style>
           [contenteditable="true"] { outline: 0 !important; }
