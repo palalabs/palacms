@@ -46,15 +46,16 @@ palacms/
 
 ### Prerequisites
 
-- Node.js 18 or higher
-- npm or pnpm
+- Node.js higher than v18
+- npm (pnpm is not currently supported)
 - Git
+- devenv or Dev Container compatible development environment 
 
 ### Getting Started
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/palalabs/palacms.git
+   git clone https://github.com/palacms/palacms.git
    cd palacms
    ```
 
@@ -72,16 +73,13 @@ palacms/
 4. **Access the application**
    - Main app: http://localhost:5173
    - PocketBase Admin: http://localhost:8090/_/
+   - Built app: http://localhost:8090
 
 ### Available Scripts
 
 - `npm run dev` - Start development server with devenv
 - `npm run build` - Build for production (with increased memory limit)
 - `npm run preview` - Preview production build
-- `npm run test` - Run Playwright tests
-- `npm run check` - Type checking with svelte-check
-- `npm run lint` - Check code formatting with Prettier
-- `npm run format` - Format code with Prettier
 
 ## 📝 Core Concepts
 
@@ -154,31 +152,6 @@ await manager.commit()
 - Follow existing color and spacing patterns
 - Use CSS custom properties for theme values
 
-## 🧪 Testing
-
-### Running Tests
-
-```bash
-# Run all tests
-npm run test
-
-# Run specific test file
-npm run test tests/e2e/[test-name].spec.ts
-
-# Run tests in headed mode (see browser)
-npm run test -- --headed
-
-# Debug mode
-npm run test -- --debug
-```
-
-### Writing Tests
-
-- E2E tests go in `tests/e2e/`
-- Test user workflows, not implementation details
-- Include both happy path and error scenarios
-- Use Page Object Model for complex workflows
-
 ## 🐛 Debugging & Troubleshooting
 
 ### Common Issues
@@ -231,15 +204,14 @@ npm run preview
 
 ### Environment Setup
 
-The app expects these environment variables:
+The app uses these environment variables:
 
-```bash
-# Development (automatic)
-POCKETBASE_URL=http://localhost:8090
 
-# Production
+# Production (optional - defaults to same host)
 POCKETBASE_URL=https://your-pocketbase-instance.com
 ```
+
+Note: Setting `POCKETBASE_URL` is primarily for development or when PocketBase is hosted separately from the SvelteKit app. For production deployments, see the [PocketBase deployment documentation](https://pocketbase.io/docs/going-to-production/).
 
 ### Hosting Options
 

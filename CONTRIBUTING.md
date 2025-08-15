@@ -57,11 +57,6 @@ If you've received approval to proceed:
 3. **Follow code style**
    - Run `npm run format` before committing
    - Follow existing patterns in the codebase
-4. **Test your changes**
-   ```bash
-   npm run lint
-   npm run test
-   ```
 
 ### Step 3: Submit PR
 

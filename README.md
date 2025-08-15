@@ -79,16 +79,10 @@ PalaCMS is an open-source content management system that lets you build beautifu
 ## 📚 Documentation
 
 - **Getting Started**: [Coming Soon]
-- **API Reference**: [Coming Soon]
-- **Developer Guide**: See [CONTRIBUTING.md](CONTRIBUTING.md) for architecture and development setup
-- **Examples**: Check out the `/examples` directory
+- **Developer Guide**: See [DEVELOPERS.md](DEVELOPERS.md) for architecture and development setup
 
 ## 🆘 Support & Community
 
-- **Issues**: [GitHub Issues](https://github.com/palalabs/palacms/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/palalabs/palacms/discussions)
+- **Issues**: [GitHub Issues](https://github.com/palacms/palacms/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/palacms/palacms/discussions)
 - **Website**: [palacms.com](https://palacms.com)
-
----
-
-**Ready to take control of your web projects?** Star the repo and try PalaCMS V3 today!
