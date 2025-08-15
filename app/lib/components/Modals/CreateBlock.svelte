@@ -12,7 +12,6 @@
 	import { locale } from '$lib/builder/stores/app/misc.js'
 	import { page } from '$app/state'
 	import { browser } from '$app/environment'
-	import _ from 'lodash-es'
 
 	let {
 		symbol: existing_symbol,
