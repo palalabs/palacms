@@ -16,7 +16,7 @@ const Completion_Label = (value) => {
 function svelteCompletions(completions) {
   // Return an autocompletion source function
   return (context) => {
-    const word = context.matchBefore(/\{[^}]*/)
+    const word = context.matchBefore(/\{[a-zA-Z0-9_]*/)
     if (!word || !completions || completions.length === 0) return null
     
     // For any match starting with {
