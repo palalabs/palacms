@@ -24,6 +24,7 @@
 	import { current_user } from '$lib/pocketbase/user.js'
 	import { useImportSiteSymbol } from '$lib/ImportSymbol.svelte.js'
 	import { tick } from 'svelte'
+	import { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte.js'
 
 	const host = $derived(page.url.host)
 	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
@@ -73,7 +74,7 @@
 	}
 
 	let active_block_id = $state(null)
-	let active_block = $state(null)
+	let active_block = $state<ObjectOf<typeof SiteSymbols>>()
 
 	function edit_block(block, block_id) {
 		active_block = block
@@ -124,7 +125,7 @@
 	// Handle unsaved changes for block editors
 	let editing_block_has_unsaved_changes = $state(false)
 	let creating_block_has_unsaved_changes = $state(false)
-	
+
 	let commit_task = $state<NodeJS.Timeout>()
 </script>
 
@@ -150,7 +151,7 @@
 			block={active_block}
 			bind:has_unsaved_changes={editing_block_has_unsaved_changes}
 			header={{
-				title: `Edit ${active_block?.title || 'Block'}`,
+				title: `Edit ${active_block?.name || 'Block'}`,
 				button: {
 					label: 'Save',
 					onclick: () => {

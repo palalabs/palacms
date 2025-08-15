@@ -92,8 +92,6 @@
 			: []
 	)
 
-	let loading = $state(false)
-
 	// Set up hotkey listeners with cleanup
 	$effect.pre(() => {
 		const unsubscribe_e = hotkey_events.on('e', toggle_tab)
@@ -121,7 +119,7 @@
 
 		if (!$has_error && symbol) {
 			loading = true
-			
+
 			// Copy entries for newly created fields to the symbol
 			if (newly_created_fields.size > 0 && entries) {
 				for (const fieldId of newly_created_fields) {
