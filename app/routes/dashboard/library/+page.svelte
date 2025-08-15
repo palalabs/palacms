@@ -19,8 +19,9 @@
 	import { useSidebar } from '$lib/components/ui/sidebar'
 	import { LibrarySymbolGroups, LibrarySymbols, LibrarySymbolFields, LibrarySymbolEntries, manager, SiteSymbols } from '$lib/pocketbase/collections'
 	import type { LibrarySymbol } from '$lib/common/models/LibrarySymbol'
-	import { exportSymbol, importLibrarySymbol } from '$lib/builder/utils/symbolImportExport'
-	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping.svelte'
+	import type { ObjectOf } from '$lib/pocketbase/CollectionMapping'
+	import { useImportLibrarySymbol } from '$lib/ImportSymbol.svelte'
+	import { tick } from 'svelte'
 
 	const active_symbol_group_id = $derived(page.url.searchParams.get('group'))
 	const active_symbol_group = $derived(active_symbol_group_id ? LibrarySymbolGroups.one(active_symbol_group_id) : undefined)
@@ -43,7 +44,12 @@
 		creating_block = true
 	}
 
-	async function upload_block_file(file) {
+	let file = $state<File>()
+	const importLibrarySymbol = $derived(useImportLibrarySymbol(file, active_symbol_group_id ?? undefined))
+	async function upload_block_file(newFile) {
+		file = newFile
+		await tick()
+
 		if (!file) return
 		if (!active_symbol_group_id) {
 			console.error('No active symbol group selected')
@@ -51,13 +57,10 @@
 		}
 
 		try {
-			await importLibrarySymbol(file, active_symbol_group_id, {
-				LibrarySymbols,
-				LibrarySymbolFields,
-				LibrarySymbolEntries
-			})
+			await importLibrarySymbol.run()
 			upload_dialog_open = false
 			upload_file_invalid = false
+			file = undefined
 		} catch (error) {
 			console.error('Failed to import symbol:', error)
 
@@ -67,6 +70,7 @@
 			}
 
 			upload_file_invalid = true
+			file = undefined
 		}
 	}
 

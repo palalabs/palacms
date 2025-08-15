@@ -19,10 +19,11 @@
 	import { Sites, PageTypes, SiteSymbols, PageTypeSymbols, SiteSymbolFields, SiteSymbolEntries, PageTypeFields, PageTypeEntries, manager } from '$lib/pocketbase/collections'
 	import { site_html } from '$lib/builder/stores/app/page.js'
 	import DropZone from '$lib/components/DropZone.svelte'
-	import { exportSymbol, importSiteSymbol } from '$lib/builder/utils/symbolImportExport'
 	import { Button } from '$lib/components/ui/button'
 	import { setFieldEntries } from '../Fields/FieldsContent.svelte'
 	import { current_user } from '$lib/pocketbase/user.js'
+	import { useImportSiteSymbol } from '$lib/ImportSymbol.svelte.js'
+	import { tick } from 'svelte'
 
 	const host = $derived(page.url.host)
 	const site = $derived(Sites.list({ filter: `host = "${host}"` })?.[0])
@@ -49,31 +50,26 @@
 	let upload_dialog_open = $state(false)
 	let upload_file_invalid = $state(false)
 
-	async function upload_block(file: File) {
-		if (!file || !site) return
+	let file = $state<File>()
+	const importSiteSymbol = $derived(useImportSiteSymbol(file, site?.id))
+	async function upload_block(newFile: File) {
+		file = newFile
+		await tick()
 
+		if (!file || !site) return
 		try {
 			console.log('Importing file:', file.name, 'Size:', file.size)
-			const text = await file.text()
-			console.log('File content preview:', text.substring(0, 200))
-
-			await importSiteSymbol(file, site.id, {
-				SiteSymbols,
-				SiteSymbolFields,
-				SiteSymbolEntries
-			})
+			await importSiteSymbol.run()
 			upload_dialog_open = false
 			upload_file_invalid = false
+			file = undefined
 			console.log('Import successful!')
 		} catch (error) {
 			console.error('Failed to import symbol:', error)
 			console.error('Error details:', error.message, error.stack)
 			upload_file_invalid = true
+			file = undefined
 		}
-	}
-
-	function export_block(symbol) {
-		exportSymbol(symbol)
 	}
 
 	let active_block_id = $state(null)
