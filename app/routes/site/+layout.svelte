@@ -35,7 +35,7 @@
 {:else if creating_site}
 	<CreateSite
 		oncreated={() => {
-			creating_site = false
+			window.location.reload()
 		}}
 	/>
 {:else if site}
