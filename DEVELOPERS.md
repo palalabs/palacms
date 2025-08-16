@@ -46,56 +46,64 @@ palacms/
 
 ### Prerequisites
 
-- Node.js higher than v18
-- npm (pnpm is not currently supported)
-- Git
-- devenv or Dev Container compatible development environment 
+- [devenv](https://devenv.sh/) or [Dev Container](https://containers.dev/supporting) compatible development environment (eg. Visual Studio Code)
 
 ### Getting Started
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/palacms/palacms.git
    cd palacms
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Start the development server**
+
    ```bash
    npm run dev
    ```
+
    This starts both the SvelteKit dev server and PocketBase backend.
 
 4. **Access the application**
-   - Main app: http://localhost:5173
-   - PocketBase Admin: http://localhost:8090/_/
-   - Built app: http://localhost:8090
+   - Main app: `http://localhost:5173`
+   - PocketBase Admin: `http://localhost:8090/_`
+   - Built app: `http://localhost:8090`
 
 ### Available Scripts
 
-- `npm run dev` - Start development server with devenv
-- `npm run build` - Build for production (with increased memory limit)
-- `npm run preview` - Preview production build
+| Command          | Description                                        |
+| ---------------- | -------------------------------------------------- |
+| `npm run dev`    | Start development server with devenv               |
+| `npm run build`  | Build for production (with increased memory limit) |
+| `npm run check`  | Statically check for errors                        |
+| `npm run lint`   | Check for code styling issue                       |
+| `npm run format` | Format code according to code style                |
 
 ## 📝 Core Concepts
 
 ### Sites & Pages
-- **Sites** contain global content 
+
+- **Sites** contain global content
 - **Page Types** define reusable page templates with predefined sections and fields
 - **Pages** are individual content items with their own page-level content and sections
 
 ### Blocks (called Symbols internally)
+
 - Contain HTML, CSS, and JS powered by Svelte
 - Can contain dynamic **Fields** for content editing
 - Available in both **Site Library** and **Global Library**
 
 ### Fields & Content
+
 - **Site Fields** - Global content that appears across pages (e.g. Logo, Site Navigation, Social Links)
-- **Page Fields** - Content specific to individual pages  (e.g. Post Title, Event Date, Person Bio)
+- **Page Fields** - Content specific to individual pages (e.g. Post Title, Event Date, Person Bio)
 - **Block Fields** - Content within blocks - each section containing its own entries
 - Support for text, rich text, images, repeaters, and conditional logic
 
@@ -122,15 +130,16 @@ palacms/
 - Data models are in `app/lib/common/models/`
 
 Example:
+
 ```javascript
 // Get a site with reactive updates
 const site = Sites.one(siteId)
 
 // Create a new page
 const newPage = Pages.create({
-  name: 'New Page',
-  slug: 'new-page',
-  site: siteId
+	name: 'New Page',
+	slug: 'new-page',
+	site: siteId
 })
 
 // Update and commit changes
@@ -157,18 +166,21 @@ await manager.commit()
 ### Common Issues
 
 **Build Errors**
+
 ```bash
 # Increase Node memory for large builds
 NODE_OPTIONS=--max_old_space_size=16384 npm run build
 ```
 
 **PocketBase Issues**
+
 - Check `pb_data/` permissions and ownership
 - Verify migrations have run successfully
 - Check PocketBase logs in the terminal
 - Use PocketBase admin UI at :8090 to inspect data
 
 **Type Errors**
+
 ```bash
 # Get detailed TypeScript diagnostics
 npm run check
@@ -178,6 +190,7 @@ npx svelte-check --watch
 ```
 
 **Performance Issues**
+
 - Use browser DevTools Performance tab
 - Check for unnecessary rerenders with Svelte DevTools
 - Profile database queries in PocketBase admin
@@ -192,36 +205,47 @@ npx svelte-check --watch
 
 ## 🚀 Deployment
 
-### Production Build
+## Prebuilt Docker Images
+
+Prebuilt Docker image can be found from GitHub Container Registry:
+
+```
+ghcr.io/palacms/palacms
+```
+
+### Manual Build
 
 ```bash
 # Build the application
 npm run build
 
-# Preview the build locally
-npm run preview
+# Start development environment for previewing the build
+npm run dev
+
+# To preview the build locally open http://localhost:8090 while development environment is running.
+
+# Actually build Docker image tagged as "palacms"
+docker build -t palacms .
 ```
 
 ### Environment Setup
 
-The app uses these environment variables:
+The app uses these environment variables during the initial start to optionally create up to two initial users:
 
+- For initial superuser:
+  - PALA_SUPERUSER_EMAIL
+  - PALA_SUPERUSER_PASSWORD
+- For initial PalaCMS user:
+  - PALA_USER_EMAIL
+  - PALA_USER_PASSWORD
 
-# Production (optional - defaults to same host)
-POCKETBASE_URL=https://your-pocketbase-instance.com
-```
+The container requires volume to be mounted on path `/app/pb_data` for storing files and a SQLite database.
 
-Note: Setting `POCKETBASE_URL` is primarily for development or when PocketBase is hosted separately from the SvelteKit app. For production deployments, see the [PocketBase deployment documentation](https://pocketbase.io/docs/going-to-production/).
+For production deployments, see the [PocketBase deployment documentation](https://pocketbase.io/docs/going-to-production/).
 
 ### Hosting Options
 
-**SvelteKit App:**
-- Vercel, Netlify, or any Node.js hosting
-- Can be deployed as static site or with server-side features
-
-**PocketBase Backend:**
-- VPS with SQLite support
-- Docker containers
+- VPS with Docker
 - Cloud services like Railway, Fly.io
 
 ## 📚 Code Style & Patterns

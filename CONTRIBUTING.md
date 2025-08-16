@@ -1,13 +1,13 @@
 # Contributing to PalaCMS
 
-Thank you for your interest in contributing to Pala! In the interest of full transparency, we want to be up front in this doc to avoid hurting feelings and set clear expectations. 
+Thank you for your interest in contributing to Pala! In the interest of full transparency, we want to be up front in this doc to avoid hurting feelings and set clear expectations.
 
 ## 💡 About PalaCMS
 
 Pala is a business-driven open source project (think NextJS, Supabase, Tailwind CSS) rather than a community-driven one like Linux or Apache. We're building a sustainable business around a high-quality open source tool, which means:
 
 - We maintain control over project direction
-- We have limited bandwidth for reviewing external contributions  
+- We have limited bandwidth for reviewing external contributions
 - We encourage you first to fork and modify for your own needs (hence the MIT license)
 
 ## ⚠️ Before You Contribute
@@ -24,8 +24,9 @@ Pala is a business-driven open source project (think NextJS, Supabase, Tailwind 
 For detailed technical information including architecture, development setup, and code guidelines, see:
 
 **[DEVELOPERS.md](DEVELOPERS.md)** - Complete technical guide covering:
+
 - Architecture overview and project structure
-- Development setup and available scripts  
+- Development setup and available scripts
 - Core concepts (Sites, Pages, Symbols, Fields)
 - Working with PocketBase (database, hooks, collections)
 - Component development with Svelte 5
@@ -68,12 +69,14 @@ If you've received approval to proceed:
 ### What We're Looking For
 
 **More likely to accept:**
+
 - Bug fixes with clear reproduction steps
 - Documentation improvements
 - Performance optimizations
 - Accessibility improvements
 
 **Less likely to accept:**
+
 - Large feature additions
 - Breaking changes
 - Changes that increase complexity significantly

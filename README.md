@@ -9,16 +9,19 @@ PalaCMS is an open-source content management system that lets you build beautifu
 ## ✨ Why PalaCMS?
 
 ### 🎨 **Visual + Code**
+
 - Build visually with drag-and-drop blocks
 - Direct access to component HTML, CSS, and JavaScript
 - Works with any CSS framework (Tailwind, Bootstrap, etc.)
 
 ### ⚡ **Developer-Friendly**
+
 - Reusable component library
 - Custom page types and dynamic fields
-- Real-time collaboration 
+- Real-time collaboration
 
 ### 🏠 **Self-Hosted Freedom**
+
 - Run on your own infrastructure with PocketBase
 - No vendor lock-in or monthly fees
 - Your data stays under your control
@@ -26,34 +29,14 @@ PalaCMS is an open-source content management system that lets you build beautifu
 ## 🎯 Perfect For
 
 - **Agencies** building custom sites for clients
-- **Developers** who want visual editing without sacrificing control  
+- **Developers** who want visual editing without sacrificing control
 - **Teams** collaborating on content and design
 - **Anyone** tired of WordPress limitations or expensive SaaS platforms
-
-## 🚀 Quick Start
-
-### Get PalaCMS running in literally 1 minute
-
-1. **Fork this repository** to your GitHub account
-
-2. **Deploy to Railway**
-   - Go to [Railway](https://railway.app)
-   - Connect your GitHub account
-   - Deploy your forked repository
-   - Railway will automatically build and deploy PalaCMS
-
-3. **Set up your database**
-   - Go to your Railway URL + `/_` (e.g. `https://your-app.railway.app/_`)
-   - Create your PocketBase superuser account
-
-4. **Create your first site**
-   - Go to your Railway URL root (e.g. `https://your-app.railway.app`)
-   - Create your site and start building!
-   - Your site will be served from the root domain, CMS accessible at `/admin`
 
 ## 🔥 V3 Features & Improvements
 
 ### New in V3
+
 - **Self-hosting with PocketBase** - Run PalaCMS on your own infrastructure with PocketBase as the backend
 - **Custom Page Types** - Create flexible content types for different kinds of pages
 - **Dynamic Content Fields** - Site fields, page fields, and relational content that updates across pages
@@ -62,6 +45,7 @@ PalaCMS is an open-source content management system that lets you build beautifu
 - **Real-time Collaboration** - Multiple users can edit simultaneously (in development)
 
 ### Enhanced User Experience
+
 - **Conditional Fields** - Show/hide fields based on other field values
 - **CSS Framework Support** - Works reliably with Bootstrap, Tailwind, Bulma, and other frameworks
 - **Improved Drag & Drop** - Better block placement, works on mobile
@@ -70,6 +54,7 @@ PalaCMS is an open-source content management system that lets you build beautifu
 - **Refined Block Editor** - Cleaner separation between code and content
 
 ### Coming in Beta
+
 - **Framework Integration** - Embed PalaCMS content in your existing Next.js, SvelteKit, or other apps
 - **AI Block Generation** - Generate blocks with AI assistance
 - **Local Development Tools** - Full local development environment and CLI tools
