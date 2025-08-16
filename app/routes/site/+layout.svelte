@@ -4,7 +4,7 @@
 	import { onMount } from 'svelte'
 	import { goto } from '$app/navigation'
 	import { page } from '$app/state'
-	import { Sites } from '$lib/pocketbase/collections'
+	import { manager, Sites } from '$lib/pocketbase/collections'
 	import CreateSite from '$lib/components/CreateSite.svelte'
 	import { current_user, set_current_user } from '$lib/pocketbase/user'
 
@@ -35,7 +35,8 @@
 {:else if creating_site}
 	<CreateSite
 		oncreated={() => {
-			window.location.reload()
+			manager.lists.clear()
+			creating_site = false
 		}}
 	/>
 {:else if site}
