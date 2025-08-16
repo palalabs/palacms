@@ -131,7 +131,7 @@
 				html: `<svelte:head>${html}</svelte:head>`,
 				css: '',
 				js: '',
-				data
+				data: data ?? {}
 			}
 		})
 		if (!compiled.error) {
