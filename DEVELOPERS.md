@@ -14,7 +14,6 @@ This guide covers the technical aspects of working **on the PalaCMS codebase its
 - **UI Framework**: Tailwind CSS 4 with bits-ui components
 - **Code Editing**: CodeMirror 6 with Svelte language support
 - **Rich Text**: TipTap editor (built on ProseMirror 6)
-- **Testing**: Playwright for E2E tests
 
 ### Project Structure
 
@@ -27,19 +26,14 @@ palacms/
 │   │   │   ├── stores/     # Svelte stores for state
 │   │   │   ├── utils/      # Utility functions
 │   │   │   └── views/      # Builder views (editor, modals)
-│   │   ├── common/
+│   │   ├── common/         # Code shared between frontend and backend applications
 │   │   │   └── models/     # TypeScript data models
 │   │   ├── pocketbase/     # PocketBase client & collection mappings
 │   │   └── components/     # Shared UI components
 │   └── routes/            # SvelteKit routes and pages
-│       ├── admin/         # Admin interface routes
-│       └── dashboard/     # Dashboard routes
 ├── pb_hooks/              # PocketBase server-side JavaScript hooks
 ├── pb_migrations/         # Database schema migrations
 ├── pb_data/               # PocketBase database & uploaded files
-├── tests/                 # Test suites
-│   └── e2e/              # End-to-end Playwright tests
-└── static/               # Static assets
 ```
 
 ## 🚀 Development Setup
@@ -113,14 +107,15 @@ palacms/
 
 - Schema changes go in `pb_migrations/`
 - Migrations use JavaScript format
-- Collection types are auto-generated in `pb_data/types.d.ts`
+- Migrations are auto-generated when you use Pocketbase admin UI to modify the collections
+  - Remember to format the auto-generated migrations
 
 ### Server Hooks
 
 - Hooks are in `pb_hooks/` (CommonJS format)
-- Keep hooks lightweight and focused
-- Handle errors gracefully
-- Used for validation, data transformation, and business logic
+- Keep hooks simple and secure
+- Used for tasks such as validation and serving files
+- Only the business logic that has no place in the frontend application should be added here
 
 ### Collections & Data Access
 
@@ -133,17 +128,19 @@ Example:
 
 ```javascript
 // Get a site with reactive updates
-const site = Sites.one(siteId)
+const site = $derived(Sites.one(siteId))
 
-// Create a new page
+// Create a new page locally (staged for a commit)
 const newPage = Pages.create({
 	name: 'New Page',
 	slug: 'new-page',
 	site: siteId
 })
 
-// Update and commit changes
+// Update page name locally (staged for a commit)
 Pages.update(pageId, { name: 'Updated Name' })
+
+// Commit all locally made changes to the server
 await manager.commit()
 ```
 
@@ -279,7 +276,6 @@ For production deployments, see the [PocketBase deployment documentation](https:
 2. Add to field type registry
 3. Define TypeScript interfaces
 4. Add validation logic
-5. Write tests
 
 ### Creating Custom Views
 
@@ -302,7 +298,6 @@ For production deployments, see the [PocketBase deployment documentation](https:
 - [PocketBase Documentation](https://pocketbase.io/docs/)
 - [Tailwind CSS Documentation](https://tailwindcss.com/)
 - [CodeMirror Documentation](https://codemirror.net/)
-- [Playwright Testing](https://playwright.dev/)
 
 ---
 
