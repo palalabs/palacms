@@ -10,5 +10,5 @@
 </script>
 
 {#if $compilers_registered && homepage}
-	<PrimoPage page={homepage} />
+	<PalaPage page={homepage} />
 {/if}

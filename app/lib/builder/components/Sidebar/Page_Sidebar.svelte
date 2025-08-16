@@ -135,7 +135,7 @@
 									values
 								})
 								clearTimeout(commit_task)
-								commit_task = setTimeout(() => manager.commit(), 500)
+								commit_task = setTimeout(() => manager.commit(), 100)
 							}}
 						/>
 					</div>
@@ -170,7 +170,7 @@
 							values
 						})
 						clearTimeout(commit_task)
-						commit_task = setTimeout(() => manager.commit(), 500)
+						commit_task = setTimeout(() => manager.commit(), 100)
 					}}
 				/>
 			</div>

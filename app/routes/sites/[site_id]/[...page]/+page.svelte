@@ -12,5 +12,5 @@
 </script>
 
 {#if $compilers_registered && current_page}
-	<PrimoPage page={current_page} />
+	<PalaPage page={current_page} />
 {/if}

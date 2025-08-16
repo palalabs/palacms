@@ -158,7 +158,7 @@
 	<div class="menu-container">
 		<div class="left">
 			{#if $current_user?.serverRole}
-				<PrimoButton />
+				<PalaButton />
 			{/if}
 			<div class="button-group">
 				<div class="flex rounded" style="border: 1px solid #222">
