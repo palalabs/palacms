@@ -112,7 +112,6 @@
 			hotkey_events.dispatch('down')
 		})
 		Mousetrap.bind('mod+e', (e) => {
-			console.log('dispatching e')
 			e.preventDefault()
 			hotkey_events.dispatch('e')
 		})

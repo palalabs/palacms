@@ -157,7 +157,6 @@
 		{#if page && page_type_fields && page_entries}
 			<div class="p-4 page-type-fields">
 				<Content
-					minimal={true}
 					entity={page}
 					fields={page_type_fields}
 					entries={page_entries}
